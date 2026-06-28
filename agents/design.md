@@ -138,6 +138,30 @@ See the `agent-log` skill for CLI reference.
 
 Decision ID format: `des-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `des-001-001`.
 
+**Log an event for each significant action.** Event types: `file_read` (spec and view reading), `file_write` (design spec written). Include what the read *revealed* — e.g., which layout region pattern you found and adopted, or which existing AI generation surface pattern you matched against.
+
+**Before closing the run**, log a `reflection --type struggle` for each topic where the existing view patterns were unclear, where a design decision required judgment beyond these guidelines, or where the spec was thin and you had to fill gaps:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type struggle \
+  --description "what was hard and why — what information or skill would have resolved it"
+```
+
+These entries feed the cross-run aggregate via `bin/agent-log query struggles`. They should mirror what you write in the "Where I struggled" section of the design spec. If nothing was genuinely difficult, skip this step.
+
+Also log a `reflection --type skill_gap` for each area where project-specific knowledge was absent that a skill file could have provided — not general uncertainty, but a specific gap where a skill about X would have told you what to do:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type skill_gap \
+  --description "what was missing — what a skill should contain and which agents would benefit"
+```
+
+These feed `bin/agent-log query skill-gaps` and are direct input to the skill candidate pipeline, complementing the log-analyst's finding-based detection. If nothing was missing, skip this step.
+
 **Last action:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "Produced {FEATURE_DIR}/{NNN}.03-des-{feature-name} — {N} views, {N} generation surfaces"`.
 
 ---
@@ -261,7 +285,10 @@ Why key visual and flow choices were made:
 **Assumptions made:**
 - [assumption] — basis: [why]; if wrong: [impact]
 
-If none: "None."
+**Where I struggled:**
+- [topic] — [what made it hard; what information or skill would have resolved it]
+
+If nothing applies to either, write "None." Do not leave blank.
 
 ---
 

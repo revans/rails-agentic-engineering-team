@@ -243,6 +243,17 @@ Any ambiguities resolved, conflicts found, or decisions made during execution th
 
 **First action — after reading the input:** start a run with `--agent-name skill-builder`, `--input-mode ad_hoc`, `--input-summary` set to either `"Building skills from report: {report filename}"` (report mode) or `"Direct edit: {skill-name} — {one-line description of change}"` (direct edit mode). Capture the returned UUID as `$RUN_ID`.
 
+**Before closing the run**, log a `reflection --type struggle` for each topic where the log-analyst's proposal was ambiguous, where determining the minimum change was difficult, or where you had to make judgment calls about skill content beyond clear guidelines:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type struggle \
+  --description "what was hard and why — what information or skill would have resolved it"
+```
+
+These entries feed the cross-run aggregate via `bin/agent-log query struggles`. If nothing was genuinely difficult, skip this step.
+
 **Last action — after writing the build report:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "Built N skills; updated M agents"`.
 
 ### What to Log

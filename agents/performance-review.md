@@ -200,6 +200,28 @@ bin/agent-log query decisions --run-id $RUN_ID
 
 Filter for `decision_type: gap`. Each entry becomes a bullet in Assumptions Made or Where I Struggled.
 
+**Before closing the run**, log a `reflection --type struggle` for each entry in the report's "Where I struggled" section — anything where data volume context was insufficient, where classifying a finding as NEEDS WORK vs PASS WITH NOTES required a judgment call beyond clear guidelines, or where the review was harder than expected:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type struggle \
+  --description "what was hard and why — what information or skill would have resolved it"
+```
+
+These entries feed the cross-run aggregate via `bin/agent-log query struggles`. They should mirror what you write in the "Where I struggled" section of the report. If nothing was genuinely difficult, skip this step.
+
+Also log a `reflection --type skill_gap` for each area where project-specific knowledge was absent that a skill file could have provided — not general uncertainty, but a specific gap where a skill about X would have told you what to do:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type skill_gap \
+  --description "what was missing — what a skill should contain and which agents would benefit"
+```
+
+These feed `bin/agent-log query skill-gaps` and are direct input to the skill candidate pipeline, complementing the log-analyst's finding-based detection. If nothing was missing, skip this step.
+
 **End:** after report is written.
 
 **Log a finding for every issue in the report:**

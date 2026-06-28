@@ -283,6 +283,16 @@ Finding categories recurring across 3+ features — the engineer prevention skil
 
 List any pattern types where the data is too thin to produce confident proposals. Name what would need to happen (more runs, more observed outcomes logged, more features of a specific type) to generate signal.
 
+## Where I Struggled
+
+Topics where the available data was insufficient, where interpretation required judgment beyond clear guidelines, or where the analysis took significantly longer than expected.
+
+- [topic] — [what made it hard; what information or skill would have resolved it]
+
+If nothing was genuinely difficult, write "None."
+
+Note: the log-analyst does not start a run and cannot log `reflection` entries to the database. Struggles are captured here in prose only — the `bin/agent-log query struggles` aggregate will not include them.
+
 ## Proposals Summary
 
 A numbered list of all proposed changes for quick human review:

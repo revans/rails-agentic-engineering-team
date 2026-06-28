@@ -221,6 +221,28 @@ bin/agent-log query decisions --run-id $RUN_ID
 
 Filter for `decision_type: gap`. Each gap entry becomes a bullet in Assumptions Made or Where I Struggled. This makes the Agent Notes section a reliable snapshot of what was logged, not a reconstruction from memory.
 
+**Before closing the run**, log a `reflection --type struggle` for each entry in the brief's "Where I struggled" section — anything where the user's intent was genuinely unclear, where you had to make scope judgments beyond these guidelines, or where the conversation was harder to guide than expected:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type struggle \
+  --description "what was hard and why — what information or skill would have resolved it"
+```
+
+These entries feed the cross-run aggregate via `bin/agent-log query struggles`. They should mirror what you write in the "Where I struggled" section of the brief. If nothing was genuinely difficult, skip this step.
+
+Also log a `reflection --type skill_gap` for each area where project-specific knowledge was absent that a skill file could have provided — not general uncertainty, but a specific gap where a skill about X would have told you what to do:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type skill_gap \
+  --description "what was missing — what a skill should contain and which agents would benefit"
+```
+
+These feed `bin/agent-log query skill-gaps` and are direct input to the skill candidate pipeline, complementing the log-analyst's finding-based detection. If nothing was missing, skip this step.
+
 **Last action of every session — after the brief file is written:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "Produced brief: docs/briefs/{NNN}-{feature-name}/{NNN}.01-dis-{feature-name}.md"`.
 
 ### What to Log

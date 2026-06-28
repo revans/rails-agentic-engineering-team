@@ -390,6 +390,19 @@ Decision ID format: `orch-{feature-number}-{NNN}` where `feature-number` is the 
 
 **Log an event for each agent launch** — type `tool_call`, description: which agent, which artifact passed.
 
+### Struggle Logging
+
+**Before closing the run**, log a `reflection --type struggle` for each topic where routing was unclear, artifact state was ambiguous, or you had to make a judgment call beyond these guidelines:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type struggle \
+  --description "what was hard and why — what information would have resolved it"
+```
+
+These entries feed the cross-run aggregate via `bin/agent-log query struggles`. If nothing was genuinely difficult, skip this step.
+
 ---
 
 ## What the Orchestrator Does NOT Do

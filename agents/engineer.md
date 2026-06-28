@@ -96,6 +96,28 @@ If this call fails: continue working, surface the gap in your final report. Do n
 
 **Throughout the run** — log decisions as you make them, events as they happen.
 
+**Before closing the run**, log a `reflection --type struggle` for each topic from the "What Was Hard" section of your engineer report — anything where the available context was insufficient, where you had to guess, or where the work took significantly longer than expected:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type struggle \
+  --description "what was hard and why — what information or skill would have resolved it"
+```
+
+These entries feed the cross-run aggregate via `bin/agent-log query struggles` and are the primary signal for skill candidate identification. They should mirror what you write in the "What Was Hard" section of the engineer report. If nothing was genuinely difficult, skip this step.
+
+Also log a `reflection --type skill_gap` for each area where project-specific knowledge was absent that a skill file could have provided — not general uncertainty, but a specific gap where a skill about X would have told you what to do:
+
+```bash
+bin/agent-log reflection \
+  --run-id $RUN_ID \
+  --type skill_gap \
+  --description "what was missing — what a skill should contain and which agents would benefit"
+```
+
+These feed `bin/agent-log query skill-gaps` and are direct input to the skill candidate pipeline, complementing the log-analyst's finding-based detection. If nothing was missing, skip this step.
+
 **Last action of every structured run:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "{brief summary of what was built}"`.
 
 ### What to Log
