@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rails Agentic Engineering Team — A Self-Improving Agent Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --graphite:#0E1117;
+  --slate:#161B27;
+  --slate-2:#1C2336;
+  --amber:#E8A045;
+  --amber-dim:#B07828;
+  --amber-glow:rgba(232,160,69,0.15);
+  --teal:#2EC4A9;
+  --teal-glow:rgba(46,196,169,0.12);
+  --steel:#7A93AC;
+  --steel-dim:#4A6175;
+  --white:#F0EDE8;
+  --white-dim:rgba(240,237,232,0.6);
+  --white-faint:rgba(240,237,232,0.15);
+  --mono:'JetBrains Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{background:var(--graphite);color:var(--white);font-family:'Inter',sans-serif;font-size:16px;line-height:1.65;overflow-x:hidden}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:1rem 3rem;background:rgba(14,17,23,0.92);backdrop-filter:blur(14px);border-bottom:1px solid rgba(122,147,172,0.1)}
+.nav-logo{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1rem;letter-spacing:0.06em;color:var(--amber)}
+.nav-logo span{color:var(--white);font-weight:300}
+nav ul{list-style:none;display:flex;gap:2rem}
+nav ul a{color:var(--steel);text-decoration:none;font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;transition:color 0.2s}
+nav ul a:hover{color:var(--white)}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8rem 2rem 5rem;position:relative;overflow:hidden;text-align:center;background:var(--graphite)}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 35%,rgba(232,160,69,0.05) 0%,transparent 70%);pointer-events:none}
+.eyebrow{font-family:var(--mono);font-size:0.72rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--amber);margin-bottom:1.4rem}
+.hero-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(2.4rem,5vw,4.8rem);font-weight:700;line-height:1.05;max-width:820px;margin-bottom:1.4rem}
+.hero-title em{font-style:normal;color:var(--amber)}
+.hero-sub{color:var(--white-dim);font-size:1.05rem;max-width:620px;line-height:1.8;margin:0 auto 2rem}
+.hero-badges{display:flex;gap:0.75rem;flex-wrap:wrap;justify-content:center;margin-bottom:2.8rem}
+.badge{font-family:'Space Grotesk',sans-serif;font-size:0.7rem;font-weight:600;letter-spacing:0.1em;padding:0.3rem 0.85rem;border-radius:2px;text-transform:uppercase}
+.badge-amber{background:var(--amber-glow);color:var(--amber);border:1px solid rgba(232,160,69,0.3)}
+.badge-teal{background:var(--teal-glow);color:var(--teal);border:1px solid rgba(46,196,169,0.25)}
+.badge-steel{background:rgba(74,97,117,0.12);color:var(--steel);border:1px solid rgba(74,97,117,0.3)}
+.hero-cta{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-primary{background:var(--amber);color:var(--graphite);font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.88rem;letter-spacing:0.06em;padding:0.8rem 2rem;border:none;cursor:pointer;transition:opacity 0.2s;text-decoration:none;display:inline-block}
+.btn-primary:hover{opacity:0.88}
+.btn-ghost{background:transparent;color:var(--white);font-family:'Space Grotesk',sans-serif;font-weight:500;font-size:0.88rem;letter-spacing:0.06em;padding:0.8rem 2rem;border:1px solid var(--steel-dim);cursor:pointer;transition:border-color 0.2s;text-decoration:none;display:inline-block}
+.btn-ghost:hover{border-color:var(--steel)}
+
+/* ANALOGY */
+.analogy-section{padding:5rem 2rem;background:var(--slate);border-top:1px solid rgba(122,147,172,0.08)}
+.analogy-inner{max-width:860px;margin:0 auto}
+.section-eyebrow{font-family:var(--mono);font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--amber);margin-bottom:0.7rem;display:block}
+.section-eyebrow-teal{color:var(--teal)}
+.section-title{font-family:'Space Grotesk',sans-serif;font-size:clamp(1.5rem,2.8vw,2.2rem);font-weight:600;margin-bottom:1rem}
+.section-body{color:var(--white-dim);font-size:0.97rem;line-height:1.85;margin-bottom:1.2rem}
+.analogy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1px;background:var(--steel-dim);margin-top:2.5rem}
+.analogy-card{background:var(--slate);padding:1.6rem 1.4rem}
+.analogy-card-label{font-family:var(--mono);font-size:0.68rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--steel);margin-bottom:0.5rem}
+.analogy-city{font-family:'Space Grotesk',sans-serif;font-size:0.9rem;font-weight:600;color:var(--amber);margin-bottom:0.3rem}
+.analogy-agent{font-family:var(--mono);font-size:0.82rem;color:var(--teal)}
+
+/* PIPELINE SECTION */
+.pipeline-section{padding:5rem 2rem;background:var(--graphite)}
+.pipeline-inner{max-width:1080px;margin:0 auto}
+.pipeline-header{margin-bottom:3rem}
+.pipeline-diagram{display:flex;flex-direction:column;align-items:center;gap:0;max-width:680px;margin:0 auto}
+.pipe-stage{display:flex;align-items:center;gap:1.5rem;width:100%;padding:1.1rem 1.4rem;background:var(--slate);border:1px solid rgba(122,147,172,0.1);position:relative;opacity:0;transform:translateX(-20px);transition:opacity 0.5s ease,transform 0.5s ease}
+.pipe-stage.visible{opacity:1;transform:translateX(0)}
+.pipe-stage-num{font-family:var(--mono);font-size:0.68rem;color:var(--steel);min-width:24px}
+.pipe-stage-agent{font-family:var(--mono);font-size:0.9rem;font-weight:500;min-width:140px}
+.pipe-stage-agent.amber{color:var(--amber)}
+.pipe-stage-agent.teal{color:var(--teal)}
+.pipe-stage-agent.steel{color:var(--steel)}
+.pipe-stage-out{font-size:0.78rem;color:var(--white-dim)}
+.pipe-stage-out code{font-family:var(--mono);font-size:0.72rem;color:var(--steel);background:rgba(122,147,172,0.08);padding:0.1rem 0.4rem}
+.pipe-arrow{width:2px;height:24px;background:linear-gradient(to bottom,rgba(122,147,172,0.4),rgba(122,147,172,0.1));margin-left:38px;flex-shrink:0;align-self:stretch}
+.pipe-arrow-animated{background:linear-gradient(to bottom,var(--amber),rgba(232,160,69,0.1));animation:drip 1.5s ease-in-out infinite}
+@keyframes drip{0%,100%{opacity:0.4}50%{opacity:1}}
+.pipe-parallel{display:flex;gap:1px;width:100%;background:var(--steel-dim)}
+.pipe-parallel-agent{flex:1;padding:0.9rem 1rem;background:var(--slate-2);display:flex;flex-direction:column;gap:0.3rem}
+.pipe-parallel-label{font-family:var(--mono);font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--teal)}
+.pipe-parallel-name{font-family:var(--mono);font-size:0.82rem;color:var(--white)}
+.pipe-parallel-note{font-size:0.72rem;color:var(--white-dim)}
+.pipe-verdict{display:grid;grid-template-columns:1fr 1px 1fr;gap:0;width:100%;margin-top:0}
+.pipe-verdict-side{padding:1rem 1.2rem;background:var(--slate)}
+.pipe-verdict-div{background:var(--steel-dim)}
+.pipe-verdict-label{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.4rem}
+.pipe-verdict-label.pass{color:var(--teal)}
+.pipe-verdict-label.work{color:var(--amber)}
+.pipe-verdict-body{font-size:0.78rem;color:var(--white-dim)}
+.pipe-parallel-banner{width:100%;padding:0.7rem 1.4rem;background:rgba(46,196,169,0.06);border:1px solid rgba(46,196,169,0.2);font-size:0.8rem;color:var(--teal);font-family:'Space Grotesk',sans-serif;font-weight:500;display:flex;align-items:center;gap:0.6rem}
+.pipe-dot{width:7px;height:7px;border-radius:50%;background:var(--teal);animation:pulse 2s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(46,196,169,0.4)}50%{opacity:0.6;box-shadow:0 0 0 5px rgba(46,196,169,0)}}
+
+/* AGENTS SECTION */
+.agents-section{padding:5rem 2rem;background:var(--slate)}
+.agents-inner{max-width:1080px;margin:0 auto}
+.agents-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1px;background:var(--steel-dim);margin-top:2.5rem}
+.agent-card{background:var(--graphite);padding:2rem 1.8rem;position:relative;overflow:hidden;opacity:0;transform:translateY(16px);transition:opacity 0.5s ease,transform 0.5s ease}
+.agent-card.visible{opacity:1;transform:translateY(0)}
+.agent-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px}
+.ac-amber::before{background:var(--amber)}
+.ac-teal::before{background:var(--teal)}
+.ac-steel::before{background:var(--steel-dim)}
+.agent-card-num{font-family:var(--mono);font-size:0.65rem;color:var(--steel);letter-spacing:0.15em;margin-bottom:0.6rem}
+.agent-card-name{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;margin-bottom:0.3rem}
+.agent-card-file{font-family:var(--mono);font-size:0.7rem;color:var(--steel);margin-bottom:0.9rem}
+.agent-card-desc{font-size:0.85rem;color:var(--white-dim);line-height:1.75;margin-bottom:1rem}
+.agent-card-constraints{border-top:1px solid rgba(122,147,172,0.1);padding-top:0.9rem;margin-top:0.9rem}
+.agent-card-constraints-label{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--steel);margin-bottom:0.5rem}
+.agent-card-constraints ul{list-style:none;display:flex;flex-direction:column;gap:0.3rem}
+.agent-card-constraints li{font-size:0.78rem;color:var(--white-dim);padding-left:1rem;position:relative}
+.agent-card-constraints li::before{content:'→';position:absolute;left:0;color:var(--amber);font-size:0.72rem}
+.skills-chips{display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.9rem}
+.skill-chip{font-family:var(--mono);font-size:0.65rem;padding:0.2rem 0.55rem;background:rgba(122,147,172,0.08);border:1px solid rgba(122,147,172,0.2);color:var(--steel)}
+
+/* DATABASE SECTION */
+.db-section{padding:5rem 2rem;background:var(--graphite)}
+.db-inner{max-width:1080px;margin:0 auto}
+.db-tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;margin-top:2.5rem}
+.db-table{background:var(--slate);border:1px solid rgba(122,147,172,0.1)}
+.db-table-header{padding:1rem 1.4rem;border-bottom:1px solid rgba(122,147,172,0.1);display:flex;align-items:center;gap:0.75rem}
+.db-table-name{font-family:var(--mono);font-size:0.88rem;font-weight:500;color:var(--amber)}
+.db-table-desc{font-size:0.78rem;color:var(--white-dim);padding:0.8rem 1.4rem 0}
+.db-cols{padding:0.6rem 1.4rem 1.2rem}
+.db-col{display:grid;grid-template-columns:130px 1fr;gap:0.5rem;padding:0.35rem 0;border-bottom:1px solid rgba(122,147,172,0.06)}
+.db-col:last-child{border-bottom:none}
+.db-col-name{font-family:var(--mono);font-size:0.72rem;color:var(--teal)}
+.db-col-desc{font-size:0.72rem;color:var(--white-dim);line-height:1.5}
+.db-insight{max-width:1080px;margin:2rem auto 0;padding:1.4rem 1.8rem;background:rgba(232,160,69,0.04);border-left:3px solid var(--amber)}
+.db-insight p{font-size:0.9rem;color:var(--white-dim);line-height:1.8}
+.db-insight strong{color:var(--white)}
+.db-insight code{font-family:var(--mono);font-size:0.8rem;color:var(--amber);background:rgba(232,160,69,0.08);padding:0.1rem 0.4rem}
+
+/* SELF-IMPROVEMENT LOOP */
+.loop-section{padding:5rem 2rem 6rem;background:var(--slate);position:relative;overflow:hidden}
+.loop-section::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 50% 60% at 50% 50%,rgba(46,196,169,0.04) 0%,transparent 70%);pointer-events:none}
+.loop-inner{max-width:1080px;margin:0 auto}
+.loop-header{margin-bottom:3rem}
+.loop-diagram-wrap{display:flex;flex-direction:column;align-items:center;gap:3rem}
+.loop-svg-wrap{width:100%;max-width:640px;margin:0 auto}
+.loop-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--steel-dim);max-width:1080px;width:100%}
+.loop-step{background:var(--graphite);padding:1.8rem 1.6rem;position:relative}
+.loop-step::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px;background:var(--teal)}
+.loop-step-num{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.2em;color:var(--teal);margin-bottom:0.5rem}
+.loop-step-title{font-family:'Space Grotesk',sans-serif;font-size:0.95rem;font-weight:600;margin-bottom:0.5rem}
+.loop-step-body{font-size:0.82rem;color:var(--white-dim);line-height:1.75}
+.loop-callout{max-width:1080px;width:100%;padding:1.6rem 2rem;background:rgba(46,196,169,0.05);border:1px solid rgba(46,196,169,0.2)}
+.loop-callout p{font-size:0.92rem;color:var(--white-dim);line-height:1.85}
+.loop-callout strong{color:var(--teal)}
+
+/* SKILLS SECTION */
+.skills-section{padding:5rem 2rem;background:var(--graphite)}
+.skills-inner{max-width:1080px;margin:0 auto}
+.skills-matrix{margin-top:2.5rem;overflow-x:auto}
+.skills-matrix table{width:100%;border-collapse:collapse;font-size:0.78rem}
+.skills-matrix th{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--steel);padding:0.6rem 0.8rem;border-bottom:1px solid rgba(122,147,172,0.15);text-align:left;white-space:nowrap}
+.skills-matrix th:first-child{color:var(--amber)}
+.skills-matrix td{padding:0.55rem 0.8rem;border-bottom:1px solid rgba(122,147,172,0.06);color:var(--white-dim)}
+.skills-matrix td:first-child{font-family:var(--mono);font-size:0.75rem;color:var(--white)}
+.skills-matrix td.check{color:var(--teal);text-align:center;font-size:1rem}
+.skills-matrix td.dash{color:var(--steel-dim);text-align:center}
+.skills-matrix tr:hover td{background:rgba(122,147,172,0.04)}
+.skills-desc{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--steel-dim);margin-top:2rem}
+.skill-desc-card{background:var(--slate);padding:1.6rem}
+.skill-desc-name{font-family:var(--mono);font-size:0.82rem;color:var(--amber);margin-bottom:0.4rem}
+.skill-desc-file{font-family:var(--mono);font-size:0.65rem;color:var(--steel);margin-bottom:0.7rem}
+.skill-desc-body{font-size:0.82rem;color:var(--white-dim);line-height:1.75}
+
+/* ARTIFACT TEMPLATES */
+.tmpl-tab{font-family:var(--mono);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.65rem 1.2rem;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--steel);cursor:pointer;transition:color 0.2s,border-color 0.2s;margin-bottom:-1px}
+.tmpl-tab:hover{color:var(--white)}
+.tmpl-tab.active{color:var(--amber);border-bottom-color:var(--amber)}
+.tmpl-panel{display:none;margin-top:2rem}
+.tmpl-panel.active{display:block}
+.tmpl-meta{display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;padding:0.8rem 1.2rem;background:rgba(14,17,23,0.6);border:1px solid rgba(122,147,172,0.1);margin-bottom:1.5rem}
+.tmpl-file{font-family:var(--mono);font-size:0.8rem;color:var(--amber)}
+.tmpl-note{font-size:0.75rem;color:var(--white-dim)}
+.tmpl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--steel-dim)}
+.tmpl-section{background:var(--graphite);padding:1.4rem 1.6rem}
+.tmpl-section-highlight{background:var(--slate-2)}
+.tmpl-section-name{font-family:var(--mono);font-size:0.8rem;color:var(--teal);margin-bottom:0.5rem}
+.tmpl-section-desc{font-size:0.78rem;color:var(--white-dim);line-height:1.75}
+.tmpl-rev-row{display:flex;gap:0.6rem;align-items:flex-start;font-size:0.75rem;margin-bottom:0.35rem}
+.tmpl-rev-num{font-family:var(--mono);font-size:0.65rem;color:var(--steel);min-width:18px;padding-top:0.05rem}
+.tmpl-rev-item{color:var(--white-dim);line-height:1.6}
+
+/* PRINCIPLES */
+.principles-section{padding:5rem 2rem;background:var(--slate)}
+.principles-inner{max-width:860px;margin:0 auto}
+.principles-list{display:flex;flex-direction:column;gap:2rem;margin-top:2.5rem}
+.principle{display:grid;grid-template-columns:3px 1fr;gap:1.4rem}
+.principle-line{background:var(--amber);border-radius:2px}
+.principle-title{font-family:'Space Grotesk',sans-serif;font-size:1rem;font-weight:600;margin-bottom:0.4rem}
+.principle-body{font-size:0.88rem;color:var(--white-dim);line-height:1.8}
+
+/* ATTRIBUTION */
+.attribution{padding:3rem 2rem;background:var(--graphite);border-top:1px solid rgba(122,147,172,0.1);text-align:center}
+.attribution p{font-size:0.82rem;color:var(--steel)}
+.attribution a{color:var(--amber);text-decoration:none}
+.attribution a:hover{text-decoration:underline}
+
+.agent-card-struggle{margin-top:0.9rem;padding:0.7rem 0.9rem;background:rgba(46,196,169,0.05);border-left:2px solid var(--teal);display:flex;gap:0.6rem;align-items:flex-start}
+.agent-card-struggle-label{font-family:var(--mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--teal);white-space:nowrap;padding-top:0.05rem}
+.agent-card-struggle-body{font-size:0.75rem;color:var(--white-dim);line-height:1.6}
+@keyframes flowDown{to{stroke-dashoffset:-24}}
+@keyframes loopSpin{to{transform:rotate(360deg)}}
+@keyframes loopPulse{0%,100%{opacity:0.6}50%{opacity:1}}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  nav{padding:1rem 1.5rem}
+  nav ul{gap:1rem}
+  .hero{padding:7rem 1.5rem 4rem}
+  .analogy-section,.pipeline-section,.agents-section,.db-section,.loop-section,.skills-section,.principles-section{padding:3.5rem 1.5rem}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Rails Agentic<span>Engineering Team</span></div>
+  <ul>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#agents">Agents</a></li>
+    <li><a href="#loop">Self-Improvement</a></li>
+    <li><a href="#database">Database</a></li>
+    <li><a href="#commands">Commands</a></li>
+    <li><a href="#templates">Templates</a></li>
+    <li><a href="#principles">Principles</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="eyebrow">A pattern by Robert Evans</div>
+  <h1 class="hero-title">The <em>Rails</em> agentic engineering team that learns from itself</h1>
+  <p class="hero-sub">A pipeline of specialized LLM agents — each with one job, defined inputs, and defined outputs — that hands artifacts through fixed stages, logs every struggle, and improves its own rules over time.</p>
+  <div class="hero-badges">
+    <span class="badge badge-amber">Rails-First</span>
+    <span class="badge badge-amber">10 Specialized Agents</span>
+    <span class="badge badge-teal">Self-Improving Loop</span>
+    <span class="badge badge-teal">Struggle Logging</span>
+    <span class="badge badge-steel">SQLite Flight Recorder</span>
+    <span class="badge badge-steel">Parallel Review Stage</span>
+    <span class="badge badge-amber">Human Approval Gate</span>
+  </div>
+  <div class="hero-cta">
+    <a href="#pipeline" class="btn-primary">See the Pipeline</a>
+    <a href="#loop" class="btn-ghost">The Learning Loop</a>
+  </div>
+</section>
+
+<!-- ANALOGY -->
+<section class="analogy-section">
+  <div class="analogy-inner">
+    <span class="section-eyebrow">The Mental Model</span>
+    <h2 class="section-title">Think of a city planning department</h2>
+    <p class="section-body">A discovery interviewer talks to residents about what they need. A city planner reads that brief and designs the streets. An architect reads the plan and specifies the buildings. A construction crew builds from the spec. Then three independent inspectors — electrical, structural, fire — each sign off before occupancy. If any inspector flags a problem, the crew fixes it and inspectors re-check. No building gets occupied until all three sign off.</p>
+    <p class="section-body">The planner and crew don't start over from scratch each time — they learn. They keep a record of every decision, every flagged problem, every repeating pattern. A learning analyst reads that record and says: "this keeps coming up — let's make it a standing rule." A rule writer takes the approved rules and writes them into the inspection checklist.</p>
+    <p class="section-body"><strong>That is this system.</strong></p>
+
+    <div class="analogy-grid">
+      <div class="analogy-card">
+        <div class="analogy-card-label">City</div>
+        <div class="analogy-city">Discovery Interviewer</div>
+        <div class="analogy-agent">discovery agent</div>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-card-label">City</div>
+        <div class="analogy-city">City Planner</div>
+        <div class="analogy-agent">architect agent</div>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-card-label">City</div>
+        <div class="analogy-city">Architect</div>
+        <div class="analogy-agent">design agent</div>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-card-label">City</div>
+        <div class="analogy-city">Construction Crew</div>
+        <div class="analogy-agent">engineer agent</div>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-card-label">City</div>
+        <div class="analogy-city">Electrical / Structural / Fire</div>
+        <div class="analogy-agent">code · security · performance review</div>
+      </div>
+      <div class="analogy-card">
+        <div class="analogy-card-label">City</div>
+        <div class="analogy-city">Learning Analyst + Rule Writer</div>
+        <div class="analogy-agent">log-analyst · skill-builder</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PIPELINE -->
+<section class="pipeline-section" id="pipeline">
+  <div class="pipeline-inner">
+    <div class="pipeline-header">
+      <span class="section-eyebrow">The Pipeline</span>
+      <h2 class="section-title">Nothing advances until the previous artifact exists</h2>
+      <p class="section-body" style="max-width:680px;color:var(--white-dim);font-size:0.95rem">All artifacts for a feature live in <code style="font-family:var(--mono);font-size:0.82rem;color:var(--amber);background:rgba(232,160,69,0.08);padding:0.1rem 0.4rem">docs/briefs/{NNN}-{feature-name}/</code>. Sequence numbers are monotonically increasing — prior-round files are never deleted. The full history is always visible.</p>
+
+      <!-- CLAUDE.md callout -->
+      <div style="max-width:680px;margin:1.5rem 0 0;padding:1rem 1.4rem;background:rgba(232,160,69,0.04);border-left:3px solid rgba(232,160,69,0.4)">
+        <div style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--amber);margin-bottom:0.4rem">The Project Config Layer</div>
+        <div style="font-size:0.83rem;color:var(--white-dim);line-height:1.75">Every agent reads <code style="font-family:var(--mono);font-size:0.78rem;color:var(--amber)">CLAUDE.md</code> at session start — it's what makes the system project-aware rather than generic. It contains the project intro, coding requirements, abstraction decisions, and non-negotiables that anchor every agent's context. <code style="font-family:var(--mono);font-size:0.78rem;color:var(--amber)">/init-project</code> generates it from what actually exists in your codebase.</div>
+      </div>
+
+      <!-- ORCHESTRATOR MODES -->
+      <div style="max-width:680px;margin:1rem 0 0;display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--steel-dim)">
+        <div style="background:var(--slate);padding:1rem 1.2rem">
+          <div style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--amber);margin-bottom:0.4rem">Pipeline Mode</div>
+          <div style="font-size:0.78rem;color:var(--white-dim);line-height:1.7">Triggered by a new feature or feature number to resume. Runs the full workflow or re-enters from the first missing artifact. The orchestrator detects which stage to re-enter by checking which files exist.</div>
+        </div>
+        <div style="background:var(--slate);padding:1rem 1.2rem">
+          <div style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--steel);margin-bottom:0.4rem">Direct Mode</div>
+          <div style="font-size:0.78rem;color:var(--white-dim);line-height:1.7">Triggered by naming a specific agent or task. Launches that agent with the artifact the user specifies. Does not feed back into the pipeline unless explicitly asked — useful for one-off tasks and debugging.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pipe-parallel-banner">
+      <div class="pipe-dot"></div>
+      Three review agents launch in parallel — code, security, and performance inspection run simultaneously
+    </div>
+
+    <div style="height:1.5rem"></div>
+
+    <div class="pipeline-diagram">
+      <div class="pipe-stage" style="transition-delay:0.05s">
+        <div class="pipe-stage-num">01</div>
+        <div class="pipe-stage-agent amber">discovery</div>
+        <div class="pipe-stage-out">Produces <code>NNN.01-dis-{feature}.md</code> — requirement brief</div>
+      </div>
+      <div class="pipe-arrow pipe-arrow-animated"></div>
+      <div class="pipe-stage" style="transition-delay:0.15s">
+        <div class="pipe-stage-num">02</div>
+        <div class="pipe-stage-agent amber">architect</div>
+        <div class="pipe-stage-out">Produces <code>NNN.02-arc-{feature}.md</code> — feature specification</div>
+      </div>
+      <div class="pipe-arrow pipe-arrow-animated"></div>
+      <div class="pipe-stage" style="transition-delay:0.25s">
+        <div class="pipe-stage-num">03</div>
+        <div class="pipe-stage-agent amber">design</div>
+        <div class="pipe-stage-out">Produces <code>NNN.03-des-{feature}.md</code> — UI/UX specification</div>
+      </div>
+      <div class="pipe-arrow pipe-arrow-animated"></div>
+      <div class="pipe-stage" style="transition-delay:0.35s">
+        <div class="pipe-stage-num">04</div>
+        <div class="pipe-stage-agent amber">engineer</div>
+        <div class="pipe-stage-out">Implements with TDD · produces <code>NNN.{SEQ}-eng-{feature}.md</code></div>
+      </div>
+      <div class="pipe-arrow" style="background:linear-gradient(to bottom,rgba(46,196,169,0.5),rgba(46,196,169,0.1));"></div>
+
+      <!-- PARALLEL REVIEWS -->
+      <div class="pipe-parallel">
+        <div class="pipe-parallel-agent">
+          <div class="pipe-parallel-label">Parallel — Code</div>
+          <div class="pipe-parallel-name">code-review</div>
+          <div class="pipe-parallel-note">Pattern guardian · Rails conventions</div>
+        </div>
+        <div class="pipe-parallel-agent">
+          <div class="pipe-parallel-label">Parallel — Security</div>
+          <div class="pipe-parallel-name">security-review</div>
+          <div class="pipe-parallel-note">Adversarial · auth scope · brakeman</div>
+        </div>
+        <div class="pipe-parallel-agent">
+          <div class="pipe-parallel-label">Parallel — Performance</div>
+          <div class="pipe-parallel-name">performance-review</div>
+          <div class="pipe-parallel-note">N+1 · indexes · blocking callbacks</div>
+        </div>
+      </div>
+
+      <!-- VERDICT -->
+      <div class="pipe-verdict">
+        <div class="pipe-verdict-side">
+          <div class="pipe-verdict-label pass">All PASS</div>
+          <div class="pipe-verdict-body">Outcome recorded. Pipeline complete. Log-analyst accumulates data for the learning loop.</div>
+        </div>
+        <div class="pipe-verdict-div"></div>
+        <div class="pipe-verdict-side">
+          <div class="pipe-verdict-label work">Any NEEDS WORK</div>
+          <div class="pipe-verdict-body">Engineer receives findings. Round N+1 begins. Reviews re-run. Same category in 3 rounds → escalate to user.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARTIFACT NAMING -->
+    <div style="max-width:680px;margin:3rem auto 0;padding:1.4rem 1.8rem;background:var(--slate);border:1px solid rgba(122,147,172,0.1)">
+      <div style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--steel);margin-bottom:0.8rem">Two-Round Feature — Artifact Layout</div>
+      <div style="font-family:var(--mono);font-size:0.75rem;color:var(--white-dim);line-height:2">
+        <span style="color:var(--steel)">docs/briefs/003-document-templates/</span><br>
+        &nbsp;&nbsp;<span style="color:var(--amber)">003.01-dis</span>-document-templates.md &nbsp;<span style="color:var(--steel-dim)">← discovery</span><br>
+        &nbsp;&nbsp;<span style="color:var(--amber)">003.02-arc</span>-document-templates.md &nbsp;<span style="color:var(--steel-dim)">← architect</span><br>
+        &nbsp;&nbsp;<span style="color:var(--amber)">003.03-des</span>-document-templates.md &nbsp;<span style="color:var(--steel-dim)">← design</span><br>
+        &nbsp;&nbsp;<span style="color:var(--amber)">003.04-eng</span>-document-templates.md &nbsp;<span style="color:var(--steel-dim)">← engineer round 1</span><br>
+        &nbsp;&nbsp;<span style="color:var(--teal)">003.05-cr &nbsp;003.06-sec 003.07-perf</span> &nbsp;<span style="color:var(--steel-dim)">← reviews round 1</span><br>
+        &nbsp;&nbsp;<span style="color:var(--amber)">003.08-eng</span>-document-templates.md &nbsp;<span style="color:var(--steel-dim)">← engineer round 2</span><br>
+        &nbsp;&nbsp;<span style="color:var(--teal)">003.09-cr &nbsp;003.10-sec 003.11-perf</span> &nbsp;<span style="color:var(--steel-dim)">← reviews round 2</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- AGENTS -->
+<section class="agents-section" id="agents">
+  <div class="agents-inner">
+    <span class="section-eyebrow">The Agents</span>
+    <h2 class="section-title">Every agent has one job</h2>
+    <p class="section-body" style="max-width:680px;color:var(--white-dim);font-size:0.95rem">Separation of concerns across agents, not within agents. An agent that does everything well is an agent that does nothing particularly well. Every agent also logs what it struggled with — those reflections accumulate across sessions and feed the learning loop.</p>
+
+    <!-- AGENT PROCESS FLOW DIAGRAM -->
+    <div style="margin:2.5rem 0 3rem;overflow-x:auto">
+      <svg viewBox="0 0 1020 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:640px;display:block;max-width:1020px;margin:0 auto">
+        <defs>
+          <marker id="arrAmber" markerWidth="7" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#E8A045" opacity="0.8"/></marker>
+          <marker id="arrTeal" markerWidth="7" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#2EC4A9" opacity="0.8"/></marker>
+          <marker id="arrSteel" markerWidth="7" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7A93AC" opacity="0.6"/></marker>
+        </defs>
+
+        <!-- BACKGROUND LANES -->
+        <rect x="0" y="0" width="1020" height="520" fill="#0E1117"/>
+        <!-- Pipeline lane -->
+        <rect x="10" y="10" width="740" height="340" rx="3" fill="#161B27" stroke="rgba(122,147,172,0.08)" stroke-width="1"/>
+        <text x="24" y="30" font-family="JetBrains Mono,monospace" font-size="9" fill="#4A6175" letter-spacing="2">PIPELINE</text>
+        <!-- Learning lane -->
+        <rect x="770" y="10" width="240" height="340" rx="3" fill="rgba(46,196,169,0.03)" stroke="rgba(46,196,169,0.12)" stroke-width="1"/>
+        <text x="784" y="30" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9" letter-spacing="2">LEARNING LAYER</text>
+
+        <!-- USER INPUT -->
+        <rect x="30" y="50" width="110" height="44" rx="2" fill="#1C2336" stroke="rgba(232,160,69,0.3)" stroke-width="1.5"/>
+        <text x="85" y="68" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">USER</text>
+        <text x="85" y="82" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">intent</text>
+
+        <!-- ORCHESTRATOR top -->
+        <rect x="30" y="130" width="110" height="44" rx="2" fill="#1C2336" stroke="rgba(232,160,69,0.5)" stroke-width="1.5"/>
+        <text x="85" y="148" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#E8A045">01</text>
+        <text x="85" y="163" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">orchestrator</text>
+
+        <!-- user → orchestrator -->
+        <line x1="85" y1="94" x2="85" y2="128" stroke="#E8A045" stroke-width="1.5" marker-end="url(#arrAmber)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1s" repeatCount="indefinite"/>
+        </line>
+        <line x1="85" y1="94" x2="85" y2="128" stroke="#E8A045" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arrAmber)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1s" repeatCount="indefinite"/>
+        </line>
+
+        <!-- DISCOVERY -->
+        <rect x="185" y="50" width="110" height="44" rx="2" fill="#1C2336" stroke="rgba(232,160,69,0.4)" stroke-width="1.5"/>
+        <text x="240" y="68" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#E8A045">02</text>
+        <text x="240" y="83" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">discovery</text>
+
+        <!-- orchestrator → discovery -->
+        <line x1="140" y1="152" x2="185" y2="72" stroke="#E8A045" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arrAmber)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="0.9s" repeatCount="indefinite"/>
+        </line>
+
+        <!-- ARCHITECT -->
+        <rect x="185" y="130" width="110" height="44" rx="2" fill="#1C2336" stroke="rgba(232,160,69,0.4)" stroke-width="1.5"/>
+        <text x="240" y="148" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#E8A045">03</text>
+        <text x="240" y="163" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">architect</text>
+
+        <!-- discovery → architect -->
+        <line x1="240" y1="94" x2="240" y2="128" stroke="#E8A045" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arrAmber)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="0.9s" repeatCount="indefinite"/>
+        </line>
+
+        <!-- DESIGN -->
+        <rect x="185" y="210" width="110" height="44" rx="2" fill="#1C2336" stroke="rgba(232,160,69,0.4)" stroke-width="1.5"/>
+        <text x="240" y="228" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#E8A045">04</text>
+        <text x="240" y="243" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">design</text>
+
+        <!-- architect → design -->
+        <line x1="240" y1="174" x2="240" y2="208" stroke="#E8A045" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arrAmber)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="0.9s" repeatCount="indefinite"/>
+        </line>
+
+        <!-- ENGINEER -->
+        <rect x="345" y="210" width="110" height="44" rx="2" fill="#1C2336" stroke="rgba(232,160,69,0.6)" stroke-width="2"/>
+        <text x="400" y="228" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#E8A045">05</text>
+        <text x="400" y="243" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">engineer</text>
+
+        <!-- design → engineer -->
+        <line x1="295" y1="232" x2="343" y2="232" stroke="#E8A045" stroke-width="1.5" stroke-dasharray="5 5" marker-end="url(#arrAmber)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="0.9s" repeatCount="indefinite"/>
+        </line>
+
+        <!-- PARALLEL REVIEWS — fan out from engineer -->
+        <!-- code-review -->
+        <rect x="510" y="150" width="110" height="44" rx="2" fill="#0E1117" stroke="rgba(46,196,169,0.5)" stroke-width="1.5"/>
+        <text x="565" y="168" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">06</text>
+        <text x="565" y="183" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">code-review</text>
+
+        <!-- security-review -->
+        <rect x="510" y="210" width="110" height="44" rx="2" fill="#0E1117" stroke="rgba(46,196,169,0.5)" stroke-width="1.5"/>
+        <text x="565" y="228" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">07</text>
+        <text x="565" y="243" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">security</text>
+
+        <!-- performance-review -->
+        <rect x="510" y="270" width="110" height="44" rx="2" fill="#0E1117" stroke="rgba(46,196,169,0.5)" stroke-width="1.5"/>
+        <text x="565" y="288" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">08</text>
+        <text x="565" y="303" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">performance</text>
+
+        <!-- PARALLEL label -->
+        <text x="562" y="140" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#2EC4A9" letter-spacing="1">PARALLEL</text>
+
+        <!-- engineer → reviews (fan out) -->
+        <line x1="455" y1="222" x2="505" y2="175" stroke="#2EC4A9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrTeal)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="0.8s" repeatCount="indefinite"/>
+        </line>
+        <line x1="455" y1="232" x2="508" y2="232" stroke="#2EC4A9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrTeal)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="0.8s" repeatCount="indefinite"/>
+        </line>
+        <line x1="455" y1="242" x2="505" y2="288" stroke="#2EC4A9" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#arrTeal)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="0.8s" repeatCount="indefinite"/>
+        </line>
+
+        <!-- VERDICT node -->
+        <rect x="670" y="210" width="70" height="44" rx="2" fill="#1C2336" stroke="rgba(122,147,172,0.3)" stroke-width="1.5"/>
+        <text x="705" y="228" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#7A93AC">VERDICT</text>
+        <text x="705" y="242" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="9" font-weight="600" fill="#F0EDE8">combined</text>
+
+        <!-- reviews → verdict -->
+        <line x1="620" y1="172" x2="665" y2="220" stroke="#7A93AC" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrSteel)"/>
+        <line x1="620" y1="232" x2="668" y2="232" stroke="#7A93AC" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrSteel)"/>
+        <line x1="620" y1="292" x2="665" y2="246" stroke="#7A93AC" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#arrSteel)"/>
+
+        <!-- PASS path → complete -->
+        <rect x="670" y="130" width="70" height="36" rx="2" fill="rgba(46,196,169,0.08)" stroke="rgba(46,196,169,0.4)" stroke-width="1.5"/>
+        <text x="705" y="148" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#2EC4A9">ALL PASS</text>
+        <text x="705" y="160" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="8" fill="#2EC4A9">complete</text>
+        <line x1="705" y1="210" x2="705" y2="168" stroke="#2EC4A9" stroke-width="1.5" marker-end="url(#arrTeal)"/>
+
+        <!-- NEEDS WORK path → loop back to engineer -->
+        <rect x="670" y="290" width="70" height="36" rx="2" fill="rgba(232,160,69,0.08)" stroke="rgba(232,160,69,0.4)" stroke-width="1.5"/>
+        <text x="705" y="308" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#E8A045">NEEDS</text>
+        <text x="705" y="320" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#E8A045">WORK</text>
+        <line x1="705" y1="254" x2="705" y2="288" stroke="#E8A045" stroke-width="1.5" marker-end="url(#arrAmber)"/>
+
+        <!-- loop back arrow: NEEDS WORK → engineer (curved back) -->
+        <path d="M 670 308 Q 400 360 400 256" stroke="#E8A045" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#arrAmber)">
+          <animate attributeName="stroke-dashoffset" from="0" to="-18" dur="1.2s" repeatCount="indefinite"/>
+        </path>
+        <text x="510" y="368" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#E8A045">round N+1</text>
+
+        <!-- LEARNING LAYER — log-analyst -->
+        <rect x="785" y="50" width="210" height="52" rx="2" fill="#0E1117" stroke="rgba(46,196,169,0.25)" stroke-width="1.5"/>
+        <text x="890" y="68" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">09</text>
+        <text x="890" y="82" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">log-analyst</text>
+        <text x="890" y="95" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#4A6175">runs after 10–15 features</text>
+
+        <!-- skill-builder -->
+        <rect x="785" y="140" width="210" height="52" rx="2" fill="#0E1117" stroke="rgba(46,196,169,0.25)" stroke-width="1.5"/>
+        <text x="890" y="158" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">10</text>
+        <text x="890" y="172" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="10" font-weight="600" fill="#F0EDE8">skill-builder</text>
+        <text x="890" y="185" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#4A6175">executes approved proposals</text>
+
+        <!-- log-analyst → skill-builder -->
+        <line x1="890" y1="102" x2="890" y2="138" stroke="#2EC4A9" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#arrTeal)"/>
+        <text x="906" y="122" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">proposals</text>
+
+        <!-- human approval gate -->
+        <rect x="820" y="108" width="60" height="22" rx="2" fill="rgba(232,160,69,0.1)" stroke="rgba(232,160,69,0.4)" stroke-width="1"/>
+        <text x="850" y="123" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#E8A045">human ✓</text>
+
+        <!-- skill-builder → agent definitions (arrow into pipeline) -->
+        <path d="M 785 192 Q 600 230 640 232" stroke="#2EC4A9" stroke-width="1.5" fill="none" stroke-dasharray="4 4" marker-end="url(#arrTeal)"/>
+        <text x="710" y="222" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#2EC4A9">updates skills</text>
+
+        <!-- DB writes from pipeline (dashed down) -->
+        <rect x="200" y="420" width="560" height="36" rx="2" fill="rgba(122,147,172,0.05)" stroke="rgba(122,147,172,0.15)" stroke-width="1"/>
+        <text x="480" y="434" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">db/agent_log.sqlite3</text>
+        <text x="480" y="448" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#4A6175">runs · decisions · events · findings · reflections</text>
+
+        <!-- agents write to DB -->
+        <line x1="240" y1="254" x2="280" y2="418" stroke="#4A6175" stroke-width="1" stroke-dasharray="3 4" marker-end="url(#arrSteel)"/>
+        <line x1="400" y1="254" x2="430" y2="418" stroke="#4A6175" stroke-width="1" stroke-dasharray="3 4" marker-end="url(#arrSteel)"/>
+        <line x1="565" y1="314" x2="530" y2="418" stroke="#4A6175" stroke-width="1" stroke-dasharray="3 4" marker-end="url(#arrSteel)"/>
+
+        <!-- log-analyst reads from DB -->
+        <line x1="785" y1="76" x2="762" y2="436" stroke="#2EC4A9" stroke-width="1" stroke-dasharray="4 4" opacity="0.4"/>
+        <line x1="762" y1="436" x2="762" y2="420" stroke="#2EC4A9" stroke-width="1" marker-end="url(#arrTeal)" opacity="0.4"/>
+        <text x="748" y="400" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#2EC4A9" opacity="0.7">reads</text>
+
+        <!-- writes label -->
+        <text x="300" y="410" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">writes</text>
+      </svg>
+    </div>
+
+    <div class="agents-grid">
+
+      <div class="agent-card ac-amber">
+        <div class="agent-card-num">Agent 01 — Orchestrator</div>
+        <div class="agent-card-name">orchestrator</div>
+        <div class="agent-card-file">.claude/agents/orchestrator.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span></div>
+        <div class="agent-card-desc">Traffic controller. Knows where every artifact lives, what stage comes next, and who produces what. Manages two modes: pipeline (full workflow or resume) and direct (named agent or task).</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">Cannot</div>
+          <ul>
+            <li>Implement features or make design decisions</li>
+            <li>Review code or resolve content ambiguity</li>
+            <li>All of those surface to the user</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Re-entry decisions, routing choices, persistent-finding escalations, and any orchestration ambiguity it had to resolve without user input.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-amber">
+        <div class="agent-card-num">Agent 02 — Discovery</div>
+        <div class="agent-card-name">discovery</div>
+        <div class="agent-card-file">.claude/agents/discovery.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span><span class="skill-chip">discovery-brief-format</span></div>
+        <div class="agent-card-desc">Interviews the user. Asks one or two questions at a time, not a form with eight items. Reads back a structured summary and waits for explicit confirmation before writing any file.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">Cannot</div>
+          <ul>
+            <li>Assign feature numbers (orchestrator does this)</li>
+            <li>Read application code</li>
+            <li>Write outside the feature directory</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Brainstorming settlement decisions, scope ambiguities, open questions it couldn't resolve, and any gaps in user intent it had to assume rather than confirm.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-amber">
+        <div class="agent-card-num">Agent 03 — Architect</div>
+        <div class="agent-card-name">architect</div>
+        <div class="agent-card-file">.claude/agents/architect.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span><span class="skill-chip">rails-principles</span><span class="skill-chip">architect-spec-format</span><span class="skill-chip">discovery-brief-format</span></div>
+        <div class="agent-card-desc">Reads the discovery brief, audits the codebase, and produces the feature specification engineers execute. Runs coherence checks: URL grammar, naming conventions, no new patterns without justification.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">Cannot</div>
+          <ul>
+            <li>Modify application code</li>
+            <li>Write outside the feature directory</li>
+            <li>Hand off with non-empty Open Questions</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">URL structure decisions, model and concern naming decisions, pattern introductions, dependency decisions, and any gaps where the codebase audit revealed something the brief didn't cover.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-amber">
+        <div class="agent-card-num">Agent 04 — Design</div>
+        <div class="agent-card-name">design</div>
+        <div class="agent-card-file">.claude/agents/design.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span><span class="skill-chip">writer-design-system</span></div>
+        <div class="agent-card-desc">Sits between architect and engineer. Produces the complete UX specification: user flows, screen layouts, component inventory, AI generation surface patterns, and state design for every view.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">Cannot</div>
+          <ul>
+            <li>Make behavioral or data model decisions</li>
+            <li>Override Behavioral Constraints from the spec</li>
+            <li>Invent new design system classes without flagging</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Layout decisions, component choices, AI generation state design, empty state calls-to-action, and any deviations from existing view patterns that required a judgment call.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-amber">
+        <div class="agent-card-num">Agent 05 — Engineer</div>
+        <div class="agent-card-name">engineer</div>
+        <div class="agent-card-file">.claude/agents/engineer.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span><span class="skill-chip">rails-principles</span><span class="skill-chip">writer-design-system</span></div>
+        <div class="agent-card-desc">Executes the plan with strict TDD discipline: Red → Green → Refactor per task. Writes the engineer report the review agents read. Hard constraints enforced at implementation time.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">Cannot</div>
+          <ul>
+            <li>Add things the plan doesn't specify</li>
+            <li>Use Redis, Devise, RSpec, service objects</li>
+            <li>Use custom CSS classes not in the design system</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Every non-trivial implementation choice, deviation from plan, ambiguity resolution, and skill gap. Queries gap decisions before writing the engineer report to populate Assumptions Made — the struggle log feeds directly into the spec quality assessment.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-teal">
+        <div class="agent-card-num">Agent 06 — Code Review</div>
+        <div class="agent-card-name">code-review</div>
+        <div class="agent-card-file">.claude/agents/code-review.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span><span class="skill-chip">rails-principles</span><span class="skill-chip">architect-spec-format</span></div>
+        <div class="agent-card-desc">Pattern guardian first, compliance checker second. Applies the two-tier pattern test: does Rails provide this? If not, does it look like Rails built it? A competing pattern is always NEEDS WORK.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">10 Review Categories</div>
+          <ul>
+            <li>Test suite · Pattern consistency · Test coverage</li>
+            <li>Rails conventions · Naming quality · Data integrity</li>
+            <li>Fat controller · Dead artifacts · Design compliance</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Every finding via standard category vocabulary, plus judgment calls — why something was PASS WITH NOTES vs. NEEDS WORK. These categories accumulate across features and become skill candidates when they repeat.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-teal">
+        <div class="agent-card-num">Agent 07 — Security Review</div>
+        <div class="agent-card-name">security-review</div>
+        <div class="agent-card-file">.claude/agents/security-review.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span><span class="skill-chip">rails-principles</span><span class="skill-chip">architect-spec-format</span></div>
+        <div class="agent-card-desc">Thinks adversarially. Any lookup that bypasses user → project → document association traversal is a potential authorization hole. Runs Brakeman — every HIGH confidence warning is NEEDS WORK.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">7 Review Categories</div>
+          <ul>
+            <li>Brakeman · Authorization scope · Mass assignment</li>
+            <li>XSS · SQL injection · Sensitive data · CSRF</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Each finding with standard category tag, plus false-positive assessment reasoning. When the same security category appears across 3+ features, the learning loop proposes a prevention skill so engineers stop making the same mistake.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-teal">
+        <div class="agent-card-num">Agent 08 — Performance Review</div>
+        <div class="agent-card-name">performance-review</div>
+        <div class="agent-card-file">.claude/agents/performance-review.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span><span class="skill-chip">rails-principles</span><span class="skill-chip">architect-spec-format</span></div>
+        <div class="agent-card-desc">Thinks at scale — not what the code does with 10 records today, but with 100,000 records in six months. Reads view files even when not in the diff if the controller feeds them.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">5 Review Categories</div>
+          <ul>
+            <li>N+1 queries · Database index coverage</li>
+            <li>Blocking callbacks · Unscoped queries · Missing constraints</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Findings with category tag, plus judgment calls — why a potential N+1 was PASS WITH NOTES (e.g., collection bounded by design). Recurring N+1 patterns across features become engineer skill content.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-steel">
+        <div class="agent-card-num">Agent 09 — Log Analyst</div>
+        <div class="agent-card-name">log-analyst</div>
+        <div class="agent-card-file">.claude/agents/log-analyst.md</div>
+        <div class="skills-chips"><span class="skill-chip">sqlite3 direct</span></div>
+        <div class="agent-card-desc">The learning analyst. Reads across all features via direct SQL — not session-scoped CLI. Finds patterns no individual session can see. Runs on demand after 10–15 feature cycles.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">Cannot</div>
+          <ul>
+            <li>Modify .claude/agents/ files</li>
+            <li>Write anywhere except docs/agent-analysis/</li>
+            <li>Run any bin/agent-log write commands</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Reads</div>
+          <div class="agent-card-struggle-body">Aggregates struggles across all agents and features via <code style="font-family:var(--mono);font-size:0.72rem;color:var(--amber)">query struggles</code> and <code style="font-family:var(--mono);font-size:0.72rem;color:var(--amber)">query skill-gaps</code>. The same struggle appearing across agents and features is the signal that an agent definition needs updating.</div>
+        </div>
+      </div>
+
+      <div class="agent-card ac-steel">
+        <div class="agent-card-num">Agent 10 — Skill Builder</div>
+        <div class="agent-card-name">skill-builder</div>
+        <div class="agent-card-file">.claude/agents/skill-builder.md</div>
+        <div class="skills-chips"><span class="skill-chip">agent-log</span></div>
+        <div class="agent-card-desc">Executes confirmed proposals. A surgeon following a pre-approved procedure. The diagnosis happened before it arrived; human approval happened before it runs. Clean execution and a complete operative note.</div>
+        <div class="agent-card-constraints">
+          <div class="agent-card-constraints-label">Cannot</div>
+          <ul>
+            <li>Approve its own proposals</li>
+            <li>Act without confirmed human approval</li>
+            <li>Modify agent definitions beyond approved scope</li>
+          </ul>
+        </div>
+        <div class="agent-card-struggle">
+          <div class="agent-card-struggle-label">Logs</div>
+          <div class="agent-card-struggle-body">Its own session via agent-log — every skill built, every file changed, every ambiguity resolved during execution. The build report is a complete operative note of what changed and why.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SELF-IMPROVEMENT LOOP -->
+<section class="loop-section" id="loop">
+  <div class="loop-inner">
+    <div class="loop-header">
+      <span class="section-eyebrow section-eyebrow-teal">The Learning Loop</span>
+      <h2 class="section-title">The system that improves itself</h2>
+      <p class="section-body" style="max-width:680px;color:var(--white-dim);font-size:0.95rem">Every session starts fresh. Every agent's context window resets. The SQLite database is the only thing that persists across that boundary. Without it, the system can build features but cannot learn from them.</p>
+    </div>
+
+    <div class="loop-diagram-wrap">
+
+      <!-- SVG LOOP DIAGRAM -->
+      <div class="loop-svg-wrap">
+        <svg viewBox="0 0 560 360" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block">
+          <defs>
+            <marker id="arrowTeal" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+              <polygon points="0 0, 8 3, 0 6" fill="#2EC4A9" opacity="0.7"/>
+            </marker>
+          </defs>
+
+          <!-- CENTER LABEL -->
+          <text x="280" y="175" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="13" font-weight="600" fill="#F0EDE8">Self-Improvement</text>
+          <text x="280" y="193" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="11" fill="#7A93AC">Loop</text>
+
+          <!-- CIRCULAR PATH INDICATORS (5 nodes around a circle) -->
+          <!-- Node positions: top, top-right, bottom-right, bottom-left, top-left -->
+          <!-- r=130, center=280,180 -->
+
+          <!-- Arcs connecting nodes -->
+          <path d="M 280 50 A 130 130 0 0 1 403 115" stroke="#2EC4A9" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5">
+            <animateTransform attributeName="" type="" dur="0s"/>
+          </path>
+          <path d="M 403 115 A 130 130 0 0 1 370 270" stroke="#2EC4A9" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5"/>
+          <path d="M 370 270 A 130 130 0 0 1 190 270" stroke="#2EC4A9" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5"/>
+          <path d="M 190 270 A 130 130 0 0 1 157 115" stroke="#2EC4A9" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5"/>
+          <path d="M 157 115 A 130 130 0 0 1 280 50" stroke="#2EC4A9" stroke-width="1.5" fill="none" stroke-dasharray="6 4" opacity="0.5"/>
+
+          <!-- Animated dash overlay -->
+          <path d="M 280 50 A 130 130 0 1 1 279.9 50" stroke="#2EC4A9" stroke-width="2" fill="none" stroke-dasharray="50 766" opacity="0.8">
+            <animate attributeName="stroke-dashoffset" from="0" to="-816" dur="8s" repeatCount="indefinite"/>
+          </path>
+
+          <!-- Node 1: Top — Accumulation -->
+          <circle cx="280" cy="50" r="36" fill="#161B27" stroke="#2EC4A9" stroke-width="1.5"/>
+          <text x="280" y="44" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">STEP 1</text>
+          <text x="280" y="57" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="9.5" font-weight="600" fill="#F0EDE8">Accumulation</text>
+
+          <!-- Node 2: Right — Analysis -->
+          <circle cx="403" cy="115" r="36" fill="#161B27" stroke="#2EC4A9" stroke-width="1.5"/>
+          <text x="403" y="109" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">STEP 2</text>
+          <text x="403" y="122" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="9.5" font-weight="600" fill="#F0EDE8">Analysis</text>
+
+          <!-- Node 3: Bottom-right — Human Review -->
+          <circle cx="370" cy="270" r="36" fill="#161B27" stroke="#E8A045" stroke-width="2"/>
+          <text x="370" y="264" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#E8A045">STEP 3</text>
+          <text x="370" y="277" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="9.5" font-weight="600" fill="#F0EDE8">Human ✓</text>
+
+          <!-- Node 4: Bottom-left — Execution -->
+          <circle cx="190" cy="270" r="36" fill="#161B27" stroke="#2EC4A9" stroke-width="1.5"/>
+          <text x="190" y="264" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">STEP 4</text>
+          <text x="190" y="277" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="9.5" font-weight="600" fill="#F0EDE8">Execution</text>
+
+          <!-- Node 5: Left — Effect -->
+          <circle cx="157" cy="115" r="36" fill="#161B27" stroke="#2EC4A9" stroke-width="1.5"/>
+          <text x="157" y="109" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">STEP 5</text>
+          <text x="157" y="122" text-anchor="middle" font-family="Space Grotesk,sans-serif" font-size="9.5" font-weight="600" fill="#F0EDE8">Effect</text>
+
+          <!-- Key SQL query shown below -->
+          <rect x="60" y="316" width="440" height="36" rx="2" fill="rgba(46,196,169,0.05)" stroke="rgba(46,196,169,0.2)" stroke-width="1"/>
+          <text x="280" y="330" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">SELECT category, COUNT(DISTINCT feature_id)</text>
+          <text x="280" y="344" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">FROM findings JOIN runs ... GROUP BY category HAVING COUNT(...) &gt;= 3</text>
+        </svg>
+      </div>
+
+      <!-- STEP CARDS -->
+      <div class="loop-steps">
+        <div class="loop-step">
+          <div class="loop-step-num">Step 01 — Accumulation</div>
+          <div class="loop-step-title">Agents write to the database every session</div>
+          <div class="loop-step-body">Every decision, finding, and reflection accumulates across the entire lifetime of the project. A code-review agent that flags <code style="font-family:var(--mono);font-size:0.78rem;color:var(--amber)">[MISSING_TEST]</code> on features 001, 003, and 007 has logged evidence three times — but across three separate sessions, it never saw the pattern itself.</div>
+        </div>
+        <div class="loop-step">
+          <div class="loop-step-num">Step 02 — Analysis</div>
+          <div class="loop-step-title">Log-analyst runs cross-feature SQL</div>
+          <div class="loop-step-body">After 10–15 features, the log-analyst queries directly via sqlite3 — not the session-scoped CLI. It looks for six pattern types: promotion candidates, anti-patterns, spec template gaps, outcome deltas, quality correlators, and skill candidates from findings that appear across 3+ distinct features.</div>
+        </div>
+        <div class="loop-step">
+          <div class="loop-step-num">Step 03 — Human Review</div>
+          <div class="loop-step-title">Proposals surface; the human decides</div>
+          <div class="loop-step-body">The log-analyst produces proposals — it does not act on them. Proposals land in <code style="font-family:var(--mono);font-size:0.78rem;color:var(--amber)">docs/agent-analysis/YYYY-MM-DD.md</code> with explicit confidence levels and exact text to add. The human reviews and approves selectively — each proposal is independent.</div>
+        </div>
+        <div class="loop-step">
+          <div class="loop-step-num">Step 04 — Execution</div>
+          <div class="loop-step-title">Skill-builder executes approved proposals</div>
+          <div class="loop-step-body">Invoked with the approved report path. Classifies proposals by confidence, presents the build plan, gets final confirmation, then executes: creates skill files, adds them to agent frontmatter, sharpens detection sections. Writes a build report documenting every change.</div>
+          <div style="margin-top:0.9rem;border-top:1px solid rgba(46,196,169,0.12);padding-top:0.9rem">
+            <div style="font-family:var(--mono);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--teal);margin-bottom:0.6rem">Confidence Classification</div>
+            <div style="display:grid;grid-template-columns:1fr;gap:0.35rem">
+              <div style="display:grid;grid-template-columns:110px 1fr;gap:0.5rem;font-size:0.72rem">
+                <div style="font-family:var(--mono);color:var(--teal)">High ≥5 features</div>
+                <div style="color:var(--white-dim)">Default approved — build unless human vetoes</div>
+              </div>
+              <div style="display:grid;grid-template-columns:110px 1fr;gap:0.5rem;font-size:0.72rem">
+                <div style="font-family:var(--mono);color:var(--amber)">Medium 3–4</div>
+                <div style="color:var(--white-dim)">Requires per-item confirmation before build</div>
+              </div>
+              <div style="display:grid;grid-template-columns:110px 1fr;gap:0.5rem;font-size:0.72rem">
+                <div style="font-family:var(--mono);color:var(--steel)">Below threshold</div>
+                <div style="color:var(--white-dim)">Deferred — noted in build report, not built</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="loop-step">
+          <div class="loop-step-num">Step 05 — Effect</div>
+          <div class="loop-step-title">Every agent loads the new skill at session start</div>
+          <div class="loop-step-body">On the next feature cycle, every agent listed in the new skill's frontmatter loads the skill before any decisions are made. The finding that appeared 7 times across 7 features stops appearing — because the agent now has the standing guidance that prevents it. No human enumerated the rules.</div>
+        </div>
+      </div>
+
+      <div class="loop-callout">
+        <p>The most significant capability of this system is that it can <strong>improve itself without human enumeration of every rule</strong>. The evidence accumulates, the pattern is detected, proposals are approved, and the system updates itself. The loop is tight — but the human remains in it. Every change to agent definitions or skill files passes through a human decision.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- DATABASE -->
+<section class="db-section" id="database">
+  <div class="db-inner">
+    <span class="section-eyebrow">The Flight Recorder</span>
+    <h2 class="section-title">SQLite as organizational memory</h2>
+    <p class="section-body" style="max-width:680px;color:var(--white-dim);font-size:0.95rem">Every session starts fresh. The database is the only thing that persists across that boundary. Schema auto-creates on first use — no migration or setup step needed. A pure Ruby CLI with no gem dependencies.</p>
+
+    <!-- DATABASE RELATIONAL DIAGRAM -->
+    <div style="margin:2.5rem 0 3rem;overflow-x:auto">
+      <svg viewBox="0 0 980 400" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:580px;display:block;max-width:980px;margin:0 auto">
+        <defs>
+          <marker id="dbArr" markerWidth="7" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#7A93AC" opacity="0.7"/></marker>
+          <marker id="dbArrTeal" markerWidth="7" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#2EC4A9" opacity="0.8"/></marker>
+          <marker id="dbArrAmber" markerWidth="7" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0,7 2.5,0 5" fill="#E8A045" opacity="0.8"/></marker>
+        </defs>
+
+        <rect x="0" y="0" width="980" height="400" fill="#0E1117"/>
+
+        <!-- RUNS — center spine -->
+        <rect x="370" y="30" width="240" height="180" rx="2" fill="#161B27" stroke="rgba(232,160,69,0.4)" stroke-width="1.5"/>
+        <rect x="370" y="30" width="240" height="32" rx="2" fill="rgba(232,160,69,0.1)"/>
+        <text x="490" y="51" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="500" fill="#E8A045">runs</text>
+        <text x="385" y="82" font-family="JetBrains Mono,monospace" font-size="9" fill="#2EC4A9">id</text><text x="450" y="82" font-family="JetBrains Mono,monospace" font-size="8" fill="#4A6175">UUID · PK</text>
+        <text x="385" y="100" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">agent_name</text>
+        <text x="385" y="118" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">feature_id</text><text x="460" y="118" font-family="JetBrains Mono,monospace" font-size="8" fill="#4A6175">F-001</text>
+        <text x="385" y="136" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">quality_score</text><text x="480" y="136" font-family="JetBrains Mono,monospace" font-size="8" fill="#4A6175">1–10</text>
+        <text x="385" y="154" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">status</text>
+        <text x="385" y="172" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">input_summary</text>
+        <text x="385" y="195" font-family="JetBrains Mono,monospace" font-size="9" fill="#7A93AC">output_summary</text>
+
+        <!-- DECISIONS -->
+        <rect x="20" y="20" width="200" height="160" rx="2" fill="#161B27" stroke="rgba(122,147,172,0.2)" stroke-width="1"/>
+        <rect x="20" y="20" width="200" height="28" rx="2" fill="rgba(122,147,172,0.08)"/>
+        <text x="120" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500" fill="#F0EDE8">decisions</text>
+        <text x="32" y="66" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#2EC4A9">run_id</text><text x="82" y="66" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">FK → runs.id</text>
+        <text x="32" y="82" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">decision_type</text>
+        <text x="32" y="98" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">rationale</text>
+        <text x="32" y="114" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">alternatives</text>
+        <text x="32" y="130" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">expected_outcome</text>
+        <text x="32" y="146" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#E8A045">observed_outcome</text>
+        <text x="32" y="162" font-family="JetBrains Mono,monospace" font-size="7" fill="#4A6175">← learning signal</text>
+
+        <!-- decisions → runs -->
+        <line x1="220" y1="66" x2="368" y2="100" stroke="#7A93AC" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#dbArr)"/>
+
+        <!-- EVENTS -->
+        <rect x="20" y="220" width="200" height="140" rx="2" fill="#161B27" stroke="rgba(122,147,172,0.2)" stroke-width="1"/>
+        <rect x="20" y="220" width="200" height="28" rx="2" fill="rgba(122,147,172,0.08)"/>
+        <text x="120" y="238" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500" fill="#F0EDE8">events</text>
+        <text x="32" y="266" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#2EC4A9">run_id</text><text x="82" y="266" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">FK → runs.id</text>
+        <text x="32" y="282" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">event_type</text>
+        <text x="32" y="298" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">description</text>
+        <text x="32" y="314" font-family="JetBrains Mono,monospace" font-size="7" fill="#4A6175">what it revealed</text>
+        <text x="32" y="330" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">duration_ms</text>
+        <text x="32" y="346" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">started_at</text>
+
+        <!-- events → runs -->
+        <line x1="220" y1="266" x2="368" y2="170" stroke="#7A93AC" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#dbArr)"/>
+
+        <!-- FINDINGS -->
+        <rect x="760" y="20" width="200" height="180" rx="2" fill="#161B27" stroke="rgba(46,196,169,0.25)" stroke-width="1.5"/>
+        <rect x="760" y="20" width="200" height="28" rx="2" fill="rgba(46,196,169,0.08)"/>
+        <text x="860" y="38" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500" fill="#2EC4A9">findings</text>
+        <text x="772" y="66" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#2EC4A9">run_id</text><text x="822" y="66" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">FK → runs.id</text>
+        <text x="772" y="82" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#E8A045">category</text><text x="830" y="82" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">controlled vocab</text>
+        <text x="772" y="98" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">severity</text><text x="830" y="98" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">NEEDS_WORK</text>
+        <text x="772" y="114" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">file</text>
+        <text x="772" y="130" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">description</text>
+        <!-- key index callout -->
+        <rect x="772" y="148" width="176" height="40" rx="1" fill="rgba(46,196,169,0.06)" stroke="rgba(46,196,169,0.2)" stroke-width="1"/>
+        <text x="780" y="162" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#2EC4A9">idx_findings_category</text>
+        <text x="780" y="178" font-family="JetBrains Mono,monospace" font-size="7" fill="#4A6175">GROUP BY → skill candidates</text>
+
+        <!-- findings → runs -->
+        <line x1="760" y1="66" x2="612" y2="100" stroke="#2EC4A9" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#dbArrTeal)"/>
+
+        <!-- REFLECTIONS -->
+        <rect x="760" y="240" width="200" height="140" rx="2" fill="#161B27" stroke="rgba(46,196,169,0.2)" stroke-width="1"/>
+        <rect x="760" y="240" width="200" height="28" rx="2" fill="rgba(46,196,169,0.05)"/>
+        <text x="860" y="258" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" font-weight="500" fill="#2EC4A9">reflections</text>
+        <text x="772" y="286" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#2EC4A9">run_id</text><text x="822" y="286" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">FK → runs.id</text>
+        <text x="772" y="302" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#E8A045">type</text><text x="810" y="302" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">struggle/assumption/gap</text>
+        <text x="772" y="318" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#7A93AC">description</text>
+        <text x="772" y="340" font-family="JetBrains Mono,monospace" font-size="7" fill="#4A6175">query struggles · query skill-gaps</text>
+        <text x="772" y="356" font-family="JetBrains Mono,monospace" font-size="7" fill="#4A6175">cross-run aggregate queries</text>
+        <text x="772" y="372" font-family="JetBrains Mono,monospace" font-size="7" fill="#2EC4A9">→ agent definition updates</text>
+
+        <!-- reflections → runs -->
+        <line x1="760" y1="286" x2="612" y2="185" stroke="#2EC4A9" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#dbArrTeal)"/>
+
+        <!-- LOG-ANALYST cross-run read label -->
+        <rect x="340" y="310" width="300" height="60" rx="2" fill="rgba(46,196,169,0.04)" stroke="rgba(46,196,169,0.15)" stroke-width="1"/>
+        <text x="490" y="330" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#2EC4A9">log-analyst reads all tables</text>
+        <text x="490" y="346" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="8" fill="#4A6175">SELECT ... JOIN runs ... GROUP BY feature_id</text>
+        <text x="490" y="360" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#4A6175">cross-session patterns invisible to any single agent</text>
+
+        <!-- arrow from runs down to log-analyst box -->
+        <line x1="490" y1="210" x2="490" y2="308" stroke="#2EC4A9" stroke-width="1" stroke-dasharray="4 4" marker-end="url(#dbArrTeal)" opacity="0.5"/>
+      </svg>
+    </div>
+
+    <div class="db-tables">
+      <div class="db-table">
+        <div class="db-table-header">
+          <div class="db-table-name">runs</div>
+          <span style="font-size:0.72rem;color:var(--steel)">one row per agent session</span>
+        </div>
+        <div class="db-table-desc">Session lifecycle. Every agent that writes creates a run with UUID, feature ID, input mode, status, quality score, and output summary.</div>
+        <div class="db-cols">
+          <div class="db-col"><div class="db-col-name">id</div><div class="db-col-desc">UUID primary key — captured as $RUN_ID for session</div></div>
+          <div class="db-col"><div class="db-col-name">agent_name</div><div class="db-col-desc">Which agent ran this session</div></div>
+          <div class="db-col"><div class="db-col-name">feature_id</div><div class="db-col-desc">F-001, F-002 — cross-feature join key</div></div>
+          <div class="db-col"><div class="db-col-name">quality_score</div><div class="db-col-desc">Agent self-assessment 1–10; correlators detect hidden practices in high-scoring runs</div></div>
+          <div class="db-col"><div class="db-col-name">status</div><div class="db-col-desc">running / completed / failed / abandoned</div></div>
+        </div>
+      </div>
+
+      <div class="db-table">
+        <div class="db-table-header">
+          <div class="db-table-name">decisions</div>
+          <span style="font-size:0.72rem;color:var(--steel)">one row per non-trivial choice</span>
+        </div>
+        <div class="db-table-desc">The reasoning record. What was decided, why, what else was considered, and the bet on expected outcome — closed later by observed outcome.</div>
+        <div class="db-cols">
+          <div class="db-col"><div class="db-col-name">decision_type</div><div class="db-col-desc">implementation / deviation / dependency / gap</div></div>
+          <div class="db-col"><div class="db-col-name">alternatives_considered</div><div class="db-col-desc">Anti-pattern detection — what was rejected and why</div></div>
+          <div class="db-col"><div class="db-col-name">expected_outcome</div><div class="db-col-desc">The bet — what should be true if this was right</div></div>
+          <div class="db-col"><div class="db-col-name">observed_outcome</div><div class="db-col-desc">Filled in later — the learning signal; outcome delta detection</div></div>
+        </div>
+      </div>
+
+      <div class="db-table">
+        <div class="db-table-header">
+          <div class="db-table-name">events</div>
+          <span style="font-size:0.72rem;color:var(--steel)">one row per external action</span>
+        </div>
+        <div class="db-table-desc">The audit trail of what agents actually did. The key design rule: events log what an action <em>revealed</em>, not just what the action was. "Read routes.rb" is noise. "Read routes.rb — found no existing document resource, confirmed clean namespace" is signal.</div>
+        <div class="db-cols">
+          <div class="db-col"><div class="db-col-name">event_type</div><div class="db-col-desc">tool_call / file_read / file_write / bash / test_run</div></div>
+          <div class="db-col"><div class="db-col-name">description</div><div class="db-col-desc">What happened and what it revealed — not just the action itself</div></div>
+          <div class="db-col"><div class="db-col-name">duration_ms</div><div class="db-col-desc">Elapsed time when tracked — surfaces slow operations across the pipeline</div></div>
+        </div>
+      </div>
+
+      <div class="db-table">
+        <div class="db-table-header">
+          <div class="db-table-name">findings</div>
+          <span style="font-size:0.72rem;color:var(--steel)">one row per review finding</span>
+        </div>
+        <div class="db-table-desc">The key to the learning loop. Standard category vocabulary enforced across all review agents enables cross-feature pattern detection via GROUP BY.</div>
+        <div class="db-cols">
+          <div class="db-col"><div class="db-col-name">category</div><div class="db-col-desc">Controlled vocabulary tag — see full list below</div></div>
+          <div class="db-col"><div class="db-col-name">severity</div><div class="db-col-desc">NEEDS_WORK or PASS_WITH_NOTES</div></div>
+          <div class="db-col"><div class="db-col-name">file</div><div class="db-col-desc">File path relative to project root</div></div>
+          <div class="db-col"><div class="db-col-name">description</div><div class="db-col-desc">Specific enough for engineer to act on without re-reading the review</div></div>
+        </div>
+        <div style="padding:0.8rem 1.4rem 1rem;border-top:1px solid rgba(122,147,172,0.1)">
+          <div style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--steel);margin-bottom:0.7rem">Standard Category Vocabulary</div>
+          <div style="margin-bottom:0.5rem">
+            <div style="font-family:var(--mono);font-size:0.62rem;color:var(--amber);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">Code Quality</div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--white-dim);line-height:1.9">MISSING_TEST &nbsp;·&nbsp; RAILS_CONVENTION &nbsp;·&nbsp; NAMING &nbsp;·&nbsp; PATTERN_CONFLICT<br>DATA_INTEGRITY &nbsp;·&nbsp; FAT_CONTROLLER &nbsp;·&nbsp; DEAD_CODE &nbsp;·&nbsp; CONCERN_EXTRACTION<br>COMMENT_MISSING &nbsp;·&nbsp; JBUILDER_MISSING</div>
+          </div>
+          <div style="margin-bottom:0.5rem">
+            <div style="font-family:var(--mono);font-size:0.62rem;color:var(--amber);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">Security</div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--white-dim);line-height:1.9">AUTH_SCOPE &nbsp;·&nbsp; MASS_ASSIGNMENT &nbsp;·&nbsp; XSS &nbsp;·&nbsp; SQL_INJECTION &nbsp;·&nbsp; SENSITIVE_DATA &nbsp;·&nbsp; CSRF &nbsp;·&nbsp; BRAKEMAN</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:0.62rem;color:var(--amber);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">Performance</div>
+            <div style="font-family:var(--mono);font-size:0.7rem;color:var(--white-dim);line-height:1.9">N+1 &nbsp;·&nbsp; MISSING_INDEX &nbsp;·&nbsp; BLOCKING_CALLBACK &nbsp;·&nbsp; UNSCOPED_QUERY &nbsp;·&nbsp; MISSING_CONSTRAINT</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="db-table">
+        <div class="db-table-header">
+          <div class="db-table-name">reflections</div>
+          <span style="font-size:0.72rem;color:var(--teal)">every agent logs what it struggled with</span>
+        </div>
+        <div class="db-table-desc">The most human thing in the system. Every agent writes what it found hard, what it had to assume, and where it felt a skill gap. These accumulate silently across sessions — invisible to any individual agent, visible to the log-analyst running cross-feature SQL.</div>
+        <div class="db-cols">
+          <div class="db-col"><div class="db-col-name">type</div><div class="db-col-desc"><span style="color:var(--amber);font-family:var(--mono);font-size:0.7rem">struggle</span> / <span style="color:var(--amber);font-family:var(--mono);font-size:0.7rem">assumption</span> / <span style="color:var(--amber);font-family:var(--mono);font-size:0.7rem">skill_gap</span></div></div>
+          <div class="db-col"><div class="db-col-name">description</div><div class="db-col-desc">What the agent struggled with, assumed without confirmation, or identified as a gap in its own knowledge</div></div>
+        </div>
+        <div style="padding:0.6rem 1.4rem 1rem;border-top:1px solid rgba(46,196,169,0.1);background:rgba(46,196,169,0.03)">
+          <div style="font-family:var(--mono);font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--teal);margin-bottom:0.4rem">How struggles become skills</div>
+          <div style="font-size:0.75rem;color:var(--white-dim);line-height:1.7">The log-analyst runs <code style="font-family:var(--mono);font-size:0.72rem;color:var(--amber)">query struggles</code> and <code style="font-family:var(--mono);font-size:0.72rem;color:var(--amber)">query skill-gaps</code> across all features. The same struggle appearing across multiple agents and features is a signal that the agent definitions need updating — not just one agent, the whole team.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="db-insight">
+      <p>The <code>category</code> column is the key to everything. By enforcing a standard vocabulary across all review agents, the log-analyst can run <code>GROUP BY category HAVING COUNT(DISTINCT feature_id) >= 3</code> to find issues that keep recurring — the highest-confidence signal that a prevention skill is needed. Consistent vocabulary is what makes cross-feature pattern detection reliable.</p>
+    </div>
+  </div>
+</section>
+
+<!-- COMMANDS -->
+<section class="agents-section" id="commands" style="background:var(--graphite)">
+  <div class="agents-inner">
+    <span class="section-eyebrow">Commands</span>
+    <h2 class="section-title">How you invoke the pipeline</h2>
+    <p class="section-body" style="max-width:680px;color:var(--white-dim);font-size:0.95rem">Three commands are the developer-facing interface. The orchestrator runs live in the current conversation — not as a subagent — because it needs to interact with the user across multiple turns.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1px;background:var(--steel-dim);margin-top:2.5rem">
+
+      <div style="background:var(--slate);padding:2rem 1.8rem;position:relative">
+        <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--amber)"></div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--steel);letter-spacing:0.15em;margin-bottom:0.6rem">Primary Entry Point</div>
+        <div style="font-family:var(--mono);font-size:1.1rem;color:var(--amber);margin-bottom:0.8rem">/feature</div>
+        <div style="font-size:0.85rem;color:var(--white-dim);line-height:1.75;margin-bottom:1.2rem">The entry point for all feature work. Routes to the orchestrator at the right pipeline stage. Three modes parsed from the first word of the argument.</div>
+        <div style="display:flex;flex-direction:column;gap:0.8rem">
+          <div style="background:rgba(14,17,23,0.6);border:1px solid rgba(122,147,172,0.12);padding:0.8rem 1rem">
+            <div style="font-family:var(--mono);font-size:0.68rem;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">Full Pipeline</div>
+            <div style="font-family:var(--mono);font-size:0.78rem;color:var(--white)">/feature</div>
+            <div style="font-size:0.75rem;color:var(--white-dim);margin-top:0.3rem">Empty or bare description — starts from Stage 1 (Discovery) and runs the full workflow</div>
+          </div>
+          <div style="background:rgba(14,17,23,0.6);border:1px solid rgba(122,147,172,0.12);padding:0.8rem 1rem">
+            <div style="font-family:var(--mono);font-size:0.68rem;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">Brief-First Mode</div>
+            <div style="font-family:var(--mono);font-size:0.78rem;color:var(--white)">/feature architect &lt;path-or-content&gt;</div>
+            <div style="font-size:0.75rem;color:var(--white-dim);margin-top:0.3rem">User has a brief ready — skip Discovery. Argument is either a file path or inline content treated as the brief body</div>
+          </div>
+          <div style="background:rgba(14,17,23,0.6);border:1px solid rgba(122,147,172,0.12);padding:0.8rem 1rem">
+            <div style="font-family:var(--mono);font-size:0.68rem;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">Resume Mode</div>
+            <div style="font-family:var(--mono);font-size:0.78rem;color:var(--white)">/feature resume F-00X</div>
+            <div style="font-size:0.75rem;color:var(--white-dim);margin-top:0.3rem">Continues an in-progress pipeline from the first missing artifact — no re-running completed stages</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--slate);padding:2rem 1.8rem;position:relative">
+        <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--steel-dim)"></div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--steel);letter-spacing:0.15em;margin-bottom:0.6rem">Project Setup</div>
+        <div style="font-family:var(--mono);font-size:1.1rem;color:var(--white);margin-bottom:0.8rem">/init-project</div>
+        <div style="font-size:0.85rem;color:var(--white-dim);line-height:1.75;margin-bottom:1.2rem">Audits the project and fills in missing CLAUDE.md sections. Generates from what actually exists — not generic boilerplate. Checks for 7 standard sections and only writes what's absent.</div>
+        <div style="font-family:var(--mono);font-size:0.68rem;color:var(--steel);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem">Audits</div>
+        <div style="font-family:var(--mono);font-size:0.73rem;color:var(--white-dim);line-height:2">CLAUDE.md &nbsp;·&nbsp; .claude/skills/ &nbsp;·&nbsp; .claude/agents/<br>Gemfile &nbsp;·&nbsp; app/models/ &nbsp;·&nbsp; config/routes.rb<br>gems/ &nbsp;·&nbsp; docs/</div>
+        <div style="margin-top:1rem;font-family:var(--mono);font-size:0.68rem;color:var(--steel);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem">7 Sections It Checks</div>
+        <div style="font-size:0.75rem;color:var(--white-dim);line-height:1.9">Project intro &nbsp;·&nbsp; Skills &nbsp;·&nbsp; Coding requirements<br>Docs/ structure &nbsp;·&nbsp; TODO.md convention<br>Abstraction decisions &nbsp;·&nbsp; Non-negotiables</div>
+      </div>
+
+      <div style="background:var(--slate);padding:2rem 1.8rem;position:relative">
+        <div style="position:absolute;top:0;left:0;width:100%;height:3px;background:var(--steel-dim)"></div>
+        <div style="font-family:var(--mono);font-size:0.65rem;color:var(--steel);letter-spacing:0.15em;margin-bottom:0.6rem">Documentation</div>
+        <div style="font-family:var(--mono);font-size:1.1rem;color:var(--white);margin-bottom:0.8rem">/update-readme</div>
+        <div style="font-size:0.85rem;color:var(--white-dim);line-height:1.75;margin-bottom:1.2rem">Audits the codebase and regenerates domain documentation. Rewrites README.md with exactly three sections. Writes one domain document per domain found in the codebase.</div>
+        <div style="font-family:var(--mono);font-size:0.68rem;color:var(--steel);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem">Content Rules</div>
+        <div style="font-size:0.75rem;color:var(--white-dim);line-height:1.9">Model class names must be exact — reads the class declaration<br>Method signatures must be verified — reads the method definition<br>Does not document what doesn't exist<br>Omits Rails boilerplate<br>technical.md explains significant choices and <em>why they were made</em></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS MATRIX -->
+<section class="skills-section" id="skills">
+  <div class="skills-inner">
+    <span class="section-eyebrow">Skills</span>
+    <h2 class="section-title">Reference documents loaded at session start</h2>
+    <p class="section-body" style="max-width:680px;color:var(--white-dim);font-size:0.95rem">Skills contain decisions already made — patterns, rules, format contracts — that agents would otherwise have to re-derive from training data or make up on the spot. Each skill becomes a separate system block with its own cache control.</p>
+
+    <div class="skills-matrix">
+      <table>
+        <thead>
+          <tr>
+            <th>Skill</th>
+            <th>discovery</th>
+            <th>architect</th>
+            <th>design</th>
+            <th>engineer</th>
+            <th>code-review</th>
+            <th>security</th>
+            <th>performance</th>
+            <th>orchestrator</th>
+            <th>log-analyst</th>
+            <th>skill-builder</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>agent-log</td>
+            <td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="dash">—</td><td class="check">✓</td>
+          </tr>
+          <tr>
+            <td>rails-principles</td>
+            <td class="dash">—</td><td class="check">✓</td><td class="dash">—</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td>
+          </tr>
+          <tr>
+            <td>design-system</td>
+            <td class="dash">—</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td>
+          </tr>
+          <tr>
+            <td>architect-spec-format</td>
+            <td class="dash">—</td><td class="check">✓</td><td class="dash">—</td><td class="dash">—</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td>
+          </tr>
+          <tr>
+            <td>discovery-brief-format</td>
+            <td class="check">✓</td><td class="check">✓</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td><td class="dash">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="skills-desc">
+      <div class="skill-desc-card">
+        <div class="skill-desc-name">agent-log</div>
+        <div class="skill-desc-file">.claude/skills/agent-log/SKILL.md · All agents</div>
+        <div class="skill-desc-body">Complete CLI reference for bin/agent-log. Pure Ruby, no gems — works from any directory without Rails boot overhead.</div>
+        <div style="margin-top:0.8rem;display:flex;flex-direction:column;gap:0.3rem">
+          <div style="font-family:var(--mono);font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--steel);margin-bottom:0.2rem">CLI Commands</div>
+          <div style="font-size:0.72rem;color:var(--white-dim);display:grid;grid-template-columns:120px 1fr;gap:0.2rem 0.6rem;line-height:1.7">
+            <span style="font-family:var(--mono);color:var(--amber)">run start/end</span><span>Session lifecycle — UUID captured for all subsequent logging</span>
+            <span style="font-family:var(--mono);color:var(--amber)">decision</span><span>Non-trivial choice with rationale, alternatives, type, expected outcome</span>
+            <span style="font-family:var(--mono);color:var(--amber)">event</span><span>External action — logs what it <em>revealed</em>, not just what it was</span>
+            <span style="font-family:var(--mono);color:var(--amber)">outcome</span><span>Closes hypothesis/result loop — observed vs. expected outcome</span>
+            <span style="font-family:var(--mono);color:var(--amber)">finding</span><span>Review agents log issues with standard category vocabulary</span>
+            <span style="font-family:var(--mono);color:var(--amber)">reflection</span><span>Struggles, assumptions, skill gaps — feeds cross-run aggregates</span>
+            <span style="font-family:var(--mono);color:var(--amber)">query</span><span>Reads runs, decisions, events, findings, reflections, skill-gaps, struggles</span>
+          </div>
+        </div>
+        <div style="margin-top:1rem;padding:0.9rem 1rem;background:rgba(14,17,23,0.8);border:1px solid rgba(122,147,172,0.12)">
+          <div style="font-family:var(--mono);font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--steel);margin-bottom:0.6rem">Example — engineer logging a decision</div>
+          <div style="font-family:var(--mono);font-size:0.71rem;color:var(--white-dim);line-height:2">
+            <span style="color:var(--steel)">$</span> <span style="color:var(--amber)">bin/agent-log</span> <span style="color:var(--teal)">decision</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--title</span> <span style="color:var(--white)">"Chose concerns over service objects"</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--type</span> <span style="color:var(--white)">implementation</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--rationale</span> <span style="color:var(--white)">"Three methods serve one feature — 3-method rule triggered"</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--alternatives</span> <span style="color:var(--white)">"Service object — rejected, no service objects per rails-principles"</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--expected</span> <span style="color:var(--white)">"Cleaner model layer, concern reusable across models"</span>
+          </div>
+        </div>
+        <div style="margin-top:0.6rem;padding:0.9rem 1rem;background:rgba(14,17,23,0.8);border:1px solid rgba(122,147,172,0.12)">
+          <div style="font-family:var(--mono);font-size:0.62rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--steel);margin-bottom:0.6rem">Example — review agent logging a finding</div>
+          <div style="font-family:var(--mono);font-size:0.71rem;color:var(--white-dim);line-height:2">
+            <span style="color:var(--steel)">$</span> <span style="color:var(--amber)">bin/agent-log</span> <span style="color:var(--teal)">finding</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--category</span> <span style="color:var(--white)">N+1</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--severity</span> <span style="color:var(--white)">NEEDS_WORK</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--file</span> <span style="color:var(--white)">app/views/documents/index.html.erb</span> \<br>
+            &nbsp;&nbsp;<span style="color:var(--steel)">--description</span> <span style="color:var(--white)">"document.project called in loop — add includes(:project)"</span>
+          </div>
+        </div>
+      </div>
+      <div class="skill-desc-card">
+        <div class="skill-desc-name">rails-principles</div>
+        <div class="skill-desc-file">.claude/skills/rails-principles/SKILL.md</div>
+        <div class="skill-desc-body">The engineering principles the system builds to. Architect designs to these, engineer builds to these, code-review checks against these. Convention as the interface. Rails-first. No service objects. Seven controller actions only.</div>
+      </div>
+      <div class="skill-desc-card">
+        <div class="skill-desc-name">architect-spec-format</div>
+        <div class="skill-desc-file">.claude/skills/architect-spec-format/SKILL.md</div>
+        <div class="skill-desc-body">The 12-section feature specification contract. A spec is not complete if any section is empty or vague, or if Open Questions is non-empty. Review agents load this to evaluate whether the engineer implemented what the spec actually specified.</div>
+      </div>
+      <div class="skill-desc-card">
+        <div class="skill-desc-name">discovery-brief-format</div>
+        <div class="skill-desc-file">.claude/skills/discovery-brief-format/SKILL.md</div>
+        <div class="skill-desc-body">The handoff contract between discovery and architect. Defines what a complete brief contains, what must come from the user vs. what the architect derives from the codebase. Documents common brief failures so discovery avoids them.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARTIFACT TEMPLATES -->
+<section style="padding:5rem 2rem;background:var(--slate)" id="templates">
+  <div style="max-width:1080px;margin:0 auto">
+    <span class="section-eyebrow">Artifact Templates</span>
+    <h2 class="section-title">What each agent produces</h2>
+    <p class="section-body" style="max-width:680px;color:var(--white-dim);font-size:0.95rem">Every artifact is a markdown file with a defined section contract. Nothing advances until the previous artifact exists and every required section is complete.</p>
+
+    <!-- TAB NAV -->
+    <div style="display:flex;gap:0;flex-wrap:wrap;margin-top:2.5rem;border-bottom:1px solid rgba(122,147,172,0.15)" id="template-tabs">
+      <button class="tmpl-tab active" data-tab="dis">discovery</button>
+      <button class="tmpl-tab" data-tab="arc">architect</button>
+      <button class="tmpl-tab" data-tab="des">design</button>
+      <button class="tmpl-tab" data-tab="eng">engineer</button>
+      <button class="tmpl-tab" data-tab="rev">reviews</button>
+    </div>
+
+    <!-- DISCOVERY -->
+    <div class="tmpl-panel active" id="tmpl-dis">
+      <div class="tmpl-meta">
+        <span class="tmpl-file">NNN.01-dis-{feature-name}.md</span>
+        <span class="tmpl-note">Written only after explicit user confirmation of the structured summary</span>
+      </div>
+      <div class="tmpl-grid">
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Problem Statement</div>
+          <div class="tmpl-section-desc">What is broken, missing, or possible that prompted this feature. Written from the user's perspective, not the system's.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Who Is This For</div>
+          <div class="tmpl-section-desc">Which user type or role. Authorization implications named explicitly here before the architect touches the codebase.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Data and Authorization Scope</div>
+          <div class="tmpl-section-desc">What data this feature touches and who is allowed to touch it. The security-review agent reads this to validate scope traversal.</div>
+        </div>
+        <div class="tmpl-section tmpl-section-highlight">
+          <div class="tmpl-section-name">## AI Generation Operations</div>
+          <div class="tmpl-section-desc">Explicitly Yes or No. If Yes: what is generated, what triggers it, streaming vs. batch, and how errors are handled. Required even if the answer is No.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## What They Can Do</div>
+          <div class="tmpl-section-desc">The full capability list — every action the user can take. Written as capabilities, not implementation steps.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Key Scenarios</div>
+          <div class="tmpl-section-desc">The 3–5 most important user journeys through this feature, including the unhappy paths that matter most.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Decisions Made</div>
+          <div class="tmpl-section-desc">Every scope and direction decision settled during discovery. Separates from Open Questions — these are closed.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Directions Rejected</div>
+          <div class="tmpl-section-desc">What was considered and ruled out, with a one-line reason. Prevents the architect from re-exploring dead ends.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Known Edge Cases</div>
+          <div class="tmpl-section-desc">Edge cases the user already knows about. The architect will find more during the codebase audit.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Explicit Out of Scope</div>
+          <div class="tmpl-section-desc">What this feature deliberately does not do. Prevents scope creep in the architect and engineer stages.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Open Questions for the Architect</div>
+          <div class="tmpl-section-desc">Unresolved questions that require codebase knowledge to answer. The architect must resolve all of these before handing to engineering.</div>
+        </div>
+        <div class="tmpl-section">
+          <div class="tmpl-section-name">## Agent Notes</div>
+          <div class="tmpl-section-desc">Populated from querying gap decisions in the log — what the discovery agent struggled with or assumed. Visible to the architect.</div>
+        </div>
+        <div class="tmpl-section tmpl-section-highlight">
+          <div class="tmpl-section-name">## For the Architect</div>
+          <div class="tmpl-section-desc">Closing synthesis: confidence levels per section, what to verify first in the codebase, which assumptions need confirming before spec work begins.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARCHITECT -->
+    <div class="tmpl-panel" id="tmpl-arc">
+      <div class="tmpl-meta">
+        <span class="tmpl-file">NNN.02-arc-{feature-name}.md</span>
+        <span class="tmpl-note">Open Questions must be empty before this file is handed to engineering</span>
+      </div>
+      <div class="tmpl-grid">
+        <div class="tmpl-section"><div class="tmpl-section-name">## Goal</div><div class="tmpl-section-desc">One sentence. What this feature achieves from the system's perspective.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Background</div><div class="tmpl-section-desc">Context the engineer needs to understand why this feature exists and what it connects to in the existing system.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## User Stories</div><div class="tmpl-section-desc">As a [role], I can [action], so that [outcome]. Written for every distinct capability.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Acceptance Criteria</div><div class="tmpl-section-desc">Binary pass/fail conditions only — no judgment required to evaluate. Every criterion maps to at least one test.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Scope — In / Out</div><div class="tmpl-section-desc">Two lists. What is explicitly included. What is explicitly excluded. Prevents scope drift during implementation.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## Domain Model</div><div class="tmpl-section-desc">Model names and relationships only — no column names, types, or index strategy. Those are engineering decisions. The architect specifies structure; the engineer specifies storage.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## Behavioral Constraints</div><div class="tmpl-section-desc">Non-negotiable. The engineer chooses HOW; these constrain WHAT. Authorization rules, data integrity rules, and UX contracts live here.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Routes / Resource Shape</div><div class="tmpl-section-desc">RESTful resource structure. URL grammar must be consistent with existing routes — verified against config/routes.rb during the codebase audit.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## JSON API Surface</div><div class="tmpl-section-desc">Every controller action that needs a jbuilder response. Named per YAGNI exception — AI consumers are real and likely.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Refactoring Notes</div><div class="tmpl-section-desc">Existing code the engineer should clean up or restructure as part of this feature. Not optional scope — planned work.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Design Decisions</div><div class="tmpl-section-desc">Every non-obvious architectural choice with rationale. No new patterns without justification here. Logged to agent-log with arch- IDs.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Open Questions</div><div class="tmpl-section-desc">Must be empty before handoff. If non-empty, the spec is not complete and cannot be handed to engineering.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Agent Notes</div><div class="tmpl-section-desc">What the architect struggled with or assumed — from querying gap decisions in the log.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## For the Engineer</div><div class="tmpl-section-desc">Closing synthesis: what to read first, which existing code is most relevant, the highest-risk areas in the implementation plan.</div></div>
+      </div>
+    </div>
+
+    <!-- DESIGN -->
+    <div class="tmpl-panel" id="tmpl-des">
+      <div class="tmpl-meta">
+        <span class="tmpl-file">NNN.03-des-{feature-name}.md</span>
+        <span class="tmpl-note">Every data field decision includes an explicit mono vs. sans class decision</span>
+      </div>
+      <div class="tmpl-grid">
+        <div class="tmpl-section"><div class="tmpl-section-name">## User Flow</div><div class="tmpl-section-desc">Complete path map — every route through the feature including edge cases, error states, and empty states. Includes the unhappy paths.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Screen Specifications</div><div class="tmpl-section-desc">One subsection per screen. Layout regions named, data fields listed with explicit mono/sans class decisions, components identified, available actions enumerated.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## AI Generation Surfaces</div><div class="tmpl-section-desc">Every surface that triggers or displays AI generation must specify: trigger state (visually distinct), loading state (incremental DOM updates — never batch-replace on completion), and three distinct error states (timeout, provider error, rate limit).</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## State Design</div><div class="tmpl-section-desc">Empty, loading, error, and success states for every view that can vary. Empty states include a call-to-action — never a dead end.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Component Inventory</div><div class="tmpl-section-desc">Every UI component used, with the exact class or helper name from the design system. New components flagged as additions needed.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Design Decisions</div><div class="tmpl-section-desc">Every layout or UX choice that required judgment, with rationale. Deviations from existing patterns explicitly justified.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Agent Notes</div><div class="tmpl-section-desc">Design struggles and assumptions from querying gap decisions — visible to the engineer before implementation begins.</div></div>
+      </div>
+    </div>
+
+    <!-- ENGINEER -->
+    <div class="tmpl-panel" id="tmpl-eng">
+      <div class="tmpl-meta">
+        <span class="tmpl-file">NNN.{SEQ}-eng-{feature-name}.md</span>
+        <span class="tmpl-note">Primary artifact the review agents read — written before reviews run, not after</span>
+      </div>
+      <div class="tmpl-grid">
+        <div class="tmpl-section"><div class="tmpl-section-name">## What Was Built</div><div class="tmpl-section-desc">Plain summary of what was implemented. Models, controllers, views, jobs, concerns — what exists now that didn't before.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## Key Decisions</div><div class="tmpl-section-desc">Every non-trivial implementation choice with its agent-log decision ID (eng-NNN-NNN). The reasoning is in the database; this section surfaces the IDs so reviewers can cross-reference.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## Deviations from Spec</div><div class="tmpl-section-desc">What the spec said vs. what was implemented and why. Required even if the list is empty — an empty section means the engineer confirmed full compliance.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## What Was Hard</div><div class="tmpl-section-desc">Honest account of implementation difficulty. Surfaces where the spec was ambiguous, where Rails made something harder than expected, where judgment calls had to be made.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## Spec Quality Assessment</div><div class="tmpl-section-desc">Direct feedback to the architect with a 1–10 score. What the spec got right. What was missing or ambiguous. Feeds the log-analyst's spec template gap detection.</div></div>
+        <div class="tmpl-section"><div class="tmpl-section-name">## Assumptions Made</div><div class="tmpl-section-desc">Populated from querying gap decisions in the log before writing this section. Every assumption that wasn't confirmed by the spec.</div></div>
+        <div class="tmpl-section tmpl-section-highlight"><div class="tmpl-section-name">## For the Review Agents</div><div class="tmpl-section-desc">The engineer's own assessment of deliberate tradeoffs and areas of concern. Where the engineer chose speed over purity. Where edge cases were deferred. The reviewers read this first.</div></div>
+      </div>
+    </div>
+
+    <!-- REVIEWS -->
+    <div class="tmpl-panel" id="tmpl-rev">
+      <div class="tmpl-meta">
+        <span class="tmpl-file">NNN.{SEQ}-{cr|sec|perf}-{feature-name}.md</span>
+        <span class="tmpl-note">All three run in parallel — orchestrator waits for all before evaluating combined verdict</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1px;background:var(--steel-dim);margin-top:1.5rem">
+
+        <div style="background:var(--graphite);padding:1.6rem">
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--teal);margin-bottom:1rem;letter-spacing:0.1em">code-review report</div>
+          <div style="display:flex;flex-direction:column;gap:0.55rem">
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">01</span><span class="tmpl-rev-item">Test Suite — runs bin/rails test; failure = NEEDS WORK</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">02</span><span class="tmpl-rev-item">Pattern Consistency — pattern impact statement required</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">03</span><span class="tmpl-rev-item">Test Coverage — every branch, every acceptance criterion</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">04</span><span class="tmpl-rev-item">Rails Conventions — callbacks, scopes, concerns, helpers</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">05</span><span class="tmpl-rev-item">Naming Quality — no abbreviations, no generic names</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">06</span><span class="tmpl-rev-item">Data Integrity — validations backed by DB constraints</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">07</span><span class="tmpl-rev-item">Fat Controller Check — conditional logic = violation</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">08</span><span class="tmpl-rev-item">Dead Artifacts — pry, TODOs, commented-out code</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">09</span><span class="tmpl-rev-item">Design System Compliance — mono/sans, jbuilder present</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">10</span><span class="tmpl-rev-item">Comments — missing on hard code; unnecessary on obvious code</span></div>
+            <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid rgba(122,147,172,0.1)">
+              <div style="font-family:var(--mono);font-size:0.65rem;color:var(--steel);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem">Overall Verdict</div>
+              <div style="font-size:0.75rem;color:var(--white-dim)">PASS &nbsp;·&nbsp; PASS WITH NOTES &nbsp;·&nbsp; NEEDS WORK<br>A competing pattern is always NEEDS WORK — no PASS WITH NOTES path</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--graphite);padding:1.6rem">
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--teal);margin-bottom:1rem;letter-spacing:0.1em">security-review report</div>
+          <div style="display:flex;flex-direction:column;gap:0.55rem">
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">01</span><span class="tmpl-rev-item">Brakeman — every HIGH confidence warning is NEEDS WORK</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">02</span><span class="tmpl-rev-item">Authorization Scope — user → project → document traversal</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">03</span><span class="tmpl-rev-item">Mass Assignment — strong params, no permit!, no owner IDs</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">04</span><span class="tmpl-rev-item">XSS — html_safe and raw() without sanitization = vuln</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">05</span><span class="tmpl-rev-item">SQL Injection — string interpolation in SQL fragments</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">06</span><span class="tmpl-rev-item">Sensitive Data — logs, responses, error messages checked</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">07</span><span class="tmpl-rev-item">CSRF — protect_from_forgery active, no unexplained skips</span></div>
+            <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid rgba(122,147,172,0.1)">
+              <div style="font-family:var(--mono);font-size:0.65rem;color:var(--steel);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem">Overall Verdict</div>
+              <div style="font-size:0.75rem;color:var(--white-dim)">PASS &nbsp;·&nbsp; PASS WITH NOTES &nbsp;·&nbsp; NEEDS WORK<br>False positives must be explained with full rationale</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--graphite);padding:1.6rem">
+          <div style="font-family:var(--mono);font-size:0.7rem;color:var(--teal);margin-bottom:1rem;letter-spacing:0.1em">performance-review report</div>
+          <div style="display:flex;flex-direction:column;gap:0.55rem">
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">01</span><span class="tmpl-rev-item">N+1 Queries — reads view files even when not in the diff</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">02</span><span class="tmpl-rev-item">Index Coverage — FK, WHERE, ORDER, GROUP columns checked</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">03</span><span class="tmpl-rev-item">Blocking Callbacks — anything &gt;100ms must be a background job</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">04</span><span class="tmpl-rev-item">Unscoped Queries — .all, no pagination, full objects vs. attrs</span></div>
+            <div class="tmpl-rev-row"><span class="tmpl-rev-num">05</span><span class="tmpl-rev-item">Missing Constraints — presence without NOT NULL, uniqueness without index</span></div>
+            <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid rgba(122,147,172,0.1)">
+              <div style="font-family:var(--mono);font-size:0.65rem;color:var(--steel);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.4rem">Overall Verdict</div>
+              <div style="font-size:0.75rem;color:var(--white-dim)">PASS &nbsp;·&nbsp; PASS WITH NOTES &nbsp;·&nbsp; NEEDS WORK<br>Bounded collections may be PASS WITH NOTES with explicit reasoning</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PRINCIPLES -->
+<section class="principles-section" id="principles">
+  <div class="principles-inner">
+    <span class="section-eyebrow">Design Principles</span>
+    <h2 class="section-title">Why it's built this way</h2>
+
+    <div class="principles-list">
+      <div class="principle">
+        <div class="principle-line"></div>
+        <div>
+          <div class="principle-title">Separation of concerns across agents, not within agents</div>
+          <div class="principle-body">Every agent has one job. The orchestrator does not design. The architect does not code. The engineer does not review. The reviewer does not fix. This is not bureaucratic overhead — it is what allows specialization. An agent that does everything well is an agent that does nothing particularly well.</div>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-line"></div>
+        <div>
+          <div class="principle-title">Artifacts as interfaces</div>
+          <div class="principle-body">Agents communicate through files, not through shared state or direct calls. An artifact is the contract between pipeline stages. This makes every stage independently restartable (resume works because the artifact exists), auditable (the full history is readable without querying the database), and debuggable (if a stage produced the wrong output, the artifact is there to read).</div>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-line"></div>
+        <div>
+          <div class="principle-title">Logging as organizational memory</div>
+          <div class="principle-body">Every session starts fresh. Every agent's context window resets. The SQLite database is the only thing that persists across that boundary. Without it, the system can build features but cannot learn from them. With it, patterns that no individual session can see — because they emerge across twenty sessions and seven features — become detectable.</div>
+        </div>
+      </div>
+      <div class="principle">
+        <div class="principle-line"></div>
+        <div>
+          <div class="principle-title">Human approval at the learning boundary</div>
+          <div class="principle-body">The log-analyst proposes; it does not act. The skill-builder executes confirmed proposals; it does not approve. Every change to agent definitions or skill files passes through a human decision. The loop is tight — one run → proposals → approval → execution → next run includes new guidance — but the human remains in it.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ATTRIBUTION -->
+<div class="attribution">
+  <p>Rails Agentic Engineering Team — a pattern by <a href="http://robertrevans.com">Robert Evans</a> &nbsp;·&nbsp; Built and validated in production</p>
+</div>
+
+<script>
+// Tab switching for artifact templates
+document.querySelectorAll('.tmpl-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tmpl-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tmpl-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tmpl-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// Scroll-triggered fade-in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(el => {
+    if(el.isIntersecting) {
+      el.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.pipe-stage, .agent-card').forEach(el => observer.observe(el));
+
+// Stagger agent cards
+document.querySelectorAll('.agent-card').forEach((el, i) => {
+  el.style.transitionDelay = (i * 0.06) + 's';
+});
+</script>
+</body>
+</html>

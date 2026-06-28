@@ -1,0 +1,408 @@
+#!/usr/bin/env ruby
+# bin/agent-log
+# Agent activity logging CLI for Rails agentic engineering team.
+# Writes to db/agent_log.sqlite3 via the sqlite3 CLI (no gem required).
+#
+# Usage:
+#   bin/agent-log run start  --agent-name engineer --feature-id F-001 --input-summary "..."
+#   bin/agent-log run end    --run-id $RUN_ID --status completed --quality-score 8 --output-summary "..."
+#   bin/agent-log decision   --run-id $RUN_ID --id eng-F001-001 --title "..." --rationale "..."
+#   bin/agent-log event      --run-id $RUN_ID --type tool_call --description "..."
+#   bin/agent-log query runs
+#   bin/agent-log query decisions --run-id $RUN_ID
+#   bin/agent-log query summary   --run-id $RUN_ID
+
+require "securerandom"
+require "open3"
+
+DB = ENV.fetch("AGENT_LOG_DB", File.join(__dir__, "../db/agent_log.sqlite3"))
+
+SCHEMA = <<~SQL
+  PRAGMA journal_mode=WAL;
+  PRAGMA foreign_keys=ON;
+
+  CREATE TABLE IF NOT EXISTS runs (
+    id             TEXT PRIMARY KEY,
+    agent_name     TEXT NOT NULL,
+    feature_id     TEXT,
+    input_mode     TEXT,
+    input_summary  TEXT,
+    status         TEXT NOT NULL DEFAULT 'running',
+    quality_score  INTEGER,
+    output_summary TEXT,
+    started_at     TEXT NOT NULL,
+    completed_at   TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS decisions (
+    id                      TEXT PRIMARY KEY,
+    run_id                  TEXT NOT NULL REFERENCES runs(id),
+    title                   TEXT NOT NULL,
+    rationale               TEXT NOT NULL,
+    alternatives_considered TEXT,
+    decision_type           TEXT NOT NULL DEFAULT 'implementation',
+    expected_outcome        TEXT,
+    observed_outcome        TEXT,
+    created_at              TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS events (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id       TEXT NOT NULL REFERENCES runs(id),
+    event_type   TEXT NOT NULL,
+    description  TEXT,
+    duration_ms  INTEGER,
+    started_at   TEXT,
+    completed_at TEXT,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS findings (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id       TEXT NOT NULL REFERENCES runs(id),
+    category     TEXT NOT NULL,
+    severity     TEXT NOT NULL DEFAULT 'NEEDS_WORK',
+    file         TEXT,
+    line         TEXT,
+    description  TEXT,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE TABLE IF NOT EXISTS reflections (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id       TEXT NOT NULL REFERENCES runs(id),
+    type         TEXT NOT NULL,
+    description  TEXT NOT NULL,
+    created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_decisions_run      ON decisions(run_id);
+  CREATE INDEX IF NOT EXISTS idx_events_run         ON events(run_id);
+  CREATE INDEX IF NOT EXISTS idx_runs_feature       ON runs(feature_id);
+  CREATE INDEX IF NOT EXISTS idx_findings_run       ON findings(run_id);
+  CREATE INDEX IF NOT EXISTS idx_findings_category  ON findings(category);
+  CREATE INDEX IF NOT EXISTS idx_reflections_run    ON reflections(run_id);
+  CREATE INDEX IF NOT EXISTS idx_reflections_type   ON reflections(type);
+SQL
+
+def sq(sql, *args)
+  # Escape each argument for safe SQLite interpolation.
+  bound = args.map { |a| a.nil? ? "NULL" : "'#{a.to_s.gsub("'", "''")}'" }
+  i = 0
+  interpolated = sql.gsub("?") { bound[i].tap { i += 1 } }
+  migrate_once
+  out, err, status = Open3.capture3("sqlite3", DB, interpolated)
+  unless status.success?
+    $stderr.puts "sqlite3 error: #{err.strip}"
+    exit 1
+  end
+  out.strip
+end
+
+def sq_rows(sql, *args)
+  bound = args.map { |a| a.nil? ? "NULL" : "'#{a.to_s.gsub("'", "''")}'" }
+  i = 0
+  interpolated = sql.gsub("?") { bound[i].tap { i += 1 } }
+  migrate_once
+  # -separator for TSV output; -header for column names
+  out, err, status = Open3.capture3("sqlite3", "-separator", "\t", DB, interpolated)
+  unless status.success?
+    $stderr.puts "sqlite3 error: #{err.strip}"
+    exit 1
+  end
+  out.strip.split("\n").map { |line| line.split("\t") }
+end
+
+def migrate_once
+  return if @migrated
+  @migrated = true
+  system("sqlite3", DB, SCHEMA, out: File::NULL, err: File::NULL)
+end
+
+def parse_args(argv)
+  args = {}
+  i = 0
+  while i < argv.length
+    if argv[i].start_with?("--")
+      key = argv[i].sub(/^--/, "").tr("-", "_").to_sym
+      args[key] = argv[i + 1]
+      i += 2
+    else
+      i += 1
+    end
+  end
+  args
+end
+
+def now_iso
+  Time.now.strftime("%Y-%m-%dT%H:%M:%S")
+end
+
+def fail!(msg)
+  $stderr.puts "ERROR: #{msg}"
+  exit 1
+end
+
+subcommand = ARGV.shift
+# Only shift action for subcommands that have subactions (run, query).
+# For leaf commands (decision, event, outcome, help) the next token is a flag.
+action = if %w[run query].include?(subcommand) && ARGV.first && !ARGV.first.start_with?("--")
+           ARGV.shift
+         end
+args = parse_args(ARGV)
+
+case subcommand
+
+# ── run ──────────────────────────────────────────────────────────────────────
+
+when "run"
+  case action
+  when "start"
+    id = SecureRandom.uuid
+    sq(
+      "INSERT INTO runs (id, agent_name, feature_id, input_mode, input_summary, started_at) VALUES (?,?,?,?,?,?)",
+      id, args[:agent_name] || "unknown", args[:feature_id],
+      args[:input_mode] || "ad_hoc", args[:input_summary], now_iso
+    )
+    puts id
+
+  when "end"
+    fail!("--run-id required") unless args[:run_id]
+    sq(
+      "UPDATE runs SET status=?, quality_score=?, output_summary=?, completed_at=? WHERE id=?",
+      args[:status] || "completed", args[:quality_score],
+      args[:output_summary], now_iso, args[:run_id]
+    )
+    puts "Run #{args[:run_id]} closed."
+
+  else
+    fail!("Unknown run action: #{action}. Use: start, end")
+  end
+
+# ── decision ─────────────────────────────────────────────────────────────────
+
+when "decision"
+  fail!("--run-id required")   unless args[:run_id]
+  fail!("--title required")    unless args[:title]
+  fail!("--rationale required") unless args[:rationale]
+
+  id = args[:id] || SecureRandom.uuid
+  sq(
+    "INSERT INTO decisions (id, run_id, title, rationale, alternatives_considered, decision_type, expected_outcome) VALUES (?,?,?,?,?,?,?)",
+    id, args[:run_id], args[:title], args[:rationale],
+    args[:alternatives], args[:type] || "implementation", args[:expected_outcome]
+  )
+  puts "Decision #{id} logged."
+
+# ── event ────────────────────────────────────────────────────────────────────
+
+when "event"
+  fail!("--run-id required") unless args[:run_id]
+  fail!("--type required")   unless args[:type]
+
+  sq(
+    "INSERT INTO events (run_id, event_type, description, duration_ms, started_at, completed_at) VALUES (?,?,?,?,?,?)",
+    args[:run_id], args[:type], args[:description],
+    args[:duration_ms], args[:started_at], args[:completed_at]
+  )
+  puts "Event logged."
+
+# ── outcome ──────────────────────────────────────────────────────────────────
+
+when "outcome"
+  fail!("--id required")      unless args[:id]
+  fail!("--observed required") unless args[:observed]
+  sq("UPDATE decisions SET observed_outcome=? WHERE id=?", args[:observed], args[:id])
+  puts "Outcome recorded for #{args[:id]}."
+
+# ── finding ──────────────────────────────────────────────────────────────────
+
+when "finding"
+  fail!("--run-id required")   unless args[:run_id]
+  fail!("--category required") unless args[:category]
+  sq(
+    "INSERT INTO findings (run_id, category, severity, file, line, description) VALUES (?,?,?,?,?,?)",
+    args[:run_id], args[:category], args[:severity] || "NEEDS_WORK",
+    args[:file], args[:line], args[:description]
+  )
+  puts "Finding [#{args[:category]}] logged."
+
+# ── reflection ───────────────────────────────────────────────────────────────
+
+when "reflection"
+  fail!("--run-id required")      unless args[:run_id]
+  fail!("--type required")        unless args[:type]
+  fail!("--description required") unless args[:description]
+
+  valid = %w[struggle assumption skill_gap]
+  fail!("--type must be one of: #{valid.join(', ')}") unless valid.include?(args[:type])
+
+  sq(
+    "INSERT INTO reflections (run_id, type, description) VALUES (?,?,?)",
+    args[:run_id], args[:type], args[:description]
+  )
+  puts "Reflection [#{args[:type]}] logged."
+
+# ── query ────────────────────────────────────────────────────────────────────
+
+when "query"
+  case action
+  when "runs"
+    rows = sq_rows(
+      "SELECT id, agent_name, feature_id, status, quality_score, started_at, substr(input_summary,1,50) FROM runs ORDER BY started_at DESC LIMIT 20"
+    )
+    if rows.empty?
+      puts "(no runs recorded)"
+    else
+      puts "%-36s  %-10s  %-8s  %-9s  %s  %s  %s" % %w[ID Agent Feature Status Score Started Summary]
+      puts "-" * 110
+      rows.each do |r|
+        puts "%-36s  %-10s  %-8s  %-9s  %-5s  %s  %s" % r.map { |v| v.to_s }
+      end
+    end
+
+  when "decisions"
+    fail!("--run-id required") unless args[:run_id]
+    rows = sq_rows(
+      "SELECT id, decision_type, title, created_at FROM decisions WHERE run_id=? ORDER BY created_at",
+      args[:run_id]
+    )
+    rows.empty? ? puts("(no decisions for this run)") : rows.each { |r| puts "[#{r[1]}] #{r[0]} — #{r[2]} (#{r[3]})" }
+
+  when "events"
+    fail!("--run-id required") unless args[:run_id]
+    rows = sq_rows(
+      "SELECT event_type, description, duration_ms, created_at FROM events WHERE run_id=? ORDER BY created_at",
+      args[:run_id]
+    )
+    rows.empty? ? puts("(no events for this run)") : rows.each { |r|
+      ms = r[2].to_s.empty? ? "" : " [#{r[2]}ms]"
+      puts "[#{r[0]}]#{ms} #{r[1]} (#{r[3]})"
+    }
+
+  when "findings"
+    fail!("--run-id required") unless args[:run_id]
+    rows = sq_rows(
+      "SELECT category, severity, file, line, description, created_at FROM findings WHERE run_id=? ORDER BY category, created_at",
+      args[:run_id]
+    )
+    rows.empty? ? puts("(no findings for this run)") : rows.each { |r|
+      loc = [r[2], r[3]].compact.reject(&:empty?).join(":")
+      puts "[#{r[1]}][#{r[0]}]#{loc.empty? ? "" : " #{loc}"} — #{r[4]} (#{r[5]})"
+    }
+
+  when "reflections"
+    fail!("--run-id required") unless args[:run_id]
+    rows = sq_rows(
+      "SELECT type, description, created_at FROM reflections WHERE run_id=? ORDER BY type, created_at",
+      args[:run_id]
+    )
+    rows.empty? ? puts("(no reflections for this run)") : rows.each { |r|
+      puts "[#{r[0]}] #{r[1]} (#{r[2]})"
+    }
+
+  when "skill-gaps"
+    rows = sq_rows(
+      "SELECT r.description, COUNT(*) as times, GROUP_CONCAT(DISTINCT ru.agent_name) as agents, GROUP_CONCAT(DISTINCT ru.feature_id) as features
+       FROM reflections r JOIN runs ru ON r.run_id = ru.id
+       WHERE r.type = 'skill_gap'
+       GROUP BY r.description ORDER BY times DESC"
+    )
+    rows.empty? ? puts("(no skill gaps recorded)") : rows.each { |r|
+      puts "[#{r[1]}x] #{r[0]}\n  agents: #{r[2]}  features: #{r[3]}\n"
+    }
+
+  when "struggles"
+    rows = sq_rows(
+      "SELECT r.description, COUNT(*) as times, GROUP_CONCAT(DISTINCT ru.agent_name) as agents
+       FROM reflections r JOIN runs ru ON r.run_id = ru.id
+       WHERE r.type = 'struggle'
+       GROUP BY r.description ORDER BY times DESC"
+    )
+    rows.empty? ? puts("(no struggles recorded)") : rows.each { |r|
+      puts "[#{r[1]}x] #{r[0]} (agents: #{r[2]})"
+    }
+
+  when "assumptions"
+    rows = sq_rows(
+      "SELECT ru.agent_name, r.description, COUNT(*) as times
+       FROM reflections r JOIN runs ru ON r.run_id = ru.id
+       WHERE r.type = 'assumption'
+       GROUP BY ru.agent_name, r.description ORDER BY ru.agent_name, times DESC"
+    )
+    rows.empty? ? puts("(no assumptions recorded)") : rows.each { |r|
+      puts "[#{r[0]}] #{r[1]} (#{r[2]}x)"
+    }
+
+  when "summary"
+    fail!("--run-id required") unless args[:run_id]
+    run = sq_rows("SELECT * FROM runs WHERE id=?", args[:run_id]).first
+    fail!("Run not found") unless run
+    d_count = sq("SELECT COUNT(*) FROM decisions WHERE run_id=?", args[:run_id])
+    e_count = sq("SELECT COUNT(*) FROM events    WHERE run_id=?", args[:run_id])
+    puts "Run ID:     #{run[0]}"
+    puts "Agent:      #{run[1]}  mode=#{run[3]}"
+    puts "Feature:    #{run[2].to_s.empty? ? "(ad-hoc)" : run[2]}"
+    puts "Status:     #{run[5]}  quality=#{run[6]}"
+    puts "Started:    #{run[8]}"
+    puts "Completed:  #{run[9].to_s.empty? ? "(in progress)" : run[9]}"
+    puts "Decisions:  #{d_count}"
+    puts "Events:     #{e_count}"
+    puts "Summary:    #{run[7]}"
+
+  else
+    fail!("Unknown query: #{action}. Use: runs, decisions, events, findings, reflections, skill-gaps, struggles, assumptions, summary")
+  end
+
+# ── help / default ────────────────────────────────────────────────────────────
+
+when "help", nil
+  puts <<~HELP
+    bin/agent-log — agent activity logging
+
+    Run lifecycle:
+      run start  --agent-name NAME [--feature-id F-001] [--input-mode ad_hoc|structured_feature]
+                 [--input-summary "..."]
+                   → prints RUN_ID
+
+      run end    --run-id ID [--status completed|failed|abandoned]
+                 [--quality-score 1-10] [--output-summary "..."]
+
+    Logging:
+      decision   --run-id ID --title "..." --rationale "..."
+                 [--id eng-F001-001] [--alternatives "..."]
+                 [--type implementation|deviation|dependency|gap]
+                 [--expected-outcome "..."]
+
+      outcome    --id eng-F001-001 --observed "what actually happened"
+
+      event      --run-id ID --type tool_call|file_read|file_write|bash|test_run
+                 --description "..." [--duration-ms N]
+
+      finding    --run-id ID --category CATEGORY
+                 [--severity NEEDS_WORK|PASS_WITH_NOTES]
+                 [--file path/to/file.rb] [--line 42]
+                 --description "specific issue"
+
+      reflection --run-id ID --type struggle|assumption|skill_gap
+                 --description "..."
+
+    Queries:
+      query runs
+      query decisions   --run-id ID
+      query events      --run-id ID
+      query findings    --run-id ID
+      query reflections --run-id ID
+      query skill-gaps                 # cross-run aggregate
+      query struggles                  # cross-run aggregate
+      query assumptions                # cross-run aggregate
+      query summary     --run-id ID
+
+    Database: #{DB}
+    Override: AGENT_LOG_DB=/path/to/other.sqlite3 bin/agent-log ...
+  HELP
+
+else
+  fail!("Unknown command: #{subcommand}. Run `bin/agent-log help`.")
+end
