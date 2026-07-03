@@ -21,25 +21,24 @@ Rails resolves behavior through naming: routes predict controllers, controllers 
 
 A well-designed system grows by adding new files in the right places — not by editing dispatch tables, conditional branches, or registration blocks. Rails itself works this way: new controllers and models are discovered by convention, not registered anywhere. Apply the same discipline to custom code.
 
-**YAML drives variants; base class drives behavior.** When a feature has many variants that share the same mechanics but differ in configuration (paths, parameters, limits, rate rules), put the mechanics in a base class and the variation in YAML. The YAML loader hydrates typed value objects at startup; the base class consumes them without knowing which variant it's running. Adding a new variant is adding YAML — no new Ruby. This only works when the base class is complete enough to need no per-variant code. Design the base first; YAML-drive the variants second.
+**The actual test:** hand someone — human or LLM — the existing files in a namespace and nothing else. Can they write the next variant without asking a question or reading a dispatch table? If yes, the convention is carrying the design. If no, no amount of per-file cleanliness fixes it — the naming isn't strong enough to be self-teaching yet.
 
-**Resolution chains over case statements.** Instead of `case type; when :amazon then AmazonHandler; when :ebay then EbayHandler`, try class names by convention and fall through to the base:
-```ruby
-def self.for(type, operation)
-  ["Namespace::#{type.classify}::#{operation.classify}", "Namespace::#{type.classify}::Handler"]
-    .each { |name| return name.constantize rescue NameError }
-  self  # base class as fallback
-end
-```
-Adding a type means creating one correctly-named file. The resolution logic never changes.
+Two things make files derivable from each other:
 
-**`raise NotImplementedError` as interface declaration.** When a base class defines abstract methods with `raise NotImplementedError`, it is documenting its own contract. Subclasses know exactly what they must provide; everything else is inherited. An explicit `raise` fails loudly with a clear message; a missing method fails confusingly at call time. Define the contract at the base; override only what's specific.
+**No abbreviated words.** `subscription`, not `sub`; `configuration`, not `cfg`; `attributes`, not `attrs`. An abbreviation saves the writer a few keystrokes and costs every future reader — and every future LLM pattern-matching against the namespace — a guess about what it stands for and whether the guess is right. Full words remove that guess entirely.
 
-**Value objects for data transport.** Use `Data.define` to create immutable, named value objects for data flowing through a pipeline. A `Data.define(:entity, :status, :requested_at, :response_ms)` object is self-documenting, prevents "what keys does this hash have?" uncertainty, and fails loudly when required fields are missing. Loose hashes are acceptable at system boundaries (params, API responses); inside the system, give data a type.
+**Naming conventions derived the same way Rails derives its own.** Rails' naming rules are what let one developer predict another's code without opening the file. Apply the same derivation to custom classes and methods:
+- Model class names are singular (`Listing`); table names are plural snake_case (`listings`) — the model name states the pluralization rule.
+- Foreign keys are `<singular_association>_id` (`account_id` for `belongs_to :account`) — the column name states the relationship.
+- Boolean methods end in `?` (`published?`); state-changing methods end in `!` (`publish!`) — the punctuation is part of the contract, not decoration.
+- Controllers and namespaced classes are named for the resource or capability they manage, not the action performed on it (`Listings::SyncsController`, not `SyncController`).
+- Concerns are named as adjectives for the capability they add (`Syncable`, `Searchable`) — they describe what a class *can do*, not what it *is*.
 
-**Single public entry point per domain.** Each domain exposes one method that generates a session ID and dispatches. The caller doesn't know how many jobs fan out, which providers run, or how pagination works. The interface is stable as internals grow. The internal fan-out is a private concern.
+(See Naming Is the Most Important Thing and Class Naming — State, Not Process below for the underlying naming principles — this section is about applying them so the *next* file is derivable from the current ones, not restating them.)
 
-Together these produce the minimum-code-to-add-a-variant outcome: the next provider, endpoint, or operation slots in by following the naming convention and implementing the declared interface. The system handles the rest.
+**Single public entry point per domain.** Each domain exposes one method the caller invokes. How many jobs fan out internally, which collaborators run, or how pagination works is a private concern — the public interface stays stable as internals grow.
+
+Together these produce the minimum-code-to-add-a-variant outcome: the next class in a namespace slots in by following the naming convention already established there — no dispatch table to edit, no one to ask.
 
 ## Rails-First
 
@@ -199,11 +198,24 @@ If this project uses SQLite (the Rails 8 default), use SQLite native search inst
 
 Search logic lives in model scopes. When a model has 3+ search-related methods, extract to a `Searchable` concern.
 
+## PostgreSQL Search
+
+If this project uses PostgreSQL, use PostgreSQL native search instead of search gems:
+- `ILIKE` — simple case-insensitive substring matching
+- Full text search — `tsvector` / `tsquery` with a `GIN` index, populated via a trigger or a `before_save` callback
+- `pg_trgm` extension — trigram similarity for fuzzy/typo-tolerant matching (`%` similarity operator, GIN or GiST trigram index)
+
+Search logic lives in model scopes. When a model has 3+ search-related methods, extract to a `Searchable` concern.
+
 If this project uses a different database, consult its native search capabilities before reaching for an external gem.
 
 ## Anti-Patterns
 
 - **No service objects** — use model methods and concerns
+- **No decorators, presenters, or form objects** — same fragmentation problem as service objects; a `Draper` decorator or a plain-object form wrapper still pulls logic away from the model that owns the data. Use a helper (view logic) or a concern (model logic) instead
 - **No JSON serializer libraries** — use jbuilder
 - **No conditional logic in views** — use helpers
 - **No background jobs over collections** — fan out one job per object; each job is atomic and individually retryable
+- **No N+1 queries** — eager load associations you know you'll touch (`includes` / `preload`); a query fired once per loop iteration is a query that scales with data, not with usage
+- **No interpolated SQL strings** — parameterized conditions only (`where("name = ?", name)` or hash conditions); string interpolation into SQL is an injection surface, not a shortcut
+- **No callbacks that reach across unrelated models** — a callback should touch itself and its own associations. A side effect on a different domain belongs in a job the caller triggers explicitly, not one chained silently through `after_save`
