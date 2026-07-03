@@ -12,7 +12,7 @@ Extracted and generalized from an internal writer application by Robert Evans. T
 
 ## Installation
 
-This is a Claude Code plugin. Install it through the mrgrampz marketplace in Claude Code, then copy the logging script to your Rails project:
+This is a Claude Code Team. Install it by copying these agents into your Rails project's Claude directory, then copy the logging script:
 
 1. Copy `bin/agent-log` to your Rails project's `bin/` directory.
 2. Make the script executable:
