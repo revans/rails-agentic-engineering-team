@@ -192,7 +192,104 @@ When routing back, pass all three report paths — not just the failing one. The
 
 ---
 
-## Stage 7 — Outcome Recording
+## Stage 7 — Feature Synthesis
+
+When the pipeline reaches a final verdict, produce a synthesis document before closing. This is the canonical handoff artifact — one file that gives any downstream consumer (QA team, human reviewer, future engineer) the full picture without reading seven separate reports.
+
+**File:** `{FEATURE_DIR}/{NNN}-summary.md`
+
+To produce it, read the following sections from the pipeline artifacts:
+
+```bash
+# Discovery brief — Key Scenarios
+grep -A 30 "## Key Scenarios" ${FEATURE_DIR}/${NNN}.01-dis-*.md
+
+# Architect spec — Acceptance Criteria
+grep -A 40 "## Acceptance Criteria" ${FEATURE_DIR}/${NNN}.02-arc-*.md
+
+# Final engineer report — What Was Built, Deviations from Spec, For the Review Agents
+# (use the highest-sequence eng file)
+ls ${FEATURE_DIR}/${NNN}.*-eng-*.md | sort | tail -1
+
+# Final review reports — PASS WITH NOTES items only
+grep -A 5 "PASS WITH NOTES" \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+2))-sec-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md
+```
+
+**Synthesis format:**
+
+```markdown
+# Feature Summary — {NNN} Feature Name
+
+**Completed:** YYYY-MM-DD
+**Feature directory:** {FEATURE_DIR}
+**Review rounds:** {N} — final verdict: [PASS | PASS WITH NOTES]
+
+---
+
+## What Was Built
+
+[From the final engineer report's "What Was Built" section — factual, one short paragraph.
+Models, controllers, views, jobs. What exists now that didn't before.]
+
+## User Flows
+
+[From the discovery brief's "Key Scenarios" section — what the user can do.
+Written as concrete before/after capabilities, not technical descriptions.
+This is what the QA team walks.]
+
+## Acceptance Criteria
+
+[The checklist from the architect spec, verbatim. These are the testable behaviors.
+QA maps its test cases to these.]
+
+- [ ] ...
+- [ ] ...
+
+## Known Rough Edges
+
+[PASS WITH NOTES findings from all review reports — the things that passed but
+were flagged. These are QA's first targets because they're the areas reviewers
+had reservations about but didn't block.]
+
+- [source agent] — [finding summary]
+
+## Engineer's Uncertainty Flags
+
+[From the "Assessment" and "Recommendation" subsections of the final engineer
+report's "For the Review Agents" section. These are places where the engineer
+implemented under uncertainty. QA should pay particular attention here.]
+
+## Deviations from Spec
+
+[From the final engineer report's "Deviations from Spec" section. Where
+implementation diverged from what was designed and why. Helps QA know which
+parts of the design spec to treat as authoritative vs. superseded.]
+
+## Artifacts
+
+| Stage | File |
+|---|---|
+| Discovery brief | {FEATURE_DIR}/{NNN}.01-dis-{feature-name}.md |
+| Architect spec | {FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md |
+| Design spec | {FEATURE_DIR}/{NNN}.03-des-{feature-name}.md |
+| Engineer report (final) | {FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md |
+| Code review (final) | {FEATURE_DIR}/{NNN}.{SEQ+1}-cr-{feature-name}.md |
+| Security review (final) | {FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md |
+| Performance review (final) | {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{feature-name}.md |
+```
+
+After writing the summary, confirm it exists:
+
+```bash
+ls ${FEATURE_DIR}/${NNN}-summary.md
+```
+
+---
+
+## Stage 8 — Outcome Recording
 
 When the pipeline reaches a final verdict (all three PASS or PASS WITH NOTES), trigger outcome recording before closing. This populates Pattern Type 4 in the log-analyst — without it, outcome delta analysis is empty.
 
@@ -372,13 +469,11 @@ Produce the performance review report at {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{featu
 
 ## Activity Logging
 
-### Lifecycle
+See the `agent-log` skill for the full lifecycle protocol and CLI reference. The orchestrator logs `struggle` reflections but not `skill_gap` reflections — it coordinates, it doesn't implement.
 
-**First action of every session:** start a run with `--agent-name orchestrator`, `--feature-id {F-00X-or-unknown}`, `--input-mode {pipeline|ad_hoc}`, `--input-summary "{one-line description of what is being orchestrated}"`. Capture the returned UUID as `$RUN_ID`.
+**Start:** `--agent-name orchestrator`, `--feature-id {F-00X-or-unknown}`, `--input-mode {pipeline|ad_hoc}`, `--input-summary "{one-line description of what is being orchestrated}"`. Capture the UUID as `$RUN_ID`.
 
-**Last action of every session:** close with `--status completed`, `--quality-score {1-10}`, `--output-summary "{final stage reached and verdict}"`.
-
-### What to Log
+**End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "{final stage reached and verdict}"`.
 
 **Log a decision when:**
 - You detect a mid-pipeline resume and determine the re-entry stage — name which artifact was missing
@@ -388,20 +483,7 @@ Produce the performance review report at {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{featu
 
 Decision ID format: `orch-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `orch-001-001`.
 
-**Log an event for each agent launch** — type `tool_call`, description: which agent, which artifact passed.
-
-### Struggle Logging
-
-**Before closing the run**, log a `reflection --type struggle` for each topic where routing was unclear, artifact state was ambiguous, or you had to make a judgment call beyond these guidelines:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type struggle \
-  --description "what was hard and why — what information would have resolved it"
-```
-
-These entries feed the cross-run aggregate via `bin/agent-log query struggles`. If nothing was genuinely difficult, skip this step.
+**Log an event** (type `tool_call`) for each agent launch — which agent and which artifact was passed.
 
 ---
 
@@ -422,7 +504,8 @@ Be terse. Every message names the current stage, the agent being launched, and t
 **Pipeline complete:**
 ```
 001 complete. 2 review rounds. Final verdict: PASS WITH NOTES (cr, sec), PASS (perf).
-Files: docs/briefs/001-accounts/001.01-dis through 001.11-perf-accounts.md
+Summary: docs/briefs/001-accounts/001-summary.md
+Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.11-perf-accounts.md
 ```
 
 **Routing back to engineer:**

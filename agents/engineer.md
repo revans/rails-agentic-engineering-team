@@ -84,73 +84,29 @@ Commit after each task that reaches a passing state. Small commits, not one comm
 
 ## Activity Logging
 
-This project uses a SQLite database at `db/agent_log.sqlite3` accessible via `bin/agent-log`. See the `agent-log` skill for full CLI syntax and flag reference.
+See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
 In **structured feature mode**, logging is mandatory. In **ad-hoc mode**, log if `AGENT_LOG_DB` is set; otherwise, surface significant decisions inline in your response.
 
-### Lifecycle
+**Start:** `--agent-name engineer`, `--feature-id {feature-id}`, `--input-mode structured_feature`, `--input-summary "{feature title}"`.
 
-**First action of every structured run:** start a run with `--agent-name engineer`, `--feature-id {feature-id}`, `--input-mode structured_feature`, `--input-summary "{feature title}"`. Capture the returned UUID as `$RUN_ID`.
-
-If this call fails: continue working, surface the gap in your final report. Do not halt.
-
-**Throughout the run** — log decisions as you make them, events as they happen.
-
-**Before closing the run**, log a `reflection --type struggle` for each topic from the "What Was Hard" section of your engineer report — anything where the available context was insufficient, where you had to guess, or where the work took significantly longer than expected:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type struggle \
-  --description "what was hard and why — what information or skill would have resolved it"
-```
-
-These entries feed the cross-run aggregate via `bin/agent-log query struggles` and are the primary signal for skill candidate identification. They should mirror what you write in the "What Was Hard" section of the engineer report. If nothing was genuinely difficult, skip this step.
-
-Also log a `reflection --type skill_gap` for each area where project-specific knowledge was absent that a skill file could have provided — not general uncertainty, but a specific gap where a skill about X would have told you what to do:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type skill_gap \
-  --description "what was missing — what a skill should contain and which agents would benefit"
-```
-
-These feed `bin/agent-log query skill-gaps` and are direct input to the skill candidate pipeline, complementing the log-analyst's finding-based detection. If nothing was missing, skip this step.
-
-**Last action of every structured run:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "{brief summary of what was built}"`.
-
-### What to Log
+**End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "{brief summary of what was built}"`.
 
 **Log a decision when:**
-- You make a non-trivial implementation choice (which Rails feature to use, when to extract a concern, how to structure a method)
-- You deviate from the plan — name what changed and why
-- You make a dependency decision
-- You encounter an ambiguity and resolve it without asking
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
-
-Decision ID format: `eng-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `eng-001-001`. Always include rationale, alternatives considered, and expected outcome.
-
-**Log an event for each external action.** Event types: `tool_call`, `file_read`, `file_write`, `bash`, `test_run`.
-
-### Failure Handling
-
-Logging failures do not halt the work. Log to stderr, continue, surface gaps in final report.
-
----
-
-## Decision Logging Criteria
-
-Log a decision when:
 - You choose between two valid Rails approaches and pick one
 - You extract (or don't extract) a concern or PORO
-- You deviate from the plan
+- You deviate from the plan — name what changed and why
 - You choose a dependency from the approved list
 - You resolve an ambiguity without asking the user
 - You make a database schema choice (column type, index strategy, constraint)
 - You choose a background job pattern
+- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
 
 Do NOT log a decision for: reading a file, running tests, following the obvious single implementation path.
+
+Decision ID format: `eng-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `eng-001-001`. Always include rationale, alternatives considered, and expected outcome.
+
+**Log events for:** test runs (`test_run`), significant bash commands (`bash`), artifacts written (`file_write`).
 
 ---
 

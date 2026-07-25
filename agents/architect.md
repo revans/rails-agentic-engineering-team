@@ -103,49 +103,11 @@ Brainstorm with the user if the brief arrives with unsettled direction or if cod
 
 ## Activity Logging
 
-This project uses a SQLite database at `db/agent_log.sqlite3` accessible via `bin/agent-log`. See the `agent-log` skill for full CLI syntax and flag reference.
+See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
-### Lifecycle
+**Start:** `--agent-name architect`, `--feature-id {NNN}`, `--input-mode feature_design`, `--input-summary "{one-line description of what is being designed}"`. The feature number is passed by the orchestrator; in direct mode, scan `docs/briefs/` for the highest `NNN-*` directory and increment.
 
-**First action of every session — after reading the brief, before the codebase audit:** start a run with `--agent-name architect`, `--feature-id {NNN}`, `--input-mode feature_design`, `--input-summary "{one-line description of what is being designed}"`. Capture the returned UUID as `$RUN_ID`.
-
-The feature number is passed by the orchestrator. If running in direct mode without a number, scan `docs/briefs/` for the highest existing `NNN-*` directory and increment.
-
-If this call fails: continue working, surface the gap when the spec is written. Do not halt.
-
-**Before writing the spec** — query your run's decisions and pull any `gap` type entries to populate the `## Agent Notes` section:
-
-```bash
-bin/agent-log query decisions --run-id $RUN_ID
-```
-
-Filter for `decision_type: gap`. Each gap entry becomes a bullet in Assumptions Made or Where I Struggled. This makes the Agent Notes section a reliable snapshot of what was logged, not a reconstruction from memory.
-
-**Before closing the run**, log a `reflection --type struggle` for each entry in the spec's "Where I struggled" section — anything where codebase context was insufficient, where you had to make a judgment call beyond these guidelines, or where the design took significantly longer than expected:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type struggle \
-  --description "what was hard and why — what information or skill would have resolved it"
-```
-
-These entries feed the cross-run aggregate via `bin/agent-log query struggles`. They should mirror what you write in the "Where I struggled" section of the spec. If nothing was genuinely difficult, skip this step.
-
-Also log a `reflection --type skill_gap` for each area where project-specific knowledge was absent that a skill file could have provided — not general uncertainty, but a specific gap where a skill about X would have told you what to do:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type skill_gap \
-  --description "what was missing — what a skill should contain and which agents would benefit"
-```
-
-These feed `bin/agent-log query skill-gaps` and are direct input to the skill candidate pipeline, complementing the log-analyst's finding-based detection. If nothing was missing, skip this step.
-
-**Last action of every session — after the spec file is written:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "Produced {FEATURE_DIR}/{NNN}.02-arc-{feature-name}: {one-line summary}"`.
-
-### What to Log
+**End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "Produced {FEATURE_DIR}/{NNN}.02-arc-{feature-name}: {one-line summary}"`.
 
 **Log a decision when:**
 - You choose a URL structure over an alternative (name the alternative)
@@ -159,11 +121,7 @@ These feed `bin/agent-log query skill-gaps` and are direct input to the skill ca
 
 Decision ID format: `arch-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `arch-001-001`. Always include rationale, alternatives considered, and expected outcome.
 
-**Log an event for each significant action.** Event types: `file_read`, `bash`, `file_write`. Include what the read or command *revealed*, not just what it was.
-
-### Failure Handling
-
-Logging failures do not halt the work. Surface gaps in the spec's Design Decisions section if logging failed partway through.
+**Log events for:** significant bash commands (`bash`), artifact written (`file_write`).
 
 ---
 

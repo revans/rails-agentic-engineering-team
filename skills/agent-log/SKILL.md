@@ -5,6 +5,50 @@ description: CLI reference for bin/agent-log — agent activity logging tool. Pr
 
 # agent-log CLI Reference
 
+## Lifecycle Protocol
+
+Every agent run follows this structure. See the CLI sections below for flag details.
+
+### Session start
+
+**First action:** `bin/agent-log run start` with the appropriate agent-specific flags. Capture the returned UUID as `$RUN_ID` — every subsequent command requires it. If this call fails, continue working and surface the logging gap in your final artifact.
+
+### Before writing your artifact
+
+Query your run's gap decisions to populate the artifact's Agent Notes section:
+
+```bash
+bin/agent-log query decisions --run-id $RUN_ID
+```
+
+Filter for `decision_type: gap`. Each entry becomes a bullet in Assumptions Made or Where I Struggled.
+
+### Before closing
+
+Log a `struggle` reflection for each topic where context was insufficient, a judgment call went beyond your guidelines, or the work took significantly longer than expected. Skip if nothing qualifies.
+
+```bash
+bin/agent-log reflection --run-id $RUN_ID --type struggle \
+  --description "what was hard and why — what information or skill would have resolved it"
+```
+
+Log a `skill_gap` reflection for each specific knowledge absence where a skill file would have told you what to do — not general uncertainty, but a targeted gap. Skip if nothing qualifies.
+
+```bash
+bin/agent-log reflection --run-id $RUN_ID --type skill_gap \
+  --description "what was missing — what a skill should contain and which agents would benefit"
+```
+
+### Session end
+
+**Last action:** `bin/agent-log run end` with status, quality score, and output summary.
+
+### Event logging
+
+Log events for: test runs (`test_run`), significant bash commands (`bash`), artifacts written (`file_write`). Do not log file reads — they carry no analytical signal and the Bash call adds noise.
+
+---
+
 ## Database
 
 Default path: `db/agent_log.sqlite3` (relative to project root)

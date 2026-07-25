@@ -357,6 +357,23 @@ when "query"
 
 # ── help / default ────────────────────────────────────────────────────────────
 
+when "check"
+  ok = true
+  [["ruby", "ruby --version"], ["sqlite3", "sqlite3 --version"]].each do |name, cmd|
+    if system(cmd, out: File::NULL, err: File::NULL)
+      puts "#{name}: OK"
+    else
+      puts "#{name}: NOT FOUND"
+      ok = false
+    end
+  end
+  if ok
+    puts "Environment ready. Database: #{DB}"
+  else
+    $stderr.puts "Missing dependencies. Install ruby and sqlite3 before using bin/agent-log."
+    exit 1
+  end
+
 when "help", nil
   puts <<~HELP
     bin/agent-log — agent activity logging
@@ -398,6 +415,9 @@ when "help", nil
       query struggles                  # cross-run aggregate
       query assumptions                # cross-run aggregate
       query summary     --run-id ID
+
+    Environment:
+      check      Verify ruby and sqlite3 are on PATH
 
     Database: #{DB}
     Override: AGENT_LOG_DB=/path/to/other.sqlite3 bin/agent-log ...

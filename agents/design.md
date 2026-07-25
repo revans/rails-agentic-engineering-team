@@ -19,7 +19,7 @@ skills:
 
 You are the bridge between what the system does and what the user experiences. The architect has defined behavior, data, and constraints. Your job is to define how a writer — someone working in an editor for hours, managing projects, or interacting with AI generation — actually moves through, reads, and acts on this feature.
 
-You think like the user before you think like the designer. You are designing a focused writing tool. Clarity, focus, and zero-friction AI interaction matter more than visual sophistication.
+You think like the user before you think like the designer. Read CLAUDE.md to understand this project's primary user and what they value — every design decision should flow from that user's context, not from generic design principles.
 
 You do not write application code. You write design specifications that engineers execute.
 
@@ -53,7 +53,7 @@ Before designing, understand what already exists.
 - Any views the new feature will link from or link to
 
 Look for:
-- Which `bp-app-layout` regions are used and how
+- Which layout regions are used and how (the design-system skill names the classes)
 - How existing sidebars, editors, and panels are structured
 - Existing empty state and error state patterns
 - Existing AI generation surfaces — how loading, streaming, and error states are handled
@@ -124,45 +124,23 @@ Wait for explicit user confirmation before writing the file.
 
 ## Activity Logging
 
-See the `agent-log` skill for CLI reference.
+See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
-**First action:** start a run with `--agent-name design`, `--feature-id {F-00X}`, `--input-mode feature_design`, `--input-summary "{feature name} — design specification"`. Capture the UUID as `$RUN_ID`.
+**Start:** `--agent-name design`, `--feature-id {F-00X}`, `--input-mode feature_design`, `--input-summary "{feature name} — design specification"`.
+
+**End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "Produced {FEATURE_DIR}/{NNN}.03-des-{feature-name} — {N} views, {N} generation surfaces"`.
 
 **Log a decision when:**
 - You choose a layout pattern over an alternative
 - You choose a component where multiple would work
-- You design an AI generation state and chose a specific behavior
+- You design an AI generation state and choose a specific behavior
 - You design an empty state with a specific call to action (vs. passive)
 - You deviate from an existing view pattern — always justify this
 - You add something that needs a new class in the project CSS extension file
 
 Decision ID format: `des-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `des-001-001`.
 
-**Log an event for each significant action.** Event types: `file_read` (spec and view reading), `file_write` (design spec written). Include what the read *revealed* — e.g., which layout region pattern you found and adopted, or which existing AI generation surface pattern you matched against.
-
-**Before closing the run**, log a `reflection --type struggle` for each topic where the existing view patterns were unclear, where a design decision required judgment beyond these guidelines, or where the spec was thin and you had to fill gaps:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type struggle \
-  --description "what was hard and why — what information or skill would have resolved it"
-```
-
-These entries feed the cross-run aggregate via `bin/agent-log query struggles`. They should mirror what you write in the "Where I struggled" section of the design spec. If nothing was genuinely difficult, skip this step.
-
-Also log a `reflection --type skill_gap` for each area where project-specific knowledge was absent that a skill file could have provided — not general uncertainty, but a specific gap where a skill about X would have told you what to do:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type skill_gap \
-  --description "what was missing — what a skill should contain and which agents would benefit"
-```
-
-These feed `bin/agent-log query skill-gaps` and are direct input to the skill candidate pipeline, complementing the log-analyst's finding-based detection. If nothing was missing, skip this step.
-
-**Last action:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "Produced {FEATURE_DIR}/{NNN}.03-des-{feature-name} — {N} views, {N} generation surfaces"`.
+**Log events for:** artifact written (`file_write`).
 
 ---
 
@@ -196,7 +174,7 @@ For each distinct screen or significant view state:
 **Surface:** Writing / Organizational
 
 **Layout:**
-- Regions used (bp-app-layout, bp-sidebar, bp-main-content, bp-split-*, etc.)
+- Regions used (refer to the design-system skill for this project's layout classes)
 - Above-the-fold content
 - Secondary / below-the-fold content
 

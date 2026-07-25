@@ -239,34 +239,21 @@ Any ambiguities resolved, conflicts found, or decisions made during execution th
 
 ## Activity Logging
 
-### Lifecycle
+See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
-**First action — after reading the input:** start a run with `--agent-name skill-builder`, `--input-mode ad_hoc`, `--input-summary` set to either `"Building skills from report: {report filename}"` (report mode) or `"Direct edit: {skill-name} — {one-line description of change}"` (direct edit mode). Capture the returned UUID as `$RUN_ID`.
+**Start:** `--agent-name skill-builder`, `--input-mode ad_hoc`, `--input-summary` set to `"Building skills from report: {report filename}"` (report mode) or `"Direct edit: {skill-name} — {one-line description}"` (direct edit mode).
 
-**Before closing the run**, log a `reflection --type struggle` for each topic where the log-analyst's proposal was ambiguous, where determining the minimum change was difficult, or where you had to make judgment calls about skill content beyond clear guidelines:
-
-```bash
-bin/agent-log reflection \
-  --run-id $RUN_ID \
-  --type struggle \
-  --description "what was hard and why — what information or skill would have resolved it"
-```
-
-These entries feed the cross-run aggregate via `bin/agent-log query struggles`. If nothing was genuinely difficult, skip this step.
-
-**Last action — after writing the build report:** close the run with `--status completed`, `--quality-score {1-10}`, `--output-summary "Built N skills; updated M agents"`.
-
-### What to Log
+**End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "Built N skills; updated M agents"`.
 
 **Log a decision when:**
 - You choose skill content that required interpretation of the log-analyst's proposal
-- You update an existing skill rather than creating it fresh — log what you changed and why
+- You update an existing skill rather than creating it fresh — log what changed and why
 - You decline to wire a skill onto an agent the proposal named, and you have a reason
 - Detection sharpening required judgment about what "minimum change" meant
 
 Decision ID format: `skill-{YYYY-MM-DD}-{NNN}`.
 
-**Log an event for each significant action.** Event types: `file_read`, `file_write`. Include what the file contained that mattered, not just that you read it.
+**Log events for:** artifacts written (`file_write`).
 
 ---
 
