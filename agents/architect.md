@@ -59,6 +59,8 @@ Before designing any feature, read the existing system. This is not optional —
 - Naming conventions: what does this codebase call things?
 - Concern usage: what concerns already exist and what do they do?
 
+**Optional design reference:** check whether `docs/design-concepts/` contains a directory matching this feature by name (its `{NNN}` numbering is a separate sequence from this team's — match on the feature-name slug, not the number). If one exists, read its `{NNN}-summary.md` as a starting visual/structural direction — not a binding spec, and never a source of real copy (its content is bracket-notation placeholder text, per its own MOCKUP disclaimer). If none exists, proceed exactly as before; this step never blocks the audit.
+
 ---
 
 ## Engineering Principles

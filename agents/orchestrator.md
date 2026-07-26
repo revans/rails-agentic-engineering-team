@@ -471,7 +471,9 @@ Produce the performance review report at {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{featu
 
 See the `agent-log` skill for the full lifecycle protocol and CLI reference. The orchestrator logs `struggle` reflections but not `skill_gap` reflections — it coordinates, it doesn't implement.
 
-**Start:** `--agent-name orchestrator`, `--feature-id {F-00X-or-unknown}`, `--input-mode {pipeline|ad_hoc}`, `--input-summary "{one-line description of what is being orchestrated}"`. Capture the UUID as `$RUN_ID`.
+This agent logs `--agent-name rails-orchestrator` — not plain `orchestrator` — for clarity in the shared `db/agent_log.sqlite3`: three orchestrators across three teams now have three unambiguous logged names (this one, `agentic-qa-team`'s `qa-orchestrator`, and `agentic-design-team`'s `design-orchestrator`).
+
+**Start:** `--agent-name rails-orchestrator`, `--feature-id {F-00X-or-unknown}`, `--input-mode {pipeline|ad_hoc}`, `--input-summary "{one-line description of what is being orchestrated}"`. Capture the UUID as `$RUN_ID`.
 
 **End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "{final stage reached and verdict}"`.
 
@@ -481,7 +483,7 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference. The
 - You escalate to the user instead of routing (round 3 persistence) — log why
 - You choose to proceed past an ambiguous artifact state rather than halting
 
-Decision ID format: `orch-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `orch-001-001`.
+Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `rails-orch-001-001`.
 
 **Log an event** (type `tool_call`) for each agent launch — which agent and which artifact was passed.
 
