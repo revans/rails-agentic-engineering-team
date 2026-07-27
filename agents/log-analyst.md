@@ -100,6 +100,15 @@ sqlite3 -separator $'\t' $DB \
      )
    ORDER BY eng.feature_id, eng_d.created_at"
 
+# Decisions explicitly tagged as artifact-traceable gaps (the direct gap signal — every
+# pipeline agent logs these per the agent-log skill's Lifecycle Protocol, not just engineer)
+sqlite3 -separator $'\t' $DB \
+  "SELECT d.id, d.title, d.rationale, r.agent_name, r.feature_id, r.quality_score
+   FROM decisions d
+   JOIN runs r ON d.run_id = r.id
+   WHERE d.decision_type = 'gap'
+   ORDER BY r.agent_name, r.feature_id, d.created_at"
+
 # Quality score distribution by agent
 sqlite3 -separator $'\t' $DB \
   "SELECT agent_name,
@@ -164,13 +173,19 @@ Signal: `alternatives_considered` appears 2+ times, rejected in favor of the sam
 
 Proposal format: quote the anti-pattern entry as it would appear under "Anti-Patterns You Reject" or equivalent section.
 
-#### Pattern Type 3: Spec Template Gaps
+#### Pattern Type 3: Upstream Artifact Gaps
 
-Engineer decisions on features that also have an architect run. If the engineer had to make a decision the architect should have specified, the architect's template or question list is missing something.
+Every pipeline agent logs a `decision --type gap` whenever it fills in for a specific upstream artifact's silence, naming that artifact in the rationale (see the `agent-log` skill's Lifecycle Protocol). Query `decision_type = 'gap'` directly — this is the one pattern type mined by a raw SQL filter rather than by comparing titles or rationales across runs, since each entry already tags itself. Group results by `agent_name` and by the artifact named in the rationale:
 
-Signal: engineer decision on a feature where an architect run exists, and the decision is of type `implementation` or `deviation` on something that is design-level (URL structure, model naming, concern extraction, dependency).
+- `discovery` gaps name the user's ask, a matching product brief, or the interview/brief-format question list.
+- `architect` gaps name the discovery brief.
+- `design` gaps name the architect spec.
+- `engineer` gaps name the architect spec or the design spec — the original, narrowest case this pattern started from: an engineer decision the architect's template (`architect-spec-format` skill) should have settled. The dedicated engineer-vs-architect query above (which does not filter by `decision_type`) is a secondary, broader check for the same failure mode even when the engineer didn't explicitly tag it `gap`.
+- `code-review`, `security-review`, `performance-review` gaps name the spec or design spec (typically its Behavioral Constraints section) as silent on the case being judged.
 
-Proposal format: name the specific question or template section the architect should add to catch this earlier.
+Signal: 2+ `--type gap` decisions from the same agent naming the same upstream artifact or section.
+
+Proposal format: name the specific document and section (a discovery-brief question, an `architect-spec-format` or `design-system` template section, an interview question) that keeps coming up short, and the exact addition that would catch it earlier. For `architect`/`engineer` gaps this is usually a change to `architect-spec-format` or the discovery brief format; for `design` gaps, a change to the architect spec's Behavioral Constraints section; for `discovery` gaps, a change to the interview template; for review-agent gaps, a change to the spec's or design spec's Behavioral Constraints requirements.
 
 #### Pattern Type 4: Outcome Deltas
 
@@ -246,12 +261,12 @@ Alternatives consistently rejected that should be documented.
 - Proposed addition to `[discovery|architect|design|engineer|code-review|security-review|performance-review].md`, section `[Section Name]`:
   > [exact text to add, quoted]
 
-### Spec Template Gaps
-Engineer decisions that should have been architect decisions.
+### Upstream Artifact Gaps
+`decision --type gap` entries grouped by agent and named artifact.
 
-**[Decision Title]** — made by engineer on [feature] where architect ran
-- Why this belongs in the spec: [reasoning]
-- Proposed addition to architect template or question list:
+**[Agent] gaps naming [artifact]** — N occurrences across M features ([list feature IDs])
+- What kept being assumed: [reasoning]
+- Proposed addition to [discovery brief format | architect-spec-format skill | design-system skill | spec/design-spec Behavioral Constraints]:
   > [exact text to add, quoted]
 
 ### Outcome Deltas
