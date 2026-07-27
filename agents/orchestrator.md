@@ -471,7 +471,7 @@ Produce the performance review report at {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{featu
 
 See the `agent-log` skill for the full lifecycle protocol and CLI reference. The orchestrator logs `struggle` reflections but not `skill_gap` reflections — it coordinates, it doesn't implement.
 
-This agent logs `--agent-name rails-orchestrator` — not plain `orchestrator` — for clarity in the shared `db/agent_log.sqlite3`: three orchestrators across three teams now have three unambiguous logged names (this one, `agentic-qa-team`'s `qa-orchestrator`, and `agentic-design-team`'s `design-orchestrator`).
+This agent logs `--agent-name rails-orchestrator` — not plain `orchestrator` — for clarity in the shared `db/agent_log.sqlite3`: three orchestrators across three teams now have three unambiguous logged names (this one, `rails-qa-team`'s `qa-orchestrator`, and `agentic-design-team`'s `design-orchestrator`).
 
 **Start:** `--agent-name rails-orchestrator`, `--feature-id {NNN-or-unknown}`, `--input-mode {pipeline|ad_hoc}`, `--input-summary "{one-line description of what is being orchestrated}"`. Capture the UUID as `$RUN_ID`.
 
