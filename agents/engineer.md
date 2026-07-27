@@ -149,11 +149,11 @@ After all tasks complete, verify before reporting:
 5. Security check applied (run brakeman, verify no new issues)
 6. Decision log written via `bin/agent-log`
 7. Run ended via `bin/agent-log run end`
-8. Query gap decisions for the engineer report's Assumptions Made section:
+8. Query your run's reflections for the engineer report's Assumptions Made and What Was Hard sections:
    ```bash
-   bin/agent-log query decisions --run-id $RUN_ID
+   bin/agent-log query reflections --run-id $RUN_ID
    ```
-   Filter for `decision_type: gap` — use these entries to populate `## Assumptions Made` before writing the report.
+   Filter for `type: assumption` to populate `## Assumptions Made`; filter for `type: struggle` to populate `## What Was Hard`.
 9. Engineer report written to `{FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md`
 
 ### Engineer Report Format

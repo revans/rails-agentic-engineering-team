@@ -59,13 +59,13 @@ Every agent run follows this structure. See the CLI sections below for flag deta
 
 ### Before writing your artifact
 
-Query your run's gap decisions to populate the artifact's Agent Notes section:
+Query your run's reflections to populate the artifact's Agent Notes section:
 
 ```bash
-bin/agent-log query decisions --run-id $RUN_ID
+bin/agent-log query reflections --run-id $RUN_ID
 ```
 
-Filter for `decision_type: gap`. Each entry becomes a bullet in Assumptions Made or Where I Struggled.
+Filter for `type: assumption`. Each entry becomes a bullet in Assumptions Made. Filter for `type: struggle` (logged separately before closing, see below) for Where I Struggled.
 
 ### Before closing
 
