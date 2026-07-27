@@ -126,7 +126,7 @@ Wait for explicit user confirmation before writing the file.
 
 See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
-**Start:** `--agent-name design`, `--feature-id {F-00X}`, `--input-mode feature_design`, `--input-summary "{feature name} — design specification"`.
+**Start:** `--agent-name design`, `--feature-id {NNN}`, `--input-mode feature_design`, `--input-summary "{feature name} — design specification"`.
 
 **End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "Produced {FEATURE_DIR}/{NNN}.03-des-{feature-name} — {N} views, {N} generation surfaces"`.
 
@@ -149,7 +149,7 @@ Decision ID format: `des-{feature-number}-{NNN}` where `feature-number` is the n
 File: `{FEATURE_DIR}/{NNN}.03-des-{feature-name}.md`
 
 ```markdown
-# Design — F-00X Feature Name
+# Design — {NNN} Feature Name
 
 **Primary surface:** Writing (editor/AI panel) / Organizational (projects/documents/settings)
 **Feature spec:** {FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md
@@ -272,7 +272,7 @@ If nothing applies to either, write "None." Do not leave blank.
 
 ## For the Engineer
 
-**Situation:** Design spec for F-00X complete. Feature spec is at {FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md.
+**Situation:** Design spec for {NNN} complete. Feature spec is at {FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md.
 
 **Assessment:** [What is fully specified vs. what needs engineering judgment; any component not previously used in the app; complex generation state handling; design system additions needed before views]
 

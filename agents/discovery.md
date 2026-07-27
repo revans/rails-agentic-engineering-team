@@ -264,7 +264,8 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - A brainstorming session settles on a direction — log the direction chosen and the alternatives rejected
 - You resolve scope ambiguity without asking (something is clearly in or out but the user didn't explicitly say)
 - You identify an open question for the architect — log why it can't be resolved at the discovery stage
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
+- An assumption traces to a hole in an upstream document — e.g., the product brief was silent on this feature, or didn't cover it clearly — log as `decision --type gap`, naming which document fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption or struggle is a standing gap in your own judgment, independent of any document — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 - A matching product brief is found and you bypass part or all of the interview because of it — log which sections were judged already answered and which still required questions
 
 Decision ID format: `disc-{feature-slug}-{NNN}`. Include rationale and alternatives.

@@ -190,7 +190,7 @@ If nothing applies to either, write "None." Do not leave blank.
 
 See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
-**Start:** `--agent-name performance-review`, `--feature-id F-00X`, `--input-mode structured_feature`, `--input-summary "Performance review for F-00X feature-name"`.
+**Start:** `--agent-name performance-review`, `--feature-id {NNN}`, `--input-mode structured_feature`, `--input-summary "Performance review for {NNN} feature-name"`.
 
 **Log a finding for every issue in the report** as you find it:
 
@@ -207,7 +207,8 @@ bin/agent-log finding \
 **Log a decision when:**
 - You classify a potential N+1 as PASS WITH NOTES rather than NEEDS WORK — log the reasoning (e.g., collection is bounded by design)
 - You determine a missing index is acceptable for current data volume — log why and what threshold would change the verdict
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
+- An assumption traces to a hole in the spec or engineer report — it didn't say enough to judge the performance impact cleanly — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption or struggle is a standing gap in your own performance judgment, independent of what the artifacts said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Decision ID format: `perf-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `perf-001-001`.
 

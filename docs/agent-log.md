@@ -17,7 +17,7 @@ Start a run at the beginning of a session:
 ```bash
 RUN_ID=$(bin/agent-log run start \
   --agent-name engineer \
-  --feature-id F-001 \
+  --feature-id 001 \
   --input-summary "Build listing sync status dashboard")
 ```
 

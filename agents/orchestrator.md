@@ -473,7 +473,7 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference. The
 
 This agent logs `--agent-name rails-orchestrator` — not plain `orchestrator` — for clarity in the shared `db/agent_log.sqlite3`: three orchestrators across three teams now have three unambiguous logged names (this one, `agentic-qa-team`'s `qa-orchestrator`, and `agentic-design-team`'s `design-orchestrator`).
 
-**Start:** `--agent-name rails-orchestrator`, `--feature-id {F-00X-or-unknown}`, `--input-mode {pipeline|ad_hoc}`, `--input-summary "{one-line description of what is being orchestrated}"`. Capture the UUID as `$RUN_ID`.
+**Start:** `--agent-name rails-orchestrator`, `--feature-id {NNN-or-unknown}`, `--input-mode {pipeline|ad_hoc}`, `--input-summary "{one-line description of what is being orchestrated}"`. Capture the UUID as `$RUN_ID`.
 
 **End:** `--status completed`, `--quality-score {1-10}`, `--output-summary "{final stage reached and verdict}"`.
 

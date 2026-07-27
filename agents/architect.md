@@ -119,7 +119,8 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - You rule out a dependency in favor of Rails-native capability
 - You determine the boundary of a concern extraction
 - You add something to Refactoring Notes — log why it was identified
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
+- An assumption traces to a hole in the discovery brief — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption or struggle is a standing gap in your own architectural judgment, independent of what the brief said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Decision ID format: `arch-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `arch-001-001`. Always include rationale, alternatives considered, and expected outcome.
 
@@ -242,7 +243,7 @@ If nothing applies to either, write "None." Do not leave blank.
 
 ## For the Engineer
 
-**Situation:** Spec for [F-00X feature name] is complete and ready for implementation.
+**Situation:** Spec for [{NNN} feature name] is complete and ready for implementation.
 
 **Assessment:** [Synthesize from Agent Notes — which design decisions are confident vs. assumed; which refactoring notes are load-bearing; where the spec may be thinner than ideal]
 

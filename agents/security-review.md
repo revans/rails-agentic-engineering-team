@@ -217,7 +217,7 @@ If nothing applies to either, write "None." Do not leave blank.
 
 See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
-**Start:** `--agent-name security-review`, `--feature-id F-00X`, `--input-mode structured_feature`, `--input-summary "Security review for F-00X feature-name"`.
+**Start:** `--agent-name security-review`, `--feature-id {NNN}`, `--input-mode structured_feature`, `--input-summary "Security review for {NNN} feature-name"`.
 
 **Log a finding for every issue in the report** as you find it:
 
@@ -234,7 +234,8 @@ bin/agent-log finding \
 **Log a decision when:**
 - You assess a Brakeman warning as a false positive — log the reasoning explicitly
 - You determine a lookup pattern is safe despite not using the standard traversal — log why
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
+- An assumption traces to a hole in the spec or engineer report — it didn't specify the security posture needed here — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption or struggle is a standing gap in your own security judgment, independent of what the artifacts said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Decision ID format: `sec-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `sec-001-001`.
 

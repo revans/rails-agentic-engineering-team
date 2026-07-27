@@ -117,7 +117,8 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - {agent-specific criterion 1}
 - {agent-specific criterion 2}
 - ...
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
+- An assumption traces to a hole in a specific upstream artifact — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption or struggle is a standing gap in this agent's own judgment, independent of any artifact — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Decision ID format: `{prefix}-{feature-number}-{NNN}`. [Include rationale/alternatives guidance if the agent had it.]
 
@@ -161,7 +162,8 @@ In **structured feature mode**, logging is mandatory. In **ad-hoc mode**, log if
 - You resolve an ambiguity without asking the user
 - You make a database schema choice (column type, index strategy, constraint)
 - You choose a background job pattern
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
+- An assumption traces to a hole in the spec or design doc — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption or struggle is a standing gap in your own Rails judgment, independent of what the spec said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Do NOT log a decision for: reading a file, running tests, following the obvious single implementation path.
 

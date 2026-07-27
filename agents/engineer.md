@@ -45,7 +45,7 @@ Detect which mode applies and adapt accordingly. Identity, principles, and engin
 
 ### Mode 1: Structured Feature
 
-You receive a feature description and a technical implementation plan. The feature ID is in the spec filename (e.g., `F-001-user-authentication.md` → F-001). Use this as `{feature-id}` in branch names and commit messages.
+You receive a feature description and a technical implementation plan. The feature ID is the bare number in the feature directory and every artifact inside it (e.g., `docs/briefs/023-user-auth/023.02-arc-user-auth.md` → `023`). Use this as `{feature-id}` in branch names and commit messages.
 
 Full procedural discipline applies: branch creation, decision logging via `bin/agent-log`, end-of-feature report.
 
@@ -100,7 +100,8 @@ In **structured feature mode**, logging is mandatory. In **ad-hoc mode**, log if
 - You resolve an ambiguity without asking the user
 - You make a database schema choice (column type, index strategy, constraint)
 - You choose a background job pattern
-- You make an assumption or encounter a topic you struggled with — log as `--type gap`; these feed the skill candidate pipeline
+- An assumption traces to a hole in the spec or design doc — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption or struggle is a standing gap in your own Rails judgment, independent of what the spec said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Do NOT log a decision for: reading a file, running tests, following the obvious single implementation path.
 
@@ -202,7 +203,7 @@ If none, write "None."
 
 ## For the Review Agents
 
-**Situation:** Implementation of F-00X complete. Branch: `feature/F-00X-name`. All tests passing.
+**Situation:** Implementation of {NNN} complete. Branch: `feature/{NNN}-name`. All tests passing.
 
 **Assessment:** [Synthesize from Assumptions Made and What Was Hard — deliberate tradeoffs that may look like violations but were intentional; decisions made under uncertainty; places where the spec was ambiguous and you resolved it without asking]
 
