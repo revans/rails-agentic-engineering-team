@@ -181,11 +181,11 @@ Every pipeline agent logs a `decision --type gap` whenever it fills in for a spe
 - `architect` gaps name the discovery brief.
 - `design` gaps name the architect spec.
 - `engineer` gaps name the architect spec or the design spec — the original, narrowest case this pattern started from: an engineer decision the architect's template (`architect-spec-format` skill) should have settled. The dedicated engineer-vs-architect query above (which does not filter by `decision_type`) is a secondary, broader check for the same failure mode even when the engineer didn't explicitly tag it `gap`.
-- `code-review`, `security-review`, `performance-review` gaps name the spec or design spec (typically its Behavioral Constraints section) as silent on the case being judged.
+- `code-review`, `security-review`, `performance-review` gaps name the spec or the engineer report (typically the spec's Behavioral Constraints section) as silent on the case being judged.
 
 Signal: 2+ `--type gap` decisions from the same agent naming the same upstream artifact or section.
 
-Proposal format: name the specific document and section (a discovery-brief question, an `architect-spec-format` or `design-system` template section, an interview question) that keeps coming up short, and the exact addition that would catch it earlier. For `architect`/`engineer` gaps this is usually a change to `architect-spec-format` or the discovery brief format; for `design` gaps, a change to the architect spec's Behavioral Constraints section; for `discovery` gaps, a change to the interview template; for review-agent gaps, a change to the spec's or design spec's Behavioral Constraints requirements.
+Proposal format: name the specific document and section (a discovery-brief question, an `architect-spec-format` or `design-system` template section, an interview question) that keeps coming up short, and the exact addition that would catch it earlier. For `architect`/`engineer` gaps this is usually a change to `architect-spec-format` or the discovery brief format; for `design` gaps, a change to the architect spec's Behavioral Constraints section; for `discovery` gaps, a change to the interview template; for review-agent gaps, a change to the spec's Behavioral Constraints requirements or to the engineer report format.
 
 #### Pattern Type 4: Outcome Deltas
 
@@ -266,7 +266,7 @@ Alternatives consistently rejected that should be documented.
 
 **[Agent] gaps naming [artifact]** — N occurrences across M features ([list feature IDs])
 - What kept being assumed: [reasoning]
-- Proposed addition to [discovery brief format | architect-spec-format skill | design-system skill | spec/design-spec Behavioral Constraints]:
+- Proposed addition to [discovery brief format | architect-spec-format skill | design-system skill | spec Behavioral Constraints | engineer report format]:
   > [exact text to add, quoted]
 
 ### Outcome Deltas
