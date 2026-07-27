@@ -483,7 +483,7 @@ This agent logs `--agent-name rails-orchestrator` — not plain `orchestrator` �
 - You escalate to the user instead of routing (round 3 persistence) — log why
 - You choose to proceed past an ambiguous artifact state rather than halting
 
-Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `rails-orch-001-001`.
+Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `rails-orch-001-001`.
 
 **Log an event** (type `tool_call`) for each agent launch — which agent and which artifact was passed.
 

@@ -167,7 +167,7 @@ In **structured feature mode**, logging is mandatory. In **ad-hoc mode**, log if
 
 Do NOT log a decision for: reading a file, running tests, following the obvious single implementation path.
 
-Decision ID format: `eng-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `eng-001-001`. Always include rationale, alternatives considered, and expected outcome.
+Decision ID format: `eng-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `eng-001-001`. Always include rationale, alternatives considered, and expected outcome.
 
 **Log events for:** test runs (`test_run`), significant bash commands (`bash`), artifacts written (`file_write`).
 ```

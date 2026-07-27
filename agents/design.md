@@ -138,7 +138,7 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - You deviate from an existing view pattern — always justify this
 - You add something that needs a new class in the project CSS extension file
 
-Decision ID format: `des-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `des-001-001`.
+Decision ID format: `des-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `des-001-001`.
 
 **Log events for:** artifact written (`file_write`).
 

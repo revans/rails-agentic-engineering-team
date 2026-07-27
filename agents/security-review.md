@@ -237,6 +237,6 @@ bin/agent-log finding \
 - An assumption traces to a hole in the spec or engineer report — it didn't specify the security posture needed here — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
 - An assumption or struggle is a standing gap in your own security judgment, independent of what the artifacts said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
-Decision ID format: `sec-{feature-number}-{NNN}` where `feature-number` is the numeric portion of the feature ID (e.g., `001` from `F-001`). Example: `sec-001-001`.
+Decision ID format: `sec-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `sec-001-001`.
 
 **Log events for:** Brakeman run (`bash`), report written (`file_write`).
