@@ -1,17 +1,21 @@
 ---
 name: architect-spec-format
-description: The 12-section feature specification format — used by the architect to write feature specs and by the orchestrator to validate spec completeness before handing to the engineer.
+description: The feature specification format — used by the architect to write feature specs and by the orchestrator to validate spec completeness before handing to the engineer.
 ---
 
 # Feature Specification Format
 
+## Single Responsibility
+
+This skill defines one thing: the shape of the architect's spec file, so the engineer, the three review agents, and the orchestrator all read the same fourteen sections in the same order rather than each inferring the spec's structure from whatever the architect happened to write that day. It does not define how the architect arrives at the content of those sections — codebase audit, coherence checks, and follow-up conversation are `architect.md`'s own job, not this skill's. It does not define the discovery brief's shape either — that's `discovery-brief-format`'s contract, one stage upstream.
+
 ## File Location
 
-`docs/features/F-00X-feature-name.md`
+`{FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md`, where `{FEATURE_DIR}` is `docs/briefs/{NNN}-{feature-name}/`.
 
-Feature number assigned by scanning `docs/features/` for the highest existing F-00X and incrementing. If empty, start at F-001. Filename is kebab-case and descriptive.
+Feature number assigned by the orchestrator and passed to the architect. In direct mode (no orchestrator), determine it by scanning `docs/briefs/` for the highest existing `{NNN}-*` directory and incrementing; if none exist, start at `001`. `feature-name` is kebab-case and consistent with the feature directory's own name.
 
-## The 12 Sections
+## The 14 Sections
 
 A spec is not complete — and must not be handed to the engineer — if any section other than "Open Questions" is empty or vague, or if "Open Questions" is non-empty.
 
@@ -54,9 +58,9 @@ If a criterion requires judgment to evaluate, rewrite it until it doesn't.
 
 **Existing models:** referred to by their Rails class name. Describe how this feature extends them — what new behavior or data they gain.
 
-**New models:** described by domain purpose and relationships only. No column names, types, or index strategy — those are engineering decisions. Example: "A record linking each `Document` to a generation run, belonging to `Document`, associated with a specific message thread."
+**New models:** described by domain purpose and relationships only. No column names, types, or index strategy — those are engineering decisions. Example: "A record linking each `Listing` to a sync attempt, belonging to `Listing`, associated with a specific marketplace."
 
-**Concern extraction:** when this feature adds 3 or more methods to a model, name the concern here. Example: "AI generation behavior on `Document` — extract to `Document::Generatable` concern." The engineer determines the implementation; the architect establishes the boundary.
+**Concern extraction:** when this feature adds 3 or more methods to a model, name the concern here. Example: "Sync behavior on `Listing` — extract to `Listing::Syncable` concern." The engineer determines the implementation; the architect establishes the boundary.
 
 ### 7. Behavioral Constraints
 
@@ -66,7 +70,7 @@ Non-negotiable constraints the implementation must satisfy. The engineer chooses
 - **Data integrity:** (e.g., must be idempotent — triggering twice produces the same state)
 - **Security / scoping:** (e.g., always scoped to the current user's assigned customers via association traversal)
 - **UX contract:** (e.g., AI generation trigger — must show in-progress state during streaming, handle error states, not block the UI)
-- **Visual grammar:** (e.g., technical data values rendered using the project's monospace class — see the design-system skill)
+- **Visual grammar:** (e.g., technical data values rendered using the project's monospace class — see the `design-system` skill)
 
 ### 8. Routes / Resource Shape
 
@@ -112,6 +116,18 @@ The architect's reasoning — transparent and auditable by the engineer and by f
 
 Document here during drafting; resolve before delivery. Questions that need codebase research are resolved by the architect's audit. Questions that need user input are resolved in conversation before the summary-and-confirm step.
 
+### 13. Agent Notes
+
+**Assumptions made:** each assumption, its basis, and what would need to change if it's wrong.
+
+**Where I struggled:** each topic that was hard, and what information or skill would have resolved it.
+
+If nothing applies to either, write "None." Do not leave blank.
+
+### 14. For the Engineer
+
+A short handoff: the situation (spec complete and ready), an assessment synthesized from Agent Notes (which design decisions are confident vs. assumed, which refactoring notes are load-bearing, where the spec may be thinner than ideal), and a recommendation (what to implement first, which design decisions to verify against codebase reality early, what to flag rather than guess if the spec and codebase conflict).
+
 ---
 
 ## Completeness Check
@@ -126,3 +142,5 @@ Before writing the file, verify:
 - [ ] Every URL passes the human-readability test
 - [ ] Refactoring Notes reflects actual codebase audit — not skipped
 - [ ] Open Questions is empty
+- [ ] Agent Notes states assumptions and struggles, or explicitly "None" — never blank
+- [ ] For the Engineer synthesizes Agent Notes rather than repeating the spec

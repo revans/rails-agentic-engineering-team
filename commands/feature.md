@@ -1,6 +1,6 @@
 ---
 name: Feature
-description: "Entry point for feature work. Routes to the orchestrator at the right pipeline stage. Usage: /feature | /feature <description> | /feature architect <path-or-content> | /feature resume F-00X"
+description: "Entry point for feature work. Routes to the orchestrator at the right pipeline stage. Usage: /feature | /feature <description> | /feature architect <path-or-content> | /feature resume NNN"
 color: blue
 ---
 
@@ -36,7 +36,7 @@ If the content is not already a file in `docs/briefs/`, write it there now using
 
 **Resume mode (`resume`):**
 
-Extract the feature ID (e.g. `F-001`). No further preparation needed.
+Extract the feature number (e.g. `001`) — the bare `{NNN}` used to name its directory under `docs/briefs/`. No further preparation needed.
 
 **Full pipeline mode:**
 
@@ -59,7 +59,7 @@ Enter Pipeline Mode. This is a new feature — assign a feature number and begin
 Enter Pipeline Mode. Discovery is complete — the brief is at `{path to file in docs/briefs/}`. Assign a feature number and begin Stage 2 — Architecture.
 
 **Resume (`resume` mode):**
-Enter Pipeline Mode. Resume pipeline for `{F-00X}` — check which artifacts exist and resume from the first missing stage.
+Enter Pipeline Mode. Resume pipeline for `{NNN}` — check which artifacts exist and resume from the first missing stage.
 
 ---
 

@@ -5,6 +5,10 @@ description: Project design system rules — CSS framework, visual grammar, comp
 
 # Design System
 
+## Single Responsibility
+
+This skill defines one thing: this project's visual grammar — the CSS framework, component classes, and the AI generation surface UX contract — so the architect (naming it in Behavioral Constraints), the design agent (expanding it into full layouts), the engineer (implementing views against it), and the review agents (checking compliance) all reference one visual standard instead of each guessing at class names independently. It does not define Rails engineering principles like naming conventions or concern extraction — that's `rails-principles`'s job — and it does not define where in a spec a visual requirement gets recorded, that's `architect-spec-format`'s Behavioral Constraints section.
+
 This skill is project-specific. Read it to understand the CSS framework, visual grammar, and component library before designing or reviewing views.
 
 > **Setup required:** When adopting this team for a new project, replace the placeholder sections below with the project's actual design system documentation. Remove any sections that don't apply (e.g., AI generation surfaces for projects without LLM features).

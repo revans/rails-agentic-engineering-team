@@ -5,6 +5,10 @@ description: Rails engineering principles — Rails-first design, DRY, SRP, conc
 
 # Rails Engineering Principles
 
+## Single Responsibility
+
+This skill defines one thing: the shared Rails engineering rulebook — Rails-first design, naming conventions, the concern extraction rule, no-service-objects, dependency discipline — so the architect (designing to these), the engineer (building to these), and the three review agents (checking against these) all enforce the same standard instead of each carrying its own drifting notion of "good Rails code." It does not define the shape any artifact must take — the spec file's sections live in `architect-spec-format`, the brief's sections live in `discovery-brief-format` — and it does not define this project's visual/CSS rules, that's `design-system`'s job.
+
 ## Convention Is the Interface
 
 Rails resolves behavior through naming: routes predict controllers, controllers predict models, models predict tables. Nothing is registered — the name IS the address. Build custom code the same way.

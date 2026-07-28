@@ -5,6 +5,10 @@ description: Handoff contract between the discovery agent and the architect agen
 
 # Discovery Brief Format — Handoff Contract
 
+## Single Responsibility
+
+This skill defines one thing: the handoff contract between the discovery agent and the architect — what a complete brief must contain, and the line between what only the user can supply versus what the architect derives from the codebase — so both agents share one definition of "complete" instead of the architect re-litigating brief quality feature by feature. It does not define the architect's own spec format — that's `architect-spec-format`'s job, one stage downstream — and it does not define how the discovery interview itself is conducted (question order, brainstorming style), that's `discovery.md`'s own job.
+
 ## The Purpose of a Brief
 
 The brief carries everything that can only come from the user. The architect derives codebase-side decisions independently — model names, controller patterns, route grammar, concern opportunities. The brief's job is to make that codebase audit purposeful by giving the architect a clear target before they open a single file.

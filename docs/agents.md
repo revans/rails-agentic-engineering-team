@@ -111,15 +111,14 @@ Every agent logs decisions, events, struggles, and skill gaps to the SQLite data
 
 ## Skills
 
-Six skill files give agents project-specific knowledge that training data alone would not provide:
+Five skill files give agents project-specific knowledge that training data alone would not provide:
 
 | Skill | What it contains |
 |---|---|
 | `agent-log` | CLI syntax and flag reference for `bin/agent-log` |
 | `rails-principles` | Rails-first design rules, naming conventions, approved dependencies |
-| `design-system` | Visual grammar rules, AI generation trigger UX contract |
+| `design-system` | Visual grammar rules, component classes, AI generation trigger UX contract |
 | `architect-spec-format` | The specification template and field descriptions |
 | `discovery-brief-format` | The brief template and field descriptions |
-| `writer-design-system` | Project-specific design system classes |
 
 New skill files are added by the skill builder as the learning loop matures.
