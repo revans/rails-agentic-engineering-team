@@ -265,6 +265,7 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - You resolve scope ambiguity without asking (something is clearly in or out but the user didn't explicitly say)
 - You identify an open question for the architect — log why it can't be resolved at the discovery stage
 - An assumption traces to a hole in an upstream document — e.g., the product brief was silent on this feature, or didn't cover it clearly — log as `decision --type gap`, naming which document fell short; this feeds `log-analyst`'s Pattern Type 3
+- The user's own initial feature description was too thin or ambiguous to build a real interview around, forcing you to guess at scope before asking a single question — log as `decision --type gap` the same way, naming "the user's initial prompt" as the source rather than a document; this is the only way a first-stage agent's input quality ever gets tracked at all, don't skip it just because there's no artifact to point at
 - An assumption or struggle is a standing gap in your own judgment, independent of any document — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 - A matching product brief is found and you bypass part or all of the interview because of it — log which sections were judged already answered and which still required questions
 
