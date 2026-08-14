@@ -7,7 +7,7 @@ description: The feature specification format — used by the architect to write
 
 ## Single Responsibility
 
-This skill defines one thing: the shape of the architect's spec file, so the engineer, the three review agents, and the orchestrator all read the same fourteen sections in the same order rather than each inferring the spec's structure from whatever the architect happened to write that day. It does not define how the architect arrives at the content of those sections — codebase audit, coherence checks, and follow-up conversation are `architect.md`'s own job, not this skill's. It does not define the discovery brief's shape either — that's `discovery-brief-format`'s contract, one stage upstream.
+This skill defines one thing: the shape of the architect's spec file, so the engineer, the four review agents, and the orchestrator all read the same fourteen sections in the same order rather than each inferring the spec's structure from whatever the architect happened to write that day. It does not define how the architect arrives at the content of those sections — codebase audit, coherence checks, and follow-up conversation are `architect.md`'s own job, not this skill's. It does not define the discovery brief's shape either — that's `discovery-brief-format`'s contract, one stage upstream.
 
 ## File Location
 
