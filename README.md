@@ -1,10 +1,10 @@
 # Rails Agentic Engineering Team
 
-A Claude Code plugin that runs nine specialized AI agents to take Rails features from discovery interview to reviewed implementation.
+A Claude Code plugin that runs ten specialized AI agents to take Rails features from discovery interview to reviewed implementation.
 
 ## What This Is
 
-Rails Agentic Engineering Team installs a full feature pipeline into any Rails project using Claude Code. You describe a feature, and a team of agents handles the rest: one interviews you to understand the requirement, one reads the codebase and writes a spec, one designs the UI, one builds the feature with test-driven development, and three reviewers check the work in parallel for code quality, security issues, and performance problems. Every decision each agent makes is recorded to a SQLite database. After enough runs accumulate, a learning analyst reads those records and proposes improvements to the agents' own rules.
+Rails Agentic Engineering Team installs a full feature pipeline into any Rails project using Claude Code. You describe a feature, and a team of agents handles the rest: one interviews you to understand the requirement, one reads the codebase and writes a spec, one designs the UI, one builds the feature with test-driven development, and four reviewers check the work in parallel — three for code quality, security issues, and performance problems, and a fourth that checks whether the implementation still matches the plan and the plan still solves the problem the interview captured. Every decision each agent makes is recorded to a SQLite database. After enough runs accumulate, a learning analyst reads those records and proposes improvements to the agents' own rules.
 
 ## Origin
 
@@ -35,12 +35,12 @@ Start a new feature pipeline with `/feature` in Claude Code:
 /feature Add a dashboard showing sync status for all customer listings
 ```
 
-Claude will interview you about the requirement, produce a discovery brief, then run the full pipeline automatically through architecture, design, implementation, and three parallel reviews. If a reviewer flags a blocking issue, the engineer reruns and all three reviewers check the updated code.
+Claude will interview you about the requirement, produce a discovery brief, then run the full pipeline automatically through architecture, design, implementation, and four parallel reviews. If a reviewer flags a blocking issue, the engineer reruns and all four reviewers check the updated code.
 
 ## Documentation
 
 | Doc | About |
 |---|---|
-| [Pipeline](docs/pipeline.md) | How a feature moves through all nine stages, artifact naming, and how to resume a stopped pipeline |
+| [Pipeline](docs/pipeline.md) | How a feature moves through all ten stages, artifact naming, and how to resume a stopped pipeline |
 | [Agents](docs/agents.md) | What each agent does, what it reads, and what it produces |
 | [Agent Log](docs/agent-log.md) | The logging CLI, database schema, and how to query accumulated run data |

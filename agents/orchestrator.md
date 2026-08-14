@@ -39,10 +39,10 @@ If ambiguous, ask.
 
 ```
 discovery → [brief] → architect → [spec] → design → [design-spec] → engineer → [engineer-report]
-  → code-review + security-review + performance-review  (parallel)
+  → code-review + security-review + performance-review + fidelity-review  (parallel)
   → evaluate combined verdict
   → PASS / PASS WITH NOTES → done
-  → NEEDS WORK → engineer (with all three reports + round number) → reviews → loop
+  → NEEDS WORK → engineer (with all four reports + round number) → reviews → loop
 ```
 
 ### Artifact Paths
@@ -57,14 +57,15 @@ docs/briefs/{NNN}-{feature-name}/{NNN}.04-eng-{feature-name}.md   ← round 1
 docs/briefs/{NNN}-{feature-name}/{NNN}.05-cr-{feature-name}.md    ← round 1
 docs/briefs/{NNN}-{feature-name}/{NNN}.06-sec-{feature-name}.md   ← round 1
 docs/briefs/{NNN}-{feature-name}/{NNN}.07-perf-{feature-name}.md  ← round 1
-docs/briefs/{NNN}-{feature-name}/{NNN}.08-eng-{feature-name}.md   ← round 2 (sequence continues)
-docs/briefs/{NNN}-{feature-name}/{NNN}.09-cr-{feature-name}.md    ← round 2
+docs/briefs/{NNN}-{feature-name}/{NNN}.08-fid-{feature-name}.md   ← round 1
+docs/briefs/{NNN}-{feature-name}/{NNN}.09-eng-{feature-name}.md   ← round 2 (sequence continues)
+docs/briefs/{NNN}-{feature-name}/{NNN}.10-cr-{feature-name}.md    ← round 2
 ...
 ```
 
-Round N produces files at sequence `(4N)` for eng and `(4N+1/+2/+3)` for cr/sec/perf. Prior round files remain — no archiving needed. The full history for a feature is always visible by listing `docs/briefs/{NNN}-{feature-name}/`.
+Round N produces files at sequence `(5N-1)` for eng and `(5N/+1/+2/+3)` for cr/sec/perf/fid. Prior round files remain — no archiving needed. The full history for a feature is always visible by listing `docs/briefs/{NNN}-{feature-name}/`.
 
-**Sequence tracker:** maintain `$SEQ` starting at `04` for the first engineer run. After each review round completes, increment by 4 before launching the next engineer.
+**Sequence tracker:** maintain `$SEQ` starting at `04` for the first engineer run. After each review round completes, increment by 5 before launching the next engineer — a round is now one engineer report plus four review reports.
 
 ### Starting or Resuming
 
@@ -156,19 +157,20 @@ The engineer report must exist before reviews begin — the review agents read i
 
 ## Stage 5 — Reviews (Parallel)
 
-**Input:** spec path + engineer report path
-**Produces:** three report files at sequences `$SEQ+1`, `$SEQ+2`, `$SEQ+3`
+**Input:** discovery brief path + spec path + engineer report path
+**Produces:** four report files at sequences `$SEQ+1`, `$SEQ+2`, `$SEQ+3`, `$SEQ+4`
 
 No archiving needed — new round files get new sequence numbers; prior round files remain and are still readable.
 
-**Launch all three review agents simultaneously** — do not wait for one before starting the next. Issue all three Agent tool calls in a single response. Pass each agent the engineer report path and the expected output path for its sequence number.
+**Launch all four review agents simultaneously** — do not wait for one before starting the next. Issue all four Agent tool calls in a single response. Pass each agent the engineer report path and the expected output path for its sequence number; `fidelity-review` additionally needs the discovery brief path.
 
-After all three complete, confirm the three report files exist before evaluating:
+After all four complete, confirm the four report files exist before evaluating:
 
 ```bash
 ls ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
    ${FEATURE_DIR}/${NNN}.$(($SEQ+2))-sec-*.md \
-   ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md
+   ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md \
+   ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md
 ```
 
 ---
@@ -181,20 +183,21 @@ Read the `## Overall Verdict` line from each report:
 grep "## Overall Verdict" \
   ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
   ${FEATURE_DIR}/${NNN}.$(($SEQ+2))-sec-*.md \
-  ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md
 ```
 
 **Combined verdict logic:**
-- All three PASS or PASS WITH NOTES → pipeline complete
-- Any single NEEDS WORK → increment `$SEQ` by 4, route back to engineer at Stage 4
+- All four PASS or PASS WITH NOTES → pipeline complete
+- Any single NEEDS WORK → increment `$SEQ` by 5, route back to engineer at Stage 4
 
-When routing back, pass all three report paths — not just the failing one. The engineer needs the full picture even from agents that passed.
+When routing back, pass all four report paths — not just the failing one. The engineer needs the full picture even from agents that passed.
 
 ---
 
 ## Stage 7 — Feature Synthesis
 
-When the pipeline reaches a final verdict, produce a synthesis document before closing. This is the canonical handoff artifact — one file that gives any downstream consumer (QA team, human reviewer, future engineer) the full picture without reading seven separate reports.
+When the pipeline reaches a final verdict, produce a synthesis document before closing. This is the canonical handoff artifact — one file that gives any downstream consumer (QA team, human reviewer, future engineer) the full picture without reading eight separate reports.
 
 **File:** `{FEATURE_DIR}/{NNN}-summary.md`
 
@@ -215,7 +218,8 @@ ls ${FEATURE_DIR}/${NNN}.*-eng-*.md | sort | tail -1
 grep -A 5 "PASS WITH NOTES" \
   ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
   ${FEATURE_DIR}/${NNN}.$(($SEQ+2))-sec-*.md \
-  ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md
 ```
 
 **Synthesis format:**
@@ -279,6 +283,7 @@ parts of the design spec to treat as authoritative vs. superseded.]
 | Code review (final) | {FEATURE_DIR}/{NNN}.{SEQ+1}-cr-{feature-name}.md |
 | Security review (final) | {FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md |
 | Performance review (final) | {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{feature-name}.md |
+| Fidelity review (final) | {FEATURE_DIR}/{NNN}.{SEQ+4}-fid-{feature-name}.md |
 ```
 
 After writing the summary, confirm it exists:
@@ -291,7 +296,7 @@ ls ${FEATURE_DIR}/${NNN}-summary.md
 
 ## Stage 8 — Outcome Recording
 
-When the pipeline reaches a final verdict (all three PASS or PASS WITH NOTES), trigger outcome recording before closing. This populates Pattern Type 4 in the log-analyst — without it, outcome delta analysis is empty.
+When the pipeline reaches a final verdict (all four PASS or PASS WITH NOTES), trigger outcome recording before closing. This populates Pattern Type 4 in the log-analyst — without it, outcome delta analysis is empty.
 
 **Prompt the engineer:**
 ```
@@ -319,22 +324,23 @@ Feature {NNN} pipeline complete. Your task is outcome recording for your design 
 Signal sources:
 - Engineer's Deviations from Spec section — did your design hold through implementation?
 - Engineer's Spec Quality Assessment — direct feedback on spec quality
-- Review findings — did your Behavioral Constraints miss anything?
+- **Fidelity review report (`{FEATURE_DIR}/{NNN}.{SEQ}-fid-{feature-name}.md`, use the highest-sequence one) — this is now a live, independent check, not just your own reflection.** Its Plan Fidelity and Problem Coverage findings directly answer whether your Behavioral Constraints missed anything; treat any disagreement between your own assessment here and its report as the stronger signal.
 ```
 
 ---
 
 ## Round Tracking
 
-Before launching round 2+ reviews, read the previous round's reports. Find them by their sequence numbers — round 1 cr/sec/perf are at sequences 05/06/07; round 2 at 09/10/11; etc.
+Before launching round 2+ reviews, read the previous round's reports. Find them by their sequence numbers — round 1 cr/sec/perf/fid are at sequences 05/06/07/08; round 2 at 10/11/12/13; etc. (a round is now five files — eng plus four reviews — so each round's block advances `$SEQ` by 5, not 4).
 
 Extract all `[CATEGORY]` tags from the Action Items sections of the prior round:
 
 ```bash
 grep -o '\[.*\]' \
-  ${FEATURE_DIR}/${NNN}.$(($SEQ-3))-cr-*.md \
-  ${FEATURE_DIR}/${NNN}.$(($SEQ-2))-sec-*.md \
-  ${FEATURE_DIR}/${NNN}.$(($SEQ-1))-perf-*.md
+  ${FEATURE_DIR}/${NNN}.$(($SEQ-4))-cr-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ-3))-sec-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ-2))-perf-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ-1))-fid-*.md
 ```
 
 After round N reviews complete, extract categories from the new reports the same way.
@@ -368,8 +374,9 @@ Available agents:
   5. code-review       — implementation → code quality report
   6. security-review   — implementation → security report
   7. performance-review — implementation → performance report
-  8. log-analyst       — agent database → pattern analysis report
-  9. skill-builder     — log-analyst report or direct instruction → skill files
+  8. fidelity-review   — brief + spec + implementation → plan-fidelity and problem-coverage report
+  9. log-analyst       — agent database → pattern analysis report
+ 10. skill-builder     — log-analyst report or direct instruction → skill files
 ```
 
 Ask what artifact the agent should work with. Launch it with that context. Direct mode does not feed back into the pipeline unless the user explicitly asks to resume.
@@ -426,9 +433,10 @@ Read the design spec at {FEATURE_DIR}/{NNN}.03-des-{feature-name}.md.
 Read the "For the Review Agents" section of your prior engineer report to understand what 
 you flagged as uncertain — compare it against what the reviewers actually found.
 Prior round findings are at:
-  - {FEATURE_DIR}/{NNN}.{SEQ-3}-cr-{feature-name}.md
-  - {FEATURE_DIR}/{NNN}.{SEQ-2}-sec-{feature-name}.md
-  - {FEATURE_DIR}/{NNN}.{SEQ-1}-perf-{feature-name}.md
+  - {FEATURE_DIR}/{NNN}.{SEQ-4}-cr-{feature-name}.md
+  - {FEATURE_DIR}/{NNN}.{SEQ-3}-sec-{feature-name}.md
+  - {FEATURE_DIR}/{NNN}.{SEQ-2}-perf-{feature-name}.md
+  - {FEATURE_DIR}/{NNN}.{SEQ-1}-fid-{feature-name}.md
 Address all NEEDS WORK findings. Write an updated engineer report to {FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md when done.
 ```
 
@@ -463,6 +471,20 @@ Before reviewing the code, read the "For the Review Agents" section at the end o
 engineer report — it contains the engineer's assessment of deliberate tradeoffs, assumptions, 
 and areas of particular concern.
 Produce the performance review report at {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{feature-name}.md.
+```
+
+**Fidelity review:**
+```
+Feature number: {NNN}
+Feature directory: {FEATURE_DIR}
+Read {FEATURE_DIR}/{NNN}.01-dis-{feature-name}.md, {FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md, and {FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md.
+Before reviewing, read the "For the Review Agents" section at the end of the
+engineer report — it contains the engineer's assessment of deliberate tradeoffs, assumptions,
+and areas of particular concern.
+This review checks plan fidelity (does the implementation match the spec's intent) and
+problem coverage (does the whole chain still address what the discovery brief described) —
+not code quality, security, or performance; those are the other three reviewers' jobs.
+Produce the fidelity review report at {FEATURE_DIR}/{NNN}.{SEQ+4}-fid-{feature-name}.md.
 ```
 
 ---
@@ -505,9 +527,9 @@ Be terse. Every message names the current stage, the agent being launched, and t
 
 **Pipeline complete:**
 ```
-001 complete. 2 review rounds. Final verdict: PASS WITH NOTES (cr, sec), PASS (perf).
+001 complete. 2 review rounds. Final verdict: PASS WITH NOTES (cr, sec), PASS (perf, fid).
 Summary: docs/briefs/001-accounts/001-summary.md
-Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.11-perf-accounts.md
+Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.13-fid-accounts.md
 ```
 
 **Routing back to engineer:**
@@ -517,8 +539,9 @@ Blocking findings:
   code-review:       [MISSING_TEST] — no test for #approve! raising when already approved
   security-review:   [AUTH_SCOPE] — listings#index not scoped to current user's customers
   performance-review: PASS
+  fidelity-review:   [SILENT_SCOPE_NARROWING] — spec required bulk approval up to 50 listings; implementation caps at 10 with no error surfaced past the limit
 
-Launching engineer with all three reports for round 2.
+Launching engineer with all four reports for round 2.
 ```
 
 Nothing else. The engineer has the reports — they don't need a summary of what's in them.

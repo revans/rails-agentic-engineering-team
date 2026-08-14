@@ -1,10 +1,10 @@
 # Agents
 
-Nine agents handle specific stages of the feature pipeline. Each agent has one job, defined inputs, and defined outputs.
+Ten agents handle specific stages of the feature pipeline. Each agent has one job, defined inputs, and defined outputs.
 
 ## What They Are
 
-Each agent is a Claude Code subagent definition: a markdown file that specifies an identity, a set of tools, and skill files that give the agent project-specific knowledge. Think of them as specialists on a consulting team. The interviewer, the planner, the architect, the engineer, and the three code inspectors each own their domain and do not cross into each other's territory.
+Each agent is a Claude Code subagent definition: a markdown file that specifies an identity, a set of tools, and skill files that give the agent project-specific knowledge. Think of them as specialists on a consulting team. The interviewer, the planner, the architect, the engineer, and the four code inspectors each own their domain and do not cross into each other's territory.
 
 ## Pipeline Agents
 
@@ -68,6 +68,14 @@ Checks for N+1 queries, missing indexes, blocking callbacks, and unscoped collec
 
 **Reads:** Feature spec, engineer report  
 **Writes:** `{NNN}.{SEQ+3}-perf-{feature}.md`  
+**Verdict:** PASS, PASS WITH NOTES, or NEEDS WORK
+
+### Fidelity Review
+
+Checks whether the implementation still matches the plan's intent, and whether the plan actually addresses the problem the discovery brief described. Does not check code quality, security, or performance — this is the only reviewer that reads backward across the whole chain instead of forward into one artifact.
+
+**Reads:** Discovery brief, feature spec, engineer report  
+**Writes:** `{NNN}.{SEQ+4}-fid-{feature}.md`  
 **Verdict:** PASS, PASS WITH NOTES, or NEEDS WORK
 
 ## Learning Loop Agents
