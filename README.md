@@ -1,6 +1,6 @@
 # Rails Agentic Engineering Team
 
-A Claude Code plugin that runs eleven specialized AI agents to take Rails features from discovery interview to reviewed implementation, and to keep the resulting backlog ordered against who the product is actually for.
+A Claude Code plugin that runs twelve specialized AI agents to take Rails features from discovery interview to reviewed implementation, keep the resulting backlog ordered against who the product is actually for, and turn a bug report or an idea into a triaged GitHub issue in under a minute of conversation.
 
 ## What This Is
 
@@ -42,6 +42,15 @@ Along the way, any agent that notices something out of scope — a real feature 
 ```
 /roadmap
 ```
+
+Found a bug, or have an idea that isn't ready to build yet? `/bug` and `/request` interview you, search the codebase for supporting context, and file the result as a labeled GitHub issue in the `Ready` column — separate from this repo's local backlog, for anything that belongs in GitHub's own triage flow instead:
+
+```
+/bug The export button on the listings page throws a 500 for large accounts
+/request A way to bulk-approve pending listings instead of one at a time
+```
+
+First run of either asks for your GitHub project's owner and number, then remembers it in `AGENTS.md`.
 
 ## Documentation
 

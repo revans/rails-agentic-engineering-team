@@ -1,6 +1,6 @@
 # Agents
 
-Eleven agents handle specific stages of the feature pipeline, the learning loop, or backlog strategy. Each agent has one job, defined inputs, and defined outputs.
+Twelve agents handle specific stages of the feature pipeline, the learning loop, backlog strategy, or intake. Each agent has one job, defined inputs, and defined outputs.
 
 ## What They Are
 
@@ -131,9 +131,23 @@ Reads `TODO.md`'s `Needs Discovery` and `Tech Debt` sections, every persona file
 
 Run it via `/roadmap`, on demand — not part of `/feature`. It orders the backlog on two independent axes: technical dependency (does this need something that doesn't exist yet) and product value (does this serve a persona `docs/icp/` describes). An item can be clear-to-build and off-ICP, or blocked and on-ICP — those are different findings, not one combined score. `docs/icp/` can hold more than one persona file — a marketplace's buyer and seller, say — and an item is judged against each one, not an averaged composite. If `docs/icp/` is empty or every file in it is stale, roadmap-analyst ranks by dependency only and says so rather than guessing at a customer.
 
+## Intake Agent
+
+This is the one agent shared behind two commands. `/feature` starts building something now; this agent captures something for later — a bug report or an idea, filed to GitHub instead of a local artifact.
+
+### Intake
+
+Interviews the reporter, searches the codebase for supporting context, checks for duplicates, and files a labeled GitHub issue.
+
+**Reads:** `AGENTS.md`'s `GitHub` section, `docs/icp/*-icp.md` (feature mode only), the application codebase, existing GitHub issues  
+**Writes:** A GitHub issue via `gh` — nothing local except, on first run, a `## GitHub` config section appended to `AGENTS.md`  
+**Cannot:** Modify application code; close, resolve, or edit an existing issue; file before the user confirms
+
+Run via `/bug` (type `bug`) or `/request` (type `feature`) — same identity, same flow, different interview questions and label. Both file into the project's `Ready` column, per the `github-cli` skill. Neither runs as a subagent — the interview needs to be live, the same reason discovery and the orchestrator run directly in the conversation.
+
 ## Skills
 
-Six skill files give agents project-specific knowledge that training data alone would not provide:
+Seven skill files give agents project-specific knowledge that training data alone would not provide:
 
 | Skill | What it contains |
 |---|---|
@@ -143,5 +157,6 @@ Six skill files give agents project-specific knowledge that training data alone 
 | `architect-spec-format` | The specification template and field descriptions |
 | `discovery-brief-format` | The brief template and field descriptions |
 | `scope-capture` | When to name something out-of-scope in a report instead of building it or letting it evaporate; feeds the orchestrator's TODO.md capture step |
+| `github-cli` | Verified `gh` CLI recipes for issues, labels, Projects v2 status columns, and PRs |
 
 New skill files are added by the skill builder as the learning loop matures.
