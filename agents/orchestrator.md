@@ -352,6 +352,8 @@ After writing the summary, confirm it exists:
 ls ${FEATURE_DIR}/${NNN}-summary.md
 ```
 
+Don't add a `Pull Request` field to this template — the PR doesn't exist yet at this point in the pipeline. Stage 7c inserts a `**Pull Request:** {PR_URL}` line right after `**Review rounds:**` once the URL actually exists, and commits that change separately.
+
 ---
 
 ## Stage 7b — TODO Capture
@@ -416,10 +418,20 @@ Push the branch and open the PR, using the feature summary as the PR body — it
 ```bash
 git push -u origin "feature/${NNN}-{feature-name}"
 DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
-gh pr create --title "${NNN}: {Feature Name}" --body-file "${FEATURE_DIR}/${NNN}-summary.md" --base "$DEFAULT_BRANCH"
+PR_URL=$(gh pr create --title "${NNN}: {Feature Name}" --body-file "${FEATURE_DIR}/${NNN}-summary.md" --base "$DEFAULT_BRANCH")
 ```
 
-Capture the PR URL `gh pr create` prints — it goes in the final report to the user.
+`gh pr create` prints the PR URL on success — capture it as `$PR_URL`, not just to read once. It goes in the final report to the user, and it's also the answer to a question nothing else in this pipeline can answer later: whether, and when, this feature actually shipped. `docs/briefs/{NNN}-{feature-name}/` gets committed to `main` piecemeal — the brief immediately, everything else only once this PR merges — so there's no single artifact anywhere that says "this happened" until the summary doc records it.
+
+Record it there now, while it's known — this can't happen any earlier, the URL doesn't exist until the PR does. Read `${FEATURE_DIR}/${NNN}-summary.md`, insert a `**Pull Request:** {PR_URL}` line immediately after the `**Review rounds:**` line, and write it back:
+
+```bash
+git add "${FEATURE_DIR}/${NNN}-summary.md"
+git commit -m "docs: record PR URL in feature summary"
+git push
+```
+
+This is a live URL, not a merge timestamp — don't try to also record *when* it merges. Nothing in this pipeline runs again after a PR opens to notice that later and come back to update the field, so a `merged_at` value would just sit there blank or wrong. Anything that needs to know whether this feature actually merged — the `/roadmap` review-notes mode, for instance — reads this URL and asks GitHub directly (`gh pr view "$PR_URL" --json state,mergedAt`), live, at the moment it needs the answer. Querying the one place that's guaranteed current beats caching a fact nothing here is positioned to keep in sync.
 
 **Do not merge it.** Merging is a human decision — see "What the Orchestrator Does NOT Do." If `gh pr create` fails (missing `project` scope, branch protection, anything else), surface the actual error to the user rather than retrying blindly; don't guess at a workaround.
 
