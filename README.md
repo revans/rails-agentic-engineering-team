@@ -4,7 +4,9 @@ A Claude Code plugin that runs twelve specialized AI agents to take Rails featur
 
 ## What This Is
 
-Rails Agentic Engineering Team installs a full feature pipeline into any Rails project using Claude Code. You describe a feature, and a team of agents handles the rest: one interviews you to understand the requirement, one reads the codebase and writes a spec, one designs the UI, one builds the feature with test-driven development, and four reviewers check the work in parallel — three for code quality, security issues, and performance problems, and a fourth that checks whether the implementation still matches the plan and the plan still solves the problem the interview captured. Every decision each agent makes is recorded to a SQLite database. After enough runs accumulate, a learning analyst reads those records and proposes improvements to the agents' own rules.
+Rails Agentic Engineering Team installs a full feature pipeline into any Rails project using Claude Code. You describe a feature, and a team of agents handles the rest: one interviews you to understand the requirement, one reads the codebase and writes a spec, one designs the UI, one builds the feature with test-driven development, and four reviewers check the work in parallel — three for code quality, security issues, and performance problems, and a fourth that checks whether the implementation still matches the plan and the plan still solves the problem the interview captured. The whole pipeline runs isolated in its own git worktree and ends with an open pull request, never a self-merge. Every decision each agent makes is recorded to a SQLite database. After enough runs accumulate, a learning analyst reads those records and proposes improvements to the agents' own rules.
+
+Two things run alongside the pipeline rather than inside it. First, backlog capture: any agent that notices something out of scope names it instead of building it or losing it, and it lands in `TODO.md`; a roadmap analyst can turn that backlog into an actual build order, weighed against one or more `docs/icp/` persona files describing who the product is actually for. Second, GitHub intake: `/bug` and `/request` interview you about a bug or an idea, search the codebase for supporting context, and file a labeled, triage-ready GitHub issue — a separate, lighter front door than starting the full pipeline with `/feature`.
 
 ## Origin
 
@@ -24,6 +26,11 @@ This is a Claude Code Team. Install it by copying these agents into your Rails p
    ruby --version && sqlite3 --version
    ```
 4. The database at `db/agent_log.sqlite3` creates itself on first use.
+5. Verify `gh` is installed and authenticated — the orchestrator's pull request step and the `/bug`/`/request` intake commands both depend on it:
+   ```bash
+   gh auth status
+   ```
+   Adding an issue to a GitHub Project also needs the `project` scope: `gh auth refresh -s project`.
 
 Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic. It will also offer `/define-icp` if `docs/icp/` has no persona file yet.
 

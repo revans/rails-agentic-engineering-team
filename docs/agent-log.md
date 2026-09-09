@@ -103,6 +103,7 @@ This closes the hypothesis/result loop. Without it, the log analyst has no signa
 
 - The database creates itself on first use. No setup command is needed.
 - Override the default path: `AGENT_LOG_DB=/path/to/other.sqlite3 bin/agent-log ...`
+- **This override is required, not optional, for every agent the orchestrator runs inside a feature's git worktree** (everything from Stage 2 onward — see `docs/pipeline.md`). The database resolves against the current working directory by default, so an agent that `cd`s into a worktree without exporting `AGENT_LOG_DB` back at the main checkout's `db/agent_log.sqlite3` silently starts a second, empty database inside the worktree — one that vanishes, unread, the moment that worktree is removed. The orchestrator's launch prompts always include this export; if you're invoking an agent by hand from inside a worktree, set it yourself.
 - Logging failures do not halt agent work. If a call fails, the agent continues and notes the gap in its final report.
 - Review agents log each finding with a standard category vocabulary (`N+1`, `AUTH_SCOPE`, `MISSING_TEST`, etc.). Consistent categories are what allow the log analyst to detect recurrence across features.
 - You can query the database directly with `sqlite3` for cross-run analysis beyond what the CLI provides. The log-analyst agent does this extensively.

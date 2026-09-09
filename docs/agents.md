@@ -147,7 +147,7 @@ Run via `/bug` (type `bug`) or `/request` (type `feature`) — same identity, sa
 
 ## Skills
 
-Seven skill files give agents project-specific knowledge that training data alone would not provide:
+Eight skill files give agents project-specific knowledge that training data alone would not provide:
 
 | Skill | What it contains |
 |---|---|
@@ -156,7 +156,8 @@ Seven skill files give agents project-specific knowledge that training data alon
 | `design-system` | Visual grammar rules, component classes, AI generation trigger UX contract |
 | `architect-spec-format` | The specification template and field descriptions |
 | `discovery-brief-format` | The brief template and field descriptions |
+| `product-brief-format` | Shared with `agentic-ideation-team`; the section list discovery checks before deciding whether an incoming whole-product brief already answers its own interview questions |
 | `scope-capture` | When to name something out-of-scope in a report instead of building it or letting it evaporate; feeds the orchestrator's TODO.md capture step |
-| `github-cli` | Verified `gh` CLI recipes for issues, labels, Projects v2 status columns, and PRs |
+| `github-cli` | Verified `gh` CLI recipes for issues, labels, Projects v2 status columns, git worktree isolation, and PRs |
 
 New skill files are added by the skill builder as the learning loop matures.
