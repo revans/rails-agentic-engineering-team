@@ -8,15 +8,19 @@ Think of the pipeline like an assembly line. Each station has one job and one ou
 
 Nothing advances until the previous artifact exists. The orchestrator detects which artifacts are present and re-enters from the first missing stage automatically.
 
+The discovery brief is the one artifact that lands directly on `main`/`master`. Everything after it — spec, design, code, review reports — happens in a dedicated git worktree on its own feature branch, so no other work in the main checkout gets disturbed while the pipeline runs. When the pipeline reaches a final verdict, the orchestrator pushes that branch and opens a pull request; it never merges one itself.
+
 ## How It Works
 
-Here is how a feature moves from idea to passing review:
+Here is how a feature moves from idea to an open pull request:
 
 ```mermaid
 flowchart TD
     A[User describes feature] --> B[Discovery interview]
     B --> C[Brief written]
-    C --> D[Architect reads codebase]
+    C --> C2[Brief committed to main/master]
+    C2 --> C3[Feature worktree created]
+    C3 --> D[Architect reads codebase]
     D --> E[Spec written]
     E --> F[Design agent reads spec]
     F --> G[Design spec written]
@@ -29,7 +33,8 @@ flowchart TD
     J --> L
     K --> L
     N --> L
-    L -->|Yes| M[Pipeline complete]
+    L -->|Yes| M[Summary written, TODO.md updated on main]
+    M --> P[Branch pushed, pull request opened]
     L -->|No| H
 ```
 
@@ -74,3 +79,5 @@ Claude assigns the next feature number, interviews you to produce a brief, then 
 - If a category fails three rounds in a row, the orchestrator escalates to you. Three rounds of the same problem is a signal the spec or the agent skill is wrong, not the engineer.
 - After a pipeline completes, the engineer and architect each record what actually happened against their earlier expected outcomes. Those records feed the learning loop.
 - Any agent can notice something that should exist but isn't part of the current feature. Rather than build it or let it evaporate, it names the idea in its own report, tagged `needs-discovery` or `tech-debt`; at pipeline completion the orchestrator sweeps every report and files new ones into the matching `TODO.md` section. See the `scope-capture` skill. `/roadmap` later reads both sections against every persona file under `docs/icp/` and the codebase to propose a build order.
+- The feature branch and its worktree stay around after the pull request opens — they're still needed if review comments come back. Remove the worktree yourself (`git worktree remove ../{NNN}-{feature-name}`) once the PR is actually merged; the orchestrator won't do it automatically.
+- `db/agent_log.sqlite3` is shared across every worktree — every agent launch is told to `export AGENT_LOG_DB` pointing back at the main checkout's copy, so decisions logged mid-feature don't end up scattered across per-worktree databases nobody reads.

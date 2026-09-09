@@ -1,6 +1,6 @@
 ---
 name: github-cli
-description: gh CLI reference for this team — creating and searching issues, filing them to a GitHub Projects (v2) board with a label and status column, and opening pull requests. Every command here was verified against a real `gh --help` output, not written from memory.
+description: gh CLI reference for this team — creating and searching issues, filing them to a GitHub Projects (v2) board with a label and status column, isolating pipeline work in a git worktree, and opening pull requests. Every command here was verified against a real `gh --help`/`git worktree --help` output, not written from memory.
 ---
 
 # GitHub CLI Reference
@@ -86,20 +86,50 @@ gh project item-edit NUMBER --owner OWNER --url ISSUE_URL --field "Status" --val
 
 ---
 
-## Opening a Pull Request
+## Git Worktrees for Pipeline Isolation
+
+The orchestrator runs every stage past discovery inside its own git worktree — a second working directory checked out to the feature branch, sitting alongside the main checkout rather than inside it. This means nobody has to switch branches out from under a running conversation, and the main checkout stays clean and mergeable at all times.
 
 ```bash
-gh pr create --title "TITLE" --body "BODY" --base main --head BRANCH
+git worktree add "../{NNN}-{feature-name}" -b "feature/{NNN}-{feature-name}"
 ```
 
-`--fill` autofills title/body from commit messages if you don't want to write them — but for this team's pipeline, an explicit title/body referencing the feature spec is almost always better than an autofilled one. Reference the closing issue in the body (`Closes #123`) if this PR resolves an issue filed via `/bug` or `/request` — GitHub closes it automatically on merge.
+Creates the branch and the worktree in one step. If a worktree at that path already exists — resuming an in-progress pipeline — this fails; check first and reuse it instead of erroring:
 
-The branch must already be pushed, or `gh pr create` will prompt interactively to push it — in a non-interactive agent context, push explicitly first:
+```bash
+git worktree list --porcelain | grep -q "{NNN}-{feature-name}" \
+  && echo "reuse existing worktree" \
+  || git worktree add "../{NNN}-{feature-name}" -b "feature/{NNN}-{feature-name}"
+```
+
+Once the feature's pull request has merged, the worktree is no longer needed:
+
+```bash
+git worktree remove "../{NNN}-{feature-name}"
+```
+
+This isn't automated — see the orchestrator's own instructions for when it prompts the user to clean one up rather than doing it silently, since a worktree might still be in active use if the PR is still open.
+
+---
+
+## Opening a Pull Request
+
+Detect the actual default branch rather than assuming `main` — plenty of repos still use `master`:
+
+```bash
+DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
+```
+
+The branch must already be pushed, or `gh pr create` prompts interactively to push it — in a non-interactive agent context, push explicitly first:
 
 ```bash
 git push -u origin BRANCH
-gh pr create --title "TITLE" --body "BODY" --base main
+gh pr create --title "TITLE" --body-file PATH_TO_BODY_FILE --base "$DEFAULT_BRANCH"
 ```
+
+`--body-file` reads the PR description from a file rather than a string on the command line — use it whenever the body is already a written document (this team's `{NNN}-summary.md` is exactly that; no need to re-derive PR prose from scratch when the feature synthesis doc already says everything a reviewer needs). `--body` (a literal string) or `--fill` (autofill from commit messages) are the alternatives when there's no existing document to point at.
+
+Reference the closing issue in the body (`Closes #123`) if this PR resolves an issue filed via `/bug` or `/request` — GitHub closes it automatically on merge.
 
 ---
 

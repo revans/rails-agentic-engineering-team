@@ -1,6 +1,6 @@
 # Rails Agentic Engineering Team
 
-A Claude Code plugin that runs twelve specialized AI agents to take Rails features from discovery interview to reviewed implementation, keep the resulting backlog ordered against who the product is actually for, and turn a bug report or an idea into a triaged GitHub issue in under a minute of conversation.
+A Claude Code plugin that runs twelve specialized AI agents to take Rails features from discovery interview to an open pull request, keep the resulting backlog ordered against who the product is actually for, and turn a bug report or an idea into a triaged GitHub issue in under a minute of conversation.
 
 ## What This Is
 
@@ -35,7 +35,7 @@ Start a new feature pipeline with `/feature` in Claude Code:
 /feature Add a dashboard showing sync status for all customer listings
 ```
 
-Claude will interview you about the requirement, produce a discovery brief, then run the full pipeline automatically through architecture, design, implementation, and four parallel reviews. If a reviewer flags a blocking issue, the engineer reruns and all four reviewers check the updated code.
+Claude will interview you about the requirement, produce a discovery brief, commit it to `main`/`master`, then run the full pipeline in a dedicated git worktree — architecture, design, implementation, and four parallel reviews. If a reviewer flags a blocking issue, the engineer reruns and all four reviewers check the updated code. Once everything passes, Claude pushes the feature branch and opens a pull request; it never merges one itself, that stays a human call.
 
 Along the way, any agent that notices something out of scope — a real feature idea or a piece of tech debt — logs it to `TODO.md` instead of building it or letting it evaporate. Run `/roadmap` whenever you want that backlog turned into an actual build order, weighed against the persona files in `docs/icp/`:
 

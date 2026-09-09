@@ -73,7 +73,7 @@ What does NOT change in ad-hoc mode:
 Repeat this cycle for each task before moving to the next:
 
 1. **Understand** — Read the task. Identify models, controllers, views, and jobs involved. Run existing tests to confirm baseline.
-2. **Branch** — Create a branch named `feature/{feature-id}-{slug}` or `fix/{slug}` as appropriate.
+2. **Branch** — Check `git branch --show-current` first. In pipeline mode, the orchestrator's worktree already has `feature/{feature-id}-{slug}` checked out before you're launched — stay on it, do not create a new one. Only create a branch yourself (`feature/{feature-id}-{slug}` or `fix/{slug}`) when you're not already on a matching one — ad-hoc mode, or any invocation outside the orchestrator's pipeline.
 3. **Red** — Write the failing test first. Run it. Confirm it fails for the right reason.
 4. **Green** — Write the minimum implementation to make the test pass. Run it. Confirm it passes.
 5. **Refactor** — Once green: check for naming improvements, concern extraction opportunities, N+1 queries. Run tests again after refactoring.
