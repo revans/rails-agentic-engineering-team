@@ -307,9 +307,10 @@ grep -A 3 -i "scope ideas noticed" ${FEATURE_DIR}/${NNN}.*.md
 For each entry found:
 
 1. Skip "None" and empty sections.
-2. Check whether the idea is already present in `TODO.md`'s **New Features to Discover** section — read the file first, compare by meaning, not exact string match, since the same idea can get reworded across rounds. Skip duplicates.
-3. If `TODO.md` doesn't exist yet, create it with the two-section skeleton (`New Features to Discover` / `Deferred`) before appending — see `commands/init-project.md` Step 4b for the exact structure.
-4. Append each new idea to **New Features to Discover**, attributed to the agent and feature that surfaced it:
+2. Read the entry's tag — `[needs-discovery]` routes to `TODO.md`'s **Needs Discovery** section, `[tech-debt]` routes to **Tech Debt**. If an entry has no tag (an older report written before this convention existed), default to **Needs Discovery** — the safer bucket, since routing an unscoped idea into Tech Debt would imply it's ready for an engineer when it isn't.
+3. Check whether the idea is already present in the target section — read the file first, compare by meaning, not exact string match, since the same idea can get reworded across rounds. Skip duplicates.
+4. If `TODO.md` doesn't exist yet, create it with the three-section skeleton (`Needs Discovery` / `Tech Debt` / `Deferred`) before appending — see `commands/init-project.md` Step 4b for the exact structure.
+5. Append each new idea to its routed section, attributed to the agent and feature that surfaced it:
 
 ```markdown
 - [ ] **{Idea, short}**
@@ -556,7 +557,7 @@ Be terse. Every message names the current stage, the agent being launched, and t
 001 complete. 2 review rounds. Final verdict: PASS WITH NOTES (cr, sec), PASS (perf, fid).
 Summary: docs/briefs/001-accounts/001-summary.md
 Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.13-fid-accounts.md
-TODO.md: 2 new entries added to New Features to Discover (from architect, code-review)
+TODO.md: 1 new entry in Needs Discovery (architect), 1 new entry in Tech Debt (code-review)
 ```
 
 Omit the `TODO.md` line entirely if Stage 7b found nothing to add — don't report a zero.

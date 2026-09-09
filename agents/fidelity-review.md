@@ -128,7 +128,7 @@ Notes-only items (PASS WITH NOTES) are listed separately and labeled as non-bloc
 - [observation] — relevant to [code-review | security-review | performance-review]
 
 **Scope ideas noticed:**
-- [idea] — [what surfaced it, one sentence] (see the `scope-capture` skill)
+- [idea] [needs-discovery | tech-debt] — [what surfaced it, one sentence] (see the `scope-capture` skill)
 
 If nothing applies to any of the above, write "None." Do not leave blank.
 ```

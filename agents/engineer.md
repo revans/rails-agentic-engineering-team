@@ -206,7 +206,7 @@ If none, write "None."
 
 Something that should exist as its own capability, noticed in passing while implementing this feature — not required by the spec, not built. See the `scope-capture` skill.
 
-- [idea] — [what surfaced it, one sentence]
+- [idea] [needs-discovery | tech-debt] — [what surfaced it, one sentence]
 
 If none, write "None."
 

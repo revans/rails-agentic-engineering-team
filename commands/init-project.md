@@ -108,16 +108,26 @@ Add or remove based on what Gemfile confirms.
 ```
 ## TODO.md
 
-`TODO.md` at the project root has two sections:
+`TODO.md` at the project root has three sections:
 
-**New Features to Discover** — feature ideas worth exploring that aren't ready for the full
-discovery pipeline yet. Captured here so they aren't lost; each entry should name the idea
-and the trigger that surfaced it.
+**Needs Discovery** — capability ideas worth exploring that aren't scoped enough to hand
+to an engineer yet. Someone would need to sit through a `/feature` interview before this
+could be built. Captured here so they aren't lost; each entry names the idea and the
+trigger that surfaced it.
+
+**Tech Debt** — work that's already understood well enough to hand directly to an
+engineer, no discovery interview needed (an inconsistent pattern, a missing index, dead
+code, a naming drift). Each entry names the fix and the trigger that surfaced it.
 
 **Deferred** — work deliberately set aside during active sessions with full context on why
 it was deferred and what decision is needed. Read this before starting work that touches the
 deferred area. Update it when deferring something — include the reason and the options
 considered so the next session doesn't re-litigate it.
+
+Agents never write to `TODO.md` directly — see the `scope-capture` skill and the
+orchestrator's TODO Capture stage for how `Needs Discovery` and `Tech Debt` entries get
+added. `/roadmap` reads `Needs Discovery` and `Tech Debt` against every persona file under
+`docs/icp/` and the codebase to propose a build order — see `commands/roadmap.md`.
 ```
 
 **Abstraction Decisions:** always write this section the same way:
@@ -164,21 +174,34 @@ If every pattern found was confirmed to continue (no "stop" answers), omit the *
 
 ## Step 4b — Create TODO.md if absent
 
-If `TODO.md` does not exist at the project root, create it with the two-section structure and one example per section. The examples orient the LLM on what belongs in each section — they are illustrative, not real entries, and should be replaced as actual work surfaces.
+If `TODO.md` does not exist at the project root, create it with the three-section structure and one example per section. The examples orient the LLM on what belongs in each section — they are illustrative, not real entries, and should be replaced as actual work surfaces.
 
 ```markdown
 # {Project Name} — TODO
 
 ---
 
-## New Features to Discover
+## Needs Discovery
 
-Feature ideas worth exploring that aren't ready for the full discovery pipeline yet.
+Capability ideas worth exploring that aren't scoped enough to hand to an engineer yet —
+someone would need to sit through a `/feature` interview before this could be built.
 Each entry names the idea and what triggered it.
 
 - [ ] **Example: Mobile-friendly document view**
   Surfaced during a user session — the editor is hard to read on small screens. Not scoped
   yet. Worth a discovery interview before anything is built.
+
+---
+
+## Tech Debt
+
+Work that's already understood well enough to hand straight to an engineer — no discovery
+interview needed. Each entry names the fix and what triggered it.
+
+- [ ] **Example: Inconsistent callback style in app/models/listing.rb**
+  Noticed during a code review — half the callbacks use `before_save`, half use a
+  `before_validation` guard clause for the same kind of check. Worth a pass to pick one
+  convention and apply it consistently.
 
 ---
 
@@ -210,13 +233,25 @@ In every case, preserve everything that was already in the canonical file — on
 
 ---
 
-## Step 6 — Offer update-readme
+## Step 6 — Offer update-readme and define-icp
 
 After AGENTS.md is complete, ask:
 
 > "AGENTS.md is up to date. Want me to also run `/update-readme` to generate or refresh the domain documentation and README?"
 
 Wait for a yes before running it. Do not run it automatically.
+
+Separately, check whether `docs/icp/` exists and has at least one `*-icp.md` file in it:
+
+```bash
+ls docs/icp/*-icp.md 2>/dev/null
+```
+
+If it doesn't, ask:
+
+> "This project has no Ideal Customer Profile yet under `docs/icp/` — that's what `/roadmap` reads to judge which backlog items matter most. Want me to run `/define-icp` now?"
+
+Wait for a yes before running it. If at least one persona file already exists, don't mention it — this offer is only for the missing case, `/define-icp` itself handles both adding a new persona and refreshing an existing one.
 
 ---
 
@@ -227,3 +262,4 @@ Report what was added:
 - Which sections already existed and were left untouched
 - Whether `CLAUDE.md` was newly created as a symlink, migrated from an existing real file, or already correct
 - Whether `/update-readme` was run
+- Whether `docs/icp/` already had a persona file, or `/define-icp` was offered and run

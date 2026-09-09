@@ -1,6 +1,6 @@
 # Rails Agentic Engineering Team
 
-A Claude Code plugin that runs ten specialized AI agents to take Rails features from discovery interview to reviewed implementation.
+A Claude Code plugin that runs eleven specialized AI agents to take Rails features from discovery interview to reviewed implementation, and to keep the resulting backlog ordered against who the product is actually for.
 
 ## What This Is
 
@@ -25,7 +25,7 @@ This is a Claude Code Team. Install it by copying these agents into your Rails p
    ```
 4. The database at `db/agent_log.sqlite3` creates itself on first use.
 
-Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic.
+Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic. It will also offer `/define-icp` if `docs/icp/` has no persona file yet.
 
 ## How to Use
 
@@ -36,6 +36,12 @@ Start a new feature pipeline with `/feature` in Claude Code:
 ```
 
 Claude will interview you about the requirement, produce a discovery brief, then run the full pipeline automatically through architecture, design, implementation, and four parallel reviews. If a reviewer flags a blocking issue, the engineer reruns and all four reviewers check the updated code.
+
+Along the way, any agent that notices something out of scope — a real feature idea or a piece of tech debt — logs it to `TODO.md` instead of building it or letting it evaporate. Run `/roadmap` whenever you want that backlog turned into an actual build order, weighed against the persona files in `docs/icp/`:
+
+```
+/roadmap
+```
 
 ## Documentation
 

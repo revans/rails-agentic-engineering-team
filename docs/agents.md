@@ -1,6 +1,6 @@
 # Agents
 
-Ten agents handle specific stages of the feature pipeline. Each agent has one job, defined inputs, and defined outputs.
+Eleven agents handle specific stages of the feature pipeline, the learning loop, or backlog strategy. Each agent has one job, defined inputs, and defined outputs.
 
 ## What They Are
 
@@ -116,6 +116,20 @@ flowchart LR
 ```
 
 Every agent logs decisions, events, struggles, and skill gaps to the SQLite database during each session. After enough cycles, the log analyst can find recurring patterns. The approved changes become skill files that every agent loads at the start of the next session.
+
+## Strategy Agents
+
+This agent runs outside the feature pipeline too, but it isn't part of the learning loop — it doesn't read agent behavior, it reads the product backlog.
+
+### Roadmap Analyst
+
+Reads `TODO.md`'s `Needs Discovery` and `Tech Debt` sections, every persona file under `docs/icp/`, and the codebase, and proposes a build order.
+
+**Reads:** `TODO.md`, `docs/icp/*-icp.md`, `app/models/`, `config/routes.rb`, `db/schema.rb`, `docs/briefs/`  
+**Writes:** `docs/roadmap.md`  
+**Cannot:** Modify `TODO.md`, any file under `docs/icp/`, or application code — the one exception is appending a single new backlog entry it surfaced itself, and only after the user confirms it live
+
+Run it via `/roadmap`, on demand — not part of `/feature`. It orders the backlog on two independent axes: technical dependency (does this need something that doesn't exist yet) and product value (does this serve a persona `docs/icp/` describes). An item can be clear-to-build and off-ICP, or blocked and on-ICP — those are different findings, not one combined score. `docs/icp/` can hold more than one persona file — a marketplace's buyer and seller, say — and an item is judged against each one, not an averaged composite. If `docs/icp/` is empty or every file in it is stale, roadmap-analyst ranks by dependency only and says so rather than guessing at a customer.
 
 ## Skills
 
