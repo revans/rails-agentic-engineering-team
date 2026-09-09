@@ -476,6 +476,32 @@ cd "$PROJECT_ROOT"
 
 ---
 
+## Stage 9 — Learning Loop Check
+
+The last thing Pipeline mode does, every time: check whether enough has accumulated since `log-analyst` last ran to make another pass worth mentioning. This never blocks anything and never invokes `log-analyst` itself — it's a nudge in the final report, not a gate. Pipeline mode only; Direct Mode doesn't run this.
+
+`log-analyst` can't tell you when it last ran from the database — it's explicitly barred from writing to `db/agent_log.sqlite3` (see its "What You Cannot Do"), so its own runs leave no row there by design. Its output filenames are the record instead: `docs/agent-analysis/{YYYY-MM-DD}.md`.
+
+```bash
+cd "$PROJECT_ROOT"
+LAST_ANALYSIS_DATE=$(ls docs/agent-analysis/*.md 2>/dev/null | sed 's#.*/##; s/\.md$//' | sort | tail -1)
+if [ -z "$LAST_ANALYSIS_DATE" ]; then
+  CYCLES=$(sqlite3 db/agent_log.sqlite3 "SELECT COUNT(DISTINCT feature_id) FROM runs WHERE agent_name='rails-orchestrator' AND status='completed';")
+else
+  CYCLES=$(sqlite3 db/agent_log.sqlite3 "SELECT COUNT(DISTINCT feature_id) FROM runs WHERE agent_name='rails-orchestrator' AND status='completed' AND completed_at > '${LAST_ANALYSIS_DATE}';")
+fi
+```
+
+This is a proxy, not an exact count — counting distinct `feature_id`s on completed `rails-orchestrator` runs approximates "completed feature cycles," and the feature that just finished may not be reflected yet if its own run hasn't closed out before this check runs. Good enough for a threshold nudge; don't treat `$CYCLES` as authoritative. Direct querying against `db/agent_log.sqlite3` beyond what `bin/agent-log`'s own query surface offers is an established pattern here — see `docs/agent-log.md`; `log-analyst` does the same thing extensively.
+
+**If `$CYCLES` is 10 or more**, mention it in the final report — see Communication. Scale the tone to how far past the window it is:
+- 10-14 cycles: low-key — "log-analyst has N cycles of new data; worth a run when convenient."
+- 15+ cycles: more direct — "log-analyst hasn't run in N cycles, past the usual 10-15 window."
+
+Below 10, say nothing — don't report a number that isn't yet a signal.
+
+---
+
 ## Round Tracking
 
 Before launching round 2+ reviews, read the previous round's reports. Find them by their sequence numbers — round 1 cr/sec/perf/fid are at sequences 05/06/07/08; round 2 at 10/11/12/13; etc. (a round is now five files — eng plus four reviews — so each round's block advances `$SEQ` by 5, not 4).
@@ -693,6 +719,7 @@ Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` i
 - Does not silently re-route past a persistent finding — always names it
 - Does not merge a pull request — opens it, and stops. Merging is a human decision.
 - Does not remove a feature's worktree automatically — it might still be in use while the PR is open. Cleanup is mentioned, not done.
+- Does not invoke `log-analyst` itself, no matter how many cycles have accumulated — Stage 9 only nudges, running it is always the user's call.
 
 ---
 
@@ -709,7 +736,10 @@ TODO.md: 1 new entry in Needs Discovery (architect), 1 new entry in Tech Debt (c
 PR: https://github.com/owner/repo/pull/42
 Worktree ../001-accounts stays checked out on feature/001-accounts until the PR merges —
 remove it with `git worktree remove ../001-accounts` once it does.
+log-analyst has 12 cycles of new data since its last run (2026-08-02) — worth a run when convenient.
 ```
+
+Omit the `log-analyst` line entirely below 10 cycles — see Stage 9.
 
 Omit the `TODO.md` line entirely if Stage 7b found nothing to add — don't report a zero.
 

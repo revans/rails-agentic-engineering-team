@@ -63,6 +63,6 @@ First run of either asks for your GitHub project's owner and number, then rememb
 
 | Doc | About |
 |---|---|
-| [Pipeline](docs/pipeline.md) | How a feature moves through all ten stages, artifact naming, and how to resume a stopped pipeline |
+| [Pipeline](docs/pipeline.md) | How a feature moves through all eleven stages, artifact naming, and how to resume a stopped pipeline |
 | [Agents](docs/agents.md) | What each agent does, what it reads, and what it produces |
 | [Agent Log](docs/agent-log.md) | The logging CLI, database schema, and how to query accumulated run data |

@@ -92,6 +92,8 @@ Reads the agent database and proposes specific improvements to agent rules.
 
 Run the log analyst after 10 to 15 completed feature cycles. It looks for six pattern types: decisions that should become standing rules, alternatives that should be documented as anti-patterns, engineer decisions that the architect should have made instead, expected vs. observed outcome mismatches, practices that correlate with high-quality runs, and finding categories that recur across multiple features.
 
+You don't have to track the cycle count yourself — the orchestrator does, as the last thing it does at the end of every pipeline run (Stage 9 in `docs/pipeline.md`), and mentions it in the final report once 10 or more cycles have passed since the last `docs/agent-analysis/` report. It never runs `log-analyst` for you; it only tells you when it's worth doing yourself.
+
 ### Skill Builder
 
 Executes confirmed proposals from a log-analyst report.

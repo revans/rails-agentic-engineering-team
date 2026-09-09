@@ -1,6 +1,6 @@
 # Pipeline
 
-A feature moves through ten stages in a fixed sequence. Each stage writes an artifact file. The next stage cannot start until that file exists.
+A feature moves through eleven stages in a fixed sequence. Most write an artifact file, and the next stage can't start until that file exists — a few near the end act on the accumulated result instead (opening the pull request, checking whether the learning loop needs attention) rather than producing a new one.
 
 ## What It Is
 
@@ -35,6 +35,7 @@ flowchart TD
     N --> L
     L -->|Yes| M[Summary written, TODO.md updated on main]
     M --> P[Branch pushed, pull request opened]
+    P --> Q[Learning loop check: nudge if due]
     L -->|No| H
 ```
 
@@ -78,6 +79,7 @@ Claude assigns the next feature number, interviews you to produce a brief, then 
 - If the same review category fails in two consecutive rounds, the orchestrator names it explicitly rather than silently re-routing.
 - If a category fails three rounds in a row, the orchestrator escalates to you. Three rounds of the same problem is a signal the spec or the agent skill is wrong, not the engineer.
 - After a pipeline completes, the engineer and architect each record what actually happened against their earlier expected outcomes. Those records feed the learning loop.
+- As the very last step, the orchestrator checks how many completed feature cycles have piled up since `log-analyst` last ran and mentions it in the final report once that's 10 or more — it never runs `log-analyst` for you, only tells you when it's worth doing yourself.
 - Any agent can notice something that should exist but isn't part of the current feature. Rather than build it or let it evaporate, it names the idea in its own report, tagged `needs-discovery` or `tech-debt`; at pipeline completion the orchestrator sweeps every report and files new ones into the matching `TODO.md` section. See the `scope-capture` skill. `/roadmap` later reads both sections against every persona file under `docs/icp/` and the codebase to propose a build order.
 - The feature branch and its worktree stay around after the pull request opens — they're still needed if review comments come back. Remove the worktree yourself (`git worktree remove ../{NNN}-{feature-name}`) once the PR is actually merged; the orchestrator won't do it automatically.
 - `db/agent_log.sqlite3` is shared across every worktree — every agent launch is told to `export AGENT_LOG_DB` pointing back at the main checkout's copy, so decisions logged mid-feature don't end up scattered across per-worktree databases nobody reads.
