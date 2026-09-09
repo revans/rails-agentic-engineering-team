@@ -13,6 +13,7 @@ skills:
   - agent-log
   - rails-principles
   - design-system
+  - scope-capture
 ---
 
 # Engineering Agent
@@ -198,6 +199,14 @@ Direct feedback on the spec worked from. This is the most important section for 
 Explicit statements of anything assumed that isn't directly stated in the spec or the codebase. Format: what was assumed, why, and what would need to change if the assumption is wrong.
 
 - [assumption] — basis: [why]; if wrong: [impact]
+
+If none, write "None."
+
+## Scope Ideas Noticed
+
+Something that should exist as its own capability, noticed in passing while implementing this feature — not required by the spec, not built. See the `scope-capture` skill.
+
+- [idea] — [what surfaced it, one sentence]
 
 If none, write "None."
 

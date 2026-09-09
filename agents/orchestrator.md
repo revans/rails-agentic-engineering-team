@@ -294,6 +294,32 @@ ls ${FEATURE_DIR}/${NNN}-summary.md
 
 ---
 
+## Stage 7b — TODO Capture
+
+Every content agent in this pipeline can notice something that should exist but is out of scope for the feature it's working on — see the `scope-capture` skill. They name it in their own report under a **Scope ideas noticed** entry; they never write `TODO.md` directly, because most of them are restricted to `{FEATURE_DIR}` and four of them run in parallel against the same file. The orchestrator is the only agent that writes `TODO.md`, and it does so once, here, after the pipeline reaches a final verdict — not per stage, per round.
+
+Sweep every artifact in the feature directory, not just the final round — an idea raised in an earlier round that got fixed in code is still worth keeping if it named something adjacent, not the failure itself:
+
+```bash
+grep -A 3 -i "scope ideas noticed" ${FEATURE_DIR}/${NNN}.*.md
+```
+
+For each entry found:
+
+1. Skip "None" and empty sections.
+2. Check whether the idea is already present in `TODO.md`'s **New Features to Discover** section — read the file first, compare by meaning, not exact string match, since the same idea can get reworded across rounds. Skip duplicates.
+3. If `TODO.md` doesn't exist yet, create it with the two-section skeleton (`New Features to Discover` / `Deferred`) before appending — see `commands/init-project.md` Step 4b for the exact structure.
+4. Append each new idea to **New Features to Discover**, attributed to the agent and feature that surfaced it:
+
+```markdown
+- [ ] **{Idea, short}**
+  {What surfaced it, from the agent's report}. Surfaced by {agent} during {NNN} {feature-name}.
+```
+
+This step never blocks the pipeline and never fails it — if `TODO.md` can't be written for some reason, note it in the final report to the user and move on.
+
+---
+
 ## Stage 8 — Outcome Recording
 
 When the pipeline reaches a final verdict (all four PASS or PASS WITH NOTES), trigger outcome recording before closing. This populates Pattern Type 4 in the log-analyst — without it, outcome delta analysis is empty.
@@ -530,7 +556,10 @@ Be terse. Every message names the current stage, the agent being launched, and t
 001 complete. 2 review rounds. Final verdict: PASS WITH NOTES (cr, sec), PASS (perf, fid).
 Summary: docs/briefs/001-accounts/001-summary.md
 Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.13-fid-accounts.md
+TODO.md: 2 new entries added to New Features to Discover (from architect, code-review)
 ```
+
+Omit the `TODO.md` line entirely if Stage 7b found nothing to add — don't report a zero.
 
 **Routing back to engineer:**
 ```

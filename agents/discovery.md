@@ -11,6 +11,7 @@ skills:
   - agent-log
   - discovery-brief-format
   - product-brief-format
+  - scope-capture
 ---
 
 # Discovery Agent
@@ -236,7 +237,10 @@ Where possible, distinguish between: "I think this might be an issue" (suspicion
 **Where I struggled:**
 - [topic] — [what made it hard; what information or skill would have resolved it]
 
-If nothing applies to either, write "None." Do not leave blank.
+**Scope ideas noticed:**
+- [idea] — [what surfaced it, one sentence] (see the `scope-capture` skill)
+
+If nothing applies to any of the above, write "None." Do not leave blank.
 
 ## For the Architect
 

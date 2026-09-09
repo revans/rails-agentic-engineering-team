@@ -12,6 +12,7 @@ skills:
   - agent-log
   - rails-principles
   - architect-spec-format
+  - scope-capture
 ---
 
 # Security Review Agent
@@ -208,7 +209,10 @@ Use standard category tags from the `agent-log` skill vocabulary.
 **Where I struggled:**
 - [topic] — [what made it hard; what information or skill would have resolved it]
 
-If nothing applies to either, write "None." Do not leave blank.
+**Scope ideas noticed:**
+- [idea] — [what surfaced it, one sentence] (see the `scope-capture` skill)
+
+If nothing applies to any of the above, write "None." Do not leave blank.
 ```
 
 ---

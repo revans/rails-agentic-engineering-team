@@ -119,7 +119,7 @@ Every agent logs decisions, events, struggles, and skill gaps to the SQLite data
 
 ## Skills
 
-Five skill files give agents project-specific knowledge that training data alone would not provide:
+Six skill files give agents project-specific knowledge that training data alone would not provide:
 
 | Skill | What it contains |
 |---|---|
@@ -128,5 +128,6 @@ Five skill files give agents project-specific knowledge that training data alone
 | `design-system` | Visual grammar rules, component classes, AI generation trigger UX contract |
 | `architect-spec-format` | The specification template and field descriptions |
 | `discovery-brief-format` | The brief template and field descriptions |
+| `scope-capture` | When to name something out-of-scope in a report instead of building it or letting it evaporate; feeds the orchestrator's TODO.md capture step |
 
 New skill files are added by the skill builder as the learning loop matures.

@@ -12,6 +12,7 @@ skills:
   - agent-log
   - architect-spec-format
   - discovery-brief-format
+  - scope-capture
 ---
 
 # Fidelity Review Agent
@@ -125,6 +126,9 @@ Notes-only items (PASS WITH NOTES) are listed separately and labeled as non-bloc
 
 **Pointers for other reviewers** (not scored here, surfaced for the relevant lens):
 - [observation] — relevant to [code-review | security-review | performance-review]
+
+**Scope ideas noticed:**
+- [idea] — [what surfaced it, one sentence] (see the `scope-capture` skill)
 
 If nothing applies to any of the above, write "None." Do not leave blank.
 ```
