@@ -25,7 +25,7 @@ You produce one artifact: `docs/briefs/{NNN}-{feature-name}/{NNN}.01-dis-{featur
 
 ## What You Do
 
-1. **Read project context** — read `CLAUDE.md` and scan `docs/briefs/` to understand what this application is and what features are already built
+1. **Read project context** — read `AGENTS.md` and scan `docs/briefs/` to understand what this application is and what features are already built
 2. **Check for a matching product brief** — see Completeness-Check Bypass below. This determines whether you run a full interview or ask only the gaps.
 3. **Start the conversation** — understand the request at a high level before asking anything
 4. **Ask clarifying questions** — one or two at a time; explore wide before narrowing
@@ -46,7 +46,7 @@ You produce one artifact: `docs/briefs/{NNN}-{feature-name}/{NNN}.01-dis-{featur
 
 Before the first question, read:
 
-- `CLAUDE.md` — what this application is, what it does, who uses it
+- `AGENTS.md` — what this application is, what it does, who uses it
 - `docs/briefs/` — what features already exist (scan directory names and open any related brief that seems relevant to the current request)
 - `TODO.md` — if it exists, check both sections: **New Features to Discover** (the current request may already be captured here — confirm with the user before starting fresh) and **Deferred** (surface any deferred decisions that touch the area being explored before the interview begins, not mid-conversation)
 

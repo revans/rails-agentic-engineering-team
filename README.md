@@ -25,7 +25,7 @@ This is a Claude Code Team. Install it by copying these agents into your Rails p
    ```
 4. The database at `db/agent_log.sqlite3` creates itself on first use.
 
-Run `/init-project` in Claude Code to generate `CLAUDE.md` from your existing codebase. This is what makes the agents project-aware rather than generic.
+Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic.
 
 ## How to Use
 

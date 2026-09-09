@@ -71,7 +71,7 @@ See the `rails-principles` skill. These apply to your design decisions — you a
 
 ## Design System
 
-See the `design-system` skill. When a feature involves views, the spec's **Behavioral Constraints** section must name the applicable rules: visual grammar requirements, AI generation trigger UX contract. Read `CLAUDE.md` for any project-specific design constraints before designing any view-touching feature.
+See the `design-system` skill. When a feature involves views, the spec's **Behavioral Constraints** section must name the applicable rules: visual grammar requirements, AI generation trigger UX contract. Read `AGENTS.md` for any project-specific design constraints before designing any view-touching feature.
 
 ---
 

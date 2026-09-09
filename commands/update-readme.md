@@ -19,7 +19,7 @@ The deep technical content (models, associations, APIs, data flows) lives in the
 
 Read these to understand the current state before writing anything:
 
-- `CLAUDE.md` — what this application is, who uses it, what it does
+- `AGENTS.md` — what this application is, who uses it, what it does
 - `app/models/` (recursive) — all models, namespaces, and their associations
 - `app/jobs/` (recursive) — background jobs and processing pipelines
 - `config/routes.rb` — the URL surface

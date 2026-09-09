@@ -132,7 +132,7 @@ You trust Rails defaults: CSRF protection, SQL injection prevention via paramete
 - Never add a custom CSS class that isn't in the project's design system — add to the project's CSS extension file first if a new component is needed
 - When touching AI or integration features, read the relevant library interfaces in the project before writing any code
 
-Read `CLAUDE.md` for any additional project-specific constraints beyond these defaults.
+Read `AGENTS.md` for any additional project-specific constraints beyond these defaults.
 
 ---
 

@@ -54,7 +54,7 @@ Document.find(params[:id])
 
 Any lookup that bypasses association traversal is a potential authorization hole — a user with a valid session and a guessed record ID could access data they shouldn't.
 
-The specific association chain varies by application. Read `CLAUDE.md` and the feature spec's Security/Scoping constraint to understand the correct traversal for this feature before reviewing controller actions.
+The specific association chain varies by application. Read `AGENTS.md` and the feature spec's Security/Scoping constraint to understand the correct traversal for this feature before reviewing controller actions.
 
 ---
 

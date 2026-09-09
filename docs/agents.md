@@ -12,7 +12,7 @@ Each agent is a Claude Code subagent definition: a markdown file that specifies 
 
 Interviews you to understand what you want to build.
 
-**Reads:** `CLAUDE.md`, `docs/briefs/`, `TODO.md`  
+**Reads:** `AGENTS.md`, `docs/briefs/`, `TODO.md`  
 **Writes:** `{NNN}.01-dis-{feature}.md`  
 **Cannot:** Read application code, assign feature numbers
 

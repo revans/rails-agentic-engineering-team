@@ -1,12 +1,12 @@
 ---
 name: Init Project
-description: "Audits the project and fills in missing CLAUDE.md sections — skills, docs structure, conventions, TODO.md, abstraction decisions, non-negotiables. Generates from what actually exists, not generic boilerplate. Optionally runs /update-readme."
+description: "Audits the project, surfaces its actual code patterns for the user to confirm as keep-or-stop, and fills in missing AGENTS.md sections — skills, docs structure, conventions, TODO.md, abstraction decisions, non-negotiables, patterns. Generates from what actually exists, not generic boilerplate. Writes AGENTS.md and symlinks CLAUDE.md to it. Optionally runs /update-readme."
 color: blue
 ---
 
 # Init Project
 
-This command gets a project's CLAUDE.md into shape. It reads the codebase first, then writes only what's missing — each section is generated from what's actually present, not copied from a template.
+This command gets a project's `AGENTS.md` into shape. `AGENTS.md` is the canonical file; `CLAUDE.md` is kept as a symlink to it, so both names resolve to the same content. It reads the codebase first, surfaces the patterns it finds so you can decide which ones are conventions worth enforcing and which are cruft worth stopping, then writes only what's missing — each section is generated from what's actually present, not copied from a template.
 
 ---
 
@@ -14,11 +14,13 @@ This command gets a project's CLAUDE.md into shape. It reads the codebase first,
 
 Read these before touching anything:
 
-- `CLAUDE.md` — what's already there (if anything); identify which sections are absent
+- `AGENTS.md` — what's already there (if anything); identify which sections are absent. If absent, check `CLAUDE.md`: if it's a real file (not a symlink), treat its content as the existing document — it will be migrated in Step 5. If `CLAUDE.md` is already a symlink, follow it to find the canonical content.
 - `.claude/skills/` — which skills are available in this project
 - `.claude/agents/` — which agents are defined
 - `Gemfile` — what the stack actually is; what's conspicuously absent (no Redis, no Devise, no RSpec)
-- `app/models/` — a quick scan for naming patterns, namespaces, concerns
+- `app/models/` — naming patterns, namespaces, concerns, validation style, callback usage
+- `app/controllers/` — action shape (does every controller stick to the 7 RESTful actions, or do custom actions recur?), before_action patterns, authorization style
+- `app/views/` — partial usage, naming, layout conventions
 - `config/routes.rb` — route structure and URL grammar
 - `gems/` — any local gems (scan for what's present and read their purpose)
 - `docs/` — what doc directories exist
@@ -29,10 +31,26 @@ From this, build a picture of:
 - What the stack constraints are (Solid Stack, Rails 8 auth, Minitest)
 - What the docs structure is
 - Whether a `TODO.md` exists at root
+- Whether there is any application code at all (a fresh `rails new` with empty `app/models/`, `app/controllers/`, and `app/views/` has none — skip Step 2 in that case, there's nothing to audit yet)
 
 ---
 
-## Step 2 — Identify missing CLAUDE.md sections
+## Step 2 — Audit patterns with the user
+
+Skip this step entirely if Step 1 found no application code to look at.
+
+Otherwise, look across `app/models/`, `app/controllers/`, `app/views/`, and any local `gems/` for things that repeat — a naming scheme, a way of scoping queries, a consistent use (or consistent avoidance) of concerns, a particular authorization pattern, a view-partial convention. Separate what you find into two piles:
+
+- **Consistent patterns** — the same shape shows up 3+ times with no exceptions. These are candidates for standing conventions.
+- **Inconsistent or dated patterns** — the same problem solved two or three different ways across the codebase, or a pattern that looks like it predates a later refactor and was never cleaned up (e.g. two callback styles, a naming scheme abandoned halfway through).
+
+Present both piles to the user in a short list, one line per pattern, and ask which patterns should continue as an enforced convention and which should be marked as something to stop doing (and, if relevant, migrate away from). Do not decide this yourself — the user knows which pattern was the deliberate choice and which was an accident that stuck around. Ask this as one focused question with the concrete list attached, not a long back-and-forth.
+
+Record the answers — they become the **Patterns** section in Step 3, and any "stop doing this" answers also feed the **Non-Negotiables** never-use list.
+
+---
+
+## Step 3 — Identify missing AGENTS.md sections
 
 Check for each of these sections by name. Only write sections that are absent or substantively empty:
 
@@ -43,16 +61,17 @@ Check for each of these sections by name. Only write sections that are absent or
 5. **TODO.md** — the deferred-decisions convention
 6. **Abstraction Decisions** — the "stop and surface it" rule
 7. **Non-Negotiables** — the visual grammar contract, AI generation surface rules, the never-use list (derive from Gemfile)
+8. **Patterns** — the keep/stop decisions confirmed with the user in Step 2 (omit this section entirely if Step 2 was skipped)
 
 Do NOT rewrite sections that already exist and contain real content. Append missing sections only.
 
 ---
 
-## Step 3 — Write missing sections
+## Step 4 — Write missing sections
 
 For each absent section, generate content from what you found in Step 1 — not from a generic template.
 
-**Project intro:** write from CLAUDE.md (if partial), `Gemfile`, and `app/models/` scan. Name the primary user, the core function, and where AI fits in if the app uses an LLM.
+**Project intro:** write from AGENTS.md (if partial), `Gemfile`, and `app/models/` scan. Name the primary user, the core function, and where AI fits in if the app uses an LLM.
 
 **Skills:** list each file under `.claude/skills/` with its purpose. Format:
 ```
@@ -62,7 +81,7 @@ When doing engineering work in this session, read:
 - `.claude/skills/{skill}/SKILL.md` — {one-line purpose from skill frontmatter}
 ```
 
-**Coding Requirements:** derive from Gemfile (what's absent = what's banned), from `CLAUDE.md` if partial, and from Rails version. Standard list for this stack:
+**Coding Requirements:** derive from Gemfile (what's absent = what's banned), from `AGENTS.md` if partial, and from Rails version. Standard list for this stack:
 ```
 * Always start new work in a new git branch
 * TDD First Always
@@ -126,9 +145,24 @@ a default implementation choice.
 - Do not invent design system classes — add to the project's CSS extension file first
 ```
 
+**Patterns:** write only from the answers gathered in Step 2 — never invent this section from the code scan alone, the user's keep/stop call is the content. Format:
+```
+## Patterns
+
+Conventions confirmed with the user during /init-project. Read this before introducing a new
+model, controller action, or view partial — check whether it already has a settled shape.
+
+**Continue:**
+- {pattern} — {where it shows up / what it looks like}
+
+**Stop:**
+- {pattern} — {why it's inconsistent or dated}{migration note if one was given}
+```
+If every pattern found was confirmed to continue (no "stop" answers), omit the **Stop** subsection rather than leaving it empty.
+
 ---
 
-## Step 3b — Create TODO.md if absent
+## Step 4b — Create TODO.md if absent
 
 If `TODO.md` does not exist at the project root, create it with the two-section structure and one example per section. The examples orient the LLM on what belongs in each section — they are illustrative, not real entries, and should be replaced as actual work surfaces.
 
@@ -161,27 +195,35 @@ decision is needed before picking it up.
 
 ---
 
-## Step 4 — Write CLAUDE.md
+## Step 5 — Write AGENTS.md, symlink CLAUDE.md
 
-Append the missing sections to the existing CLAUDE.md. Preserve everything that was already there — only add, don't rewrite.
+`AGENTS.md` is the file that gets written. `CLAUDE.md` is never written to directly — it stays a symlink pointing at `AGENTS.md`, so both names read the same content.
 
-If CLAUDE.md didn't exist: write the full file with all sections populated.
+Handle the file state found in Step 1:
+
+- **Neither `AGENTS.md` nor `CLAUDE.md` exists:** write the full `AGENTS.md` with all sections populated, then create the symlink: `ln -s AGENTS.md CLAUDE.md`.
+- **`AGENTS.md` doesn't exist, but `CLAUDE.md` does as a real file:** this is a project that hasn't migrated yet. Move `CLAUDE.md`'s content into a new `AGENTS.md` verbatim (`git mv CLAUDE.md AGENTS.md` if the project is a git repo, otherwise copy then remove), append the missing sections to it, then create the symlink: `ln -s AGENTS.md CLAUDE.md`.
+- **`AGENTS.md` exists, `CLAUDE.md` is already a symlink to it:** append the missing sections to `AGENTS.md`. Nothing else to do.
+- **`AGENTS.md` exists, but `CLAUDE.md` is a real file with different content:** don't silently pick one. Flag this to the user and ask which content should win before writing anything — this shouldn't happen from normal use of this command, so it's a sign something wrote to `CLAUDE.md` directly after the migration.
+
+In every case, preserve everything that was already in the canonical file — only add missing sections, don't rewrite existing ones.
 
 ---
 
-## Step 5 — Offer update-readme
+## Step 6 — Offer update-readme
 
-After CLAUDE.md is complete, ask:
+After AGENTS.md is complete, ask:
 
-> "CLAUDE.md is up to date. Want me to also run `/update-readme` to generate or refresh the domain documentation and README?"
+> "AGENTS.md is up to date. Want me to also run `/update-readme` to generate or refresh the domain documentation and README?"
 
 Wait for a yes before running it. Do not run it automatically.
 
 ---
 
-## Step 6 — Report
+## Step 7 — Report
 
 Report what was added:
-- Which sections were missing and are now written
+- Which sections were missing and are now written (call out the Patterns section by name if it was written, and how many "continue" vs "stop" decisions it captured)
 - Which sections already existed and were left untouched
+- Whether `CLAUDE.md` was newly created as a symlink, migrated from an existing real file, or already correct
 - Whether `/update-readme` was run

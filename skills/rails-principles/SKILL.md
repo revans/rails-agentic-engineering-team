@@ -177,7 +177,7 @@ If you can delete a conditional from the implementation and no test would catch 
 
 ## Approved Dependencies
 
-**Approved dependencies are project-specific.** Read the project's `CLAUDE.md` and `Gemfile` for the authoritative approved list.
+**Approved dependencies are project-specific.** Read the project's `AGENTS.md` and `Gemfile` for the authoritative approved list.
 
 **Standard Rails 8 baseline (typical defaults):**
 
@@ -185,7 +185,7 @@ Runtime: rails, propshaft, sqlite3, puma, importmap-rails, turbo-rails, stimulus
 
 Development/test: debug, bundler-audit, brakeman, rubocop-rails-omakase, web-console, capybara, selenium-webdriver
 
-**Typical "never use" for Rails 8 projects (check CLAUDE.md for project overrides):**
+**Typical "never use" for Rails 8 projects (check AGENTS.md for project overrides):**
 - No Redis — Solid Stack only (Solid Queue, Solid Cache, Solid Cable)
 - No Devise — Rails 8 `rails generate authentication`
 - No RSpec — Minitest with fixtures
