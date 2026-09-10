@@ -32,6 +32,7 @@ github:
   labels:
     feature: feature
     bug: bug
+    tech-debt: tech-debt
 
 review:
   escalation_rounds: 3             # same [CATEGORY] finding persisting this many consecutive
@@ -63,12 +64,14 @@ ruby -ryaml -e "c = YAML.load_file('team.yml'); puts c.dig('github','project','n
 
 `.dig` returns `nil` (prints nothing) rather than raising on a missing key — check for an empty result before using a value, don't assume the field is populated.
 
-**The project board and the issue board are two different things, and the two intake types split across them on purpose:**
+**The project board and the issue board are two different things, and the three label types split across them on purpose:**
 
-- **`feature` issues** go on the GitHub Project board (`github.project`) — that's what `roadmap-analyst` reads to weigh backlog value, and what a human looks at to decide what to build next.
+- **`feature` and `tech-debt` issues** go on the GitHub Project board (`github.project`) — that's what `roadmap-analyst` reads to weigh backlog value, and what a human looks at to decide what to build next. They're ranked together (see `roadmap-analyst.md`) — a `tech-debt` issue just skips the discovery interview a `feature` issue would need first.
 - **`bug` issues stay plain repo issues** — no project, no status column. `bug-triage` reads them straight off the repo's Issues tab (`gh issue list --label bug`), verifies and ranks them itself, and writes `docs/triage.md`. Putting a bug on the project board too would just be a second, unranked opinion sitting next to a better one.
 
-`github.project` in `team.yml` is read by feature-filing (`intake`) and `roadmap-analyst` only. `bug-triage` never touches it.
+`github.project` in `team.yml` is read by feature/tech-debt filing (`intake`, the orchestrator's scope-capture filing, `roadmap-analyst`) and `roadmap-analyst`'s own read pass. `bug-triage` never touches it.
+
+All three labels can be filed two ways: directly, by a human via `/bug`/`/request`, or automatically, by the orchestrator sweeping a pipeline run's **Scope ideas noticed** entries (see the `scope-capture` skill) once the run reaches a final verdict. Same labels, same destinations, same duplicate-check — the only difference is whether a human confirmed it live or the orchestrator confirmed it against existing issues instead, since Stage 7b can't pause a pipeline mid-run to ask.
 
 ---
 

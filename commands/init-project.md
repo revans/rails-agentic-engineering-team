@@ -108,26 +108,18 @@ Add or remove based on what Gemfile confirms.
 ```
 ## TODO.md
 
-`TODO.md` at the project root has three sections:
+`TODO.md` at the project root holds **Deferred** work only — decisions deliberately set
+aside during an active session, with full context on why and what's needed to resume. Read
+this before starting work that touches a deferred area. Update it when deferring something —
+include the reason and the options considered so the next session doesn't re-litigate it.
 
-**Needs Discovery** — capability ideas worth exploring that aren't scoped enough to hand
-to an engineer yet. Someone would need to sit through a `/feature` interview before this
-could be built. Captured here so they aren't lost; each entry names the idea and the
-trigger that surfaced it.
-
-**Tech Debt** — work that's already understood well enough to hand directly to an
-engineer, no discovery interview needed (an inconsistent pattern, a missing index, dead
-code, a naming drift). Each entry names the fix and the trigger that surfaced it.
-
-**Deferred** — work deliberately set aside during active sessions with full context on why
-it was deferred and what decision is needed. Read this before starting work that touches the
-deferred area. Update it when deferring something — include the reason and the options
-considered so the next session doesn't re-litigate it.
-
-Agents never write to `TODO.md` directly — see the `scope-capture` skill and the
-orchestrator's TODO Capture stage for how `Needs Discovery` and `Tech Debt` entries get
-added. `/roadmap` reads `Needs Discovery` and `Tech Debt` against every persona file under
-`docs/icp/` and the codebase to propose a build order — see `commands/roadmap.md`.
+New feature ideas, tech debt, and bugs don't go here — they go to GitHub. Any agent that
+notices one names it in its own report (see the `scope-capture` skill); the orchestrator
+files it as a labeled issue (`feature`, `tech-debt`, or `bug`) once the pipeline reaches a
+final verdict. `/bug` and `/request` do the same thing directly, for a human reporting
+something outside a pipeline run. `/roadmap` reads open `feature`- and `tech-debt`-labeled
+issues against every persona file under `docs/icp/` and the codebase to propose a build
+order — see `commands/roadmap.md`. `/triage` does the equivalent for `bug`-labeled issues.
 ```
 
 **Abstraction Decisions:** always write this section the same way:
@@ -174,34 +166,13 @@ If every pattern found was confirmed to continue (no "stop" answers), omit the *
 
 ## Step 4b — Create TODO.md if absent
 
-If `TODO.md` does not exist at the project root, create it with the three-section structure and one example per section. The examples orient the LLM on what belongs in each section — they are illustrative, not real entries, and should be replaced as actual work surfaces.
+If `TODO.md` does not exist at the project root, create it with the Deferred-only structure and one example entry. The example orients the LLM on what belongs there — it's illustrative, not a real entry, and should be replaced as actual work surfaces.
 
 ```markdown
 # {Project Name} — TODO
 
----
-
-## Needs Discovery
-
-Capability ideas worth exploring that aren't scoped enough to hand to an engineer yet —
-someone would need to sit through a `/feature` interview before this could be built.
-Each entry names the idea and what triggered it.
-
-- [ ] **Example: Mobile-friendly document view**
-  Surfaced during a user session — the editor is hard to read on small screens. Not scoped
-  yet. Worth a discovery interview before anything is built.
-
----
-
-## Tech Debt
-
-Work that's already understood well enough to hand straight to an engineer — no discovery
-interview needed. Each entry names the fix and what triggered it.
-
-- [ ] **Example: Inconsistent callback style in app/models/listing.rb**
-  Noticed during a code review — half the callbacks use `before_save`, half use a
-  `before_validation` guard clause for the same kind of check. Worth a pass to pick one
-  convention and apply it consistently.
+Deferred work only. New feature ideas, tech debt, and bugs go to GitHub instead — see the
+`scope-capture` skill and `commands/roadmap.md` / `commands/triage.md`.
 
 ---
 

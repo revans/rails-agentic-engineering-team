@@ -55,7 +55,7 @@ From Stage 2 onward, every agent operates inside a dedicated git worktree, not t
 
 Two directories matter for the rest of this pipeline:
 
-- **`$PROJECT_ROOT`** — the main checkout, on `main`/`master`. Capture it once, before anything else: `PROJECT_ROOT=$(pwd)`. `TODO.md` (the only project-root file this pipeline actually writes, at Stage 7b) is edited here, never in the worktree — it's project-wide backlog state, not feature-specific, and should land on `main` promptly rather than waiting on this feature's PR to merge. The same reasoning is why `docs/roadmap.md` and `docs/icp/` — written by `/roadmap` and `/define-icp`, not by this pipeline — also live at `$PROJECT_ROOT` rather than inside any feature's worktree.
+- **`$PROJECT_ROOT`** — the main checkout, on `main`/`master`. Capture it once, before anything else: `PROJECT_ROOT=$(pwd)`. `team.yml` is read from here at Stage 7b, since scope-capture ideas now file to GitHub rather than a project-root file this pipeline writes itself. The same reasoning is why `docs/roadmap.md` and `docs/icp/` — written by `/roadmap` and `/define-icp`, not by this pipeline — also live at `$PROJECT_ROOT` rather than inside any feature's worktree.
 - **`$WORKTREE_DIR`** — created at the end of Stage 1, one per feature, at `../{NNN}-{feature-name}` on branch `feature/{NNN}-{feature-name}`. Every agent from Stage 2 (architect) through Stage 7 (synthesis) reads and writes here.
 
 **Every agent launch prompt from Stage 2 onward opens with these two lines:**
@@ -358,11 +358,13 @@ Don't add a `Pull Request` field to this template — the PR doesn't exist yet a
 
 ---
 
-## Stage 7b — TODO Capture
+## Stage 7b — Scope Capture Filing
 
-Every content agent in this pipeline can notice something that should exist but is out of scope for the feature it's working on — see the `scope-capture` skill. They name it in their own report under a **Scope ideas noticed** entry; they never write `TODO.md` directly, because most of them are restricted to `{FEATURE_DIR}` and four of them run in parallel against the same file. The orchestrator is the only agent that writes `TODO.md`, and it does so once, here, after the pipeline reaches a final verdict — not per stage, per round.
+Every content agent in this pipeline can notice something that should exist but is out of scope for the feature it's working on — see the `scope-capture` skill. They name it in their own report under a **Scope ideas noticed** entry; they never file anything themselves, because most of them are restricted to `{FEATURE_DIR}` and four of them run in parallel — a coordinated duplicate-check across all four needs one filer, not four racing `gh` calls. The orchestrator is the only thing that files these, and it does so once, here, after the pipeline reaches a final verdict — not per stage, per round.
 
-**This is the one step that crosses both directories deliberately.** The entries to sweep live in the worktree (that's where every agent's report was written); the file they get written to lives at `$PROJECT_ROOT`, not the worktree — `TODO.md` is project-wide state that should reach `main` now, not wait on this feature's PR to merge. The worktree has its own stale copy of `TODO.md` from whenever it branched off `main`; ignore it, don't write to it.
+These file to GitHub, not `TODO.md` — `TODO.md` at `$PROJECT_ROOT` still exists, but only for `Deferred` entries (a note tied to *this* build, not a backlog candidate); nothing in this stage touches it.
+
+Read `${PROJECT_ROOT}/team.yml` for the repo, project board, and labels — see the `github-cli` skill.
 
 Sweep every artifact in the feature directory, not just the final round — an idea raised in an earlier round that got fixed in code is still worth keeping if it named something adjacent, not the failure itself:
 
@@ -373,27 +375,32 @@ grep -A 3 -i "scope ideas noticed" ${WORKTREE_DIR}/${FEATURE_DIR}/${NNN}.*.md
 For each entry found:
 
 1. Skip "None" and empty sections.
-2. Read the entry's tag — `[needs-discovery]` routes to `${PROJECT_ROOT}/TODO.md`'s **Needs Discovery** section, `[tech-debt]` routes to **Tech Debt**. If an entry has no tag (an older report written before this convention existed), default to **Needs Discovery** — the safer bucket, since routing an unscoped idea into Tech Debt would imply it's ready for an engineer when it isn't.
-3. Check whether the idea is already present in the target section — read `${PROJECT_ROOT}/TODO.md` first, compare by meaning, not exact string match, since the same idea can get reworded across rounds. Skip duplicates.
-4. If `${PROJECT_ROOT}/TODO.md` doesn't exist yet, create it with the three-section skeleton (`Needs Discovery` / `Tech Debt` / `Deferred`) before appending — see `commands/init-project.md` Step 4b for the exact structure.
-5. Append each new idea to its routed section in `${PROJECT_ROOT}/TODO.md`, attributed to the agent and feature that surfaced it:
+2. Read the entry's tag and resolve the label and destination:
+   - `[needs-discovery]` → `feature` label, added to the project board (same as `/request`)
+   - `[tech-debt]` → `tech-debt` label, added to the project board
+   - `[bug]` → `bug` label, plain repo issue, no project board (same as `/bug`)
+   - No tag at all (an older report predating this convention) → default to `[needs-discovery]`, the safer bucket; treating an unscoped idea as ready-to-build tech debt would be the wrong default
+3. Duplicate-check before filing — see the `github-cli` skill's recipe (`gh issue list --search "KEYWORDS in:title,body" --label LABEL --state all`). This step can't pause for a live human decision the way `/bug`/`/request` do, so the default on a clear match is to skip filing and note the existing issue number in the final report, not to ask.
+4. File the survivors: `gh issue create` with the resolved label, `--project` for `feature`/`tech-debt`, no `--project` for `bug`. Body format:
 
 ```markdown
-- [ ] **{Idea, short}**
-  {What surfaced it, from the agent's report}. Surfaced by {agent} during {NNN} {feature-name}.
+## Summary
+
+{The idea, one or two sentences}
+
+## Codebase Context
+
+Surfaced by {agent} during {NNN} {feature-name}{, round N if applicable}.
+
+## Additional Notes
+
+None.
+
+---
+Filed via scope-capture — {date}
 ```
 
-If anything was appended, commit and push it from `$PROJECT_ROOT` — not the worktree:
-
-```bash
-cd "$PROJECT_ROOT"
-git add TODO.md
-git commit -m "docs: capture backlog entries surfaced during ${NNN} {feature-name}"
-git push
-cd "$WORKTREE_DIR"
-```
-
-This step never blocks the pipeline and never fails it — if `TODO.md` can't be written or pushed for some reason, note it in the final report to the user and move on. Skip the commit entirely if nothing was appended.
+This step never blocks the pipeline and never fails it — if a `gh` call fails for some reason, note it in the final report and move on; don't retry indefinitely or halt the pipeline over it. List every issue filed (with URL) and every duplicate skipped (with the existing issue's number) in the final report — see Communication.
 
 ---
 
@@ -687,9 +694,9 @@ A lighter version of Stage 7 — there's no Key Scenarios or Acceptance Criteria
 
 The `**Closes:** #{N}` line is not decorative — Stage B8 pulls it into the PR body so GitHub closes the issue automatically on merge.
 
-### Stage B7 — TODO Capture
+### Stage B7 — Scope Capture Filing
 
-Identical to Stage 7b — sweep `{BUGFIX_DIR}` for **Scope ideas noticed** entries and file them at `$PROJECT_ROOT/TODO.md`. A bug fix can surface scope ideas exactly as a feature can; the boundary this stage enforces doesn't change because the artifact directory has a different name.
+Identical to Stage 7b — sweep `{BUGFIX_DIR}` for **Scope ideas noticed** entries and file the survivors to GitHub, labeled per tag. A bug fix can surface scope ideas exactly as a feature can; the boundary this stage enforces doesn't change because the artifact directory has a different name.
 
 ### Stage B8 — Push & Pull Request
 
@@ -921,16 +928,16 @@ Be terse. Every message names the current stage, the agent being launched, and t
 001 complete. 2 review rounds. Final verdict: PASS WITH NOTES (cr, sec), PASS (perf, fid).
 Summary: docs/briefs/001-accounts/001-summary.md
 Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.13-fid-accounts.md
-TODO.md: 1 new entry in Needs Discovery (architect), 1 new entry in Tech Debt (code-review)
+Scope capture: filed #57 (feature, architect), #58 (tech-debt, code-review); skipped #41 as a duplicate
 PR: https://github.com/owner/repo/pull/42
 Worktree ../001-accounts stays checked out on feature/001-accounts until the PR merges —
 remove it with `git worktree remove ../001-accounts` once it does.
 log-analyst has 12 cycles of new data since its last run (2026-08-02) — worth a run when convenient.
 ```
 
-Omit the `log-analyst` line entirely below 10 cycles — see Stage 9.
+Omit the `log-analyst` line entirely below the configured threshold — see Stage 9.
 
-Omit the `TODO.md` line entirely if Stage 7b found nothing to add — don't report a zero.
+Omit the `Scope capture` line entirely if Stage 7b found nothing to file and nothing to skip — don't report a zero.
 
 **Routing back to engineer:**
 ```

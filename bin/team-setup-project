@@ -1,8 +1,9 @@
 #!/usr/bin/env ruby
 # bin/team-setup-project
 # Sets up everything about a target project that doesn't need a live human
-# decision: detects the repo from git, writes team.yml, creates and migrates
-# db/agent_log.sqlite3, and creates the docs/ skeleton.
+# decision: detects the repo from git, writes team.yml, creates the feature/
+# bug/tech-debt repo labels, creates and migrates db/agent_log.sqlite3, and
+# creates the docs/ skeleton.
 #
 # Usage:
 #   bin/team-setup-project --dir /path/to/project [--repo owner/repo]
@@ -72,6 +73,7 @@ TEAM_YML_TEMPLATE = <<~YAML
     labels:
       feature: feature
       bug: bug
+      tech-debt: tech-debt
 
   review:
     escalation_rounds: 3             # same [CATEGORY] finding persisting this many consecutive
@@ -158,6 +160,28 @@ def setup_sqlite(dir)
   { status: "ok", detail: "#{existed_before ? 'already present' : 'created'} at db/agent_log.sqlite3 — tables: #{tables.split.join(', ')}" }
 end
 
+LABEL_COLORS = { "feature" => "0e8a16", "bug" => "d73a4a", "tech-debt" => "fbca04" }.freeze
+
+def setup_labels(dir, repo)
+  return { status: "ok", detail: "skipped — repo not yet known" } unless repo
+
+  created = []
+  present = []
+  LABEL_COLORS.each do |name, color|
+    existing, _ = sh("gh", "label", "list", "--repo", repo, "--search", name, "--json", "name")
+    if existing.include?("\"#{name}\"")
+      present << name
+      next
+    end
+    _, ok = sh("gh", "label", "create", name, "--repo", repo, "--color", color,
+               "--description", "#{name} — created by team-setup-project")
+    return { status: "failed", detail: "could not create label '#{name}' on #{repo} — check gh auth and repo access" } unless ok
+    created << name
+  end
+
+  { status: "ok", detail: "present: #{present.join(', ').empty? ? 'none' : present.join(', ')}; created: #{created.join(', ').empty? ? 'none' : created.join(', ')}" }
+end
+
 def setup_docs_skeleton(dir)
   dirs = %w[docs/briefs docs/icp docs/agent-analysis docs/bugfixes]
   created = []
@@ -191,6 +215,7 @@ repo_step = if repo
 steps = {
   repo: repo_step,
   team_yml: write_team_yml(dir, repo),
+  labels: setup_labels(dir, repo),
   sqlite: setup_sqlite(dir),
   docs_skeleton: setup_docs_skeleton(dir),
 }

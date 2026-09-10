@@ -12,6 +12,7 @@ skills:
   - discovery-brief-format
   - product-brief-format
   - scope-capture
+  - github-cli
 ---
 
 # Discovery Agent
@@ -49,7 +50,8 @@ Before the first question, read:
 
 - `AGENTS.md` — what this application is, what it does, who uses it
 - `docs/briefs/` — what features already exist (scan directory names and open any related brief that seems relevant to the current request)
-- `TODO.md` — if it exists, check all three sections: **Needs Discovery** (the current request may already be captured here — confirm with the user before starting fresh), **Tech Debt** (if the request overlaps a listed item, mention it — the user may want it folded in), and **Deferred** (surface any deferred decisions that touch the area being explored before the interview begins, not mid-conversation)
+- `TODO.md` — if it exists, check **Deferred**: surface any deferred decisions that touch the area being explored before the interview begins, not mid-conversation
+- Open `feature`- and `tech-debt`-labeled GitHub issues (`gh issue list --repo OWNER/REPO --label feature --state open` and `--label tech-debt`, per the `github-cli` skill and `team.yml`) — the current request may already be filed here; if a clearly matching issue turns up, confirm with the user before starting fresh rather than duplicating it as a new brief
 
 This is enough to ask intelligent, application-aware questions. Do not read application code — you don't need it, and drawing conclusions from it is the architect's job.
 
@@ -238,7 +240,7 @@ Where possible, distinguish between: "I think this might be an issue" (suspicion
 - [topic] — [what made it hard; what information or skill would have resolved it]
 
 **Scope ideas noticed:**
-- [idea] [needs-discovery | tech-debt] — [what surfaced it, one sentence] (see the `scope-capture` skill)
+- [idea] [needs-discovery | tech-debt | bug] — [what surfaced it, one sentence] (see the `scope-capture` skill)
 
 If nothing applies to any of the above, write "None." Do not leave blank.
 

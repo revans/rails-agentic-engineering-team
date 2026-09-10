@@ -12,7 +12,7 @@ Each agent is a Claude Code subagent definition: a markdown file that specifies 
 
 Interviews you to understand what you want to build.
 
-**Reads:** `AGENTS.md`, `docs/briefs/`, `TODO.md`  
+**Reads:** `AGENTS.md`, `docs/briefs/`, `TODO.md`'s `Deferred` section, open `feature`/`tech-debt`-labeled GitHub issues  
 **Writes:** `{NNN}.01-dis-{feature}.md`  
 **Cannot:** Read application code, assign feature numbers
 
@@ -125,11 +125,11 @@ These two agents run outside the feature pipeline too, but neither is part of th
 
 ### Roadmap Analyst
 
-Reads `TODO.md`'s `Needs Discovery` and `Tech Debt` sections, every persona file under `docs/icp/`, and the codebase, and proposes a build order.
+Reads open `feature`- and `tech-debt`-labeled GitHub issues, every persona file under `docs/icp/`, and the codebase, and proposes a build order.
 
-**Reads:** `TODO.md`, `docs/icp/*-icp.md`, `app/models/`, `config/routes.rb`, `db/schema.rb`, `docs/briefs/`  
+**Reads:** `team.yml`, open GitHub issues (labels `feature`, `tech-debt`), `docs/icp/*-icp.md`, `app/models/`, `config/routes.rb`, `db/schema.rb`, `docs/briefs/`  
 **Writes:** `docs/roadmap.md`  
-**Cannot:** Modify `TODO.md`, any file under `docs/icp/`, or application code — the one exception is appending a single new backlog entry it surfaced itself, and only after the user confirms it live
+**Cannot:** Modify any file under `docs/icp/`, any application code, or any existing GitHub issue — the one exception is filing a single new backlog issue it surfaced itself, and only after the user confirms it live
 
 Run it via `/roadmap`, on demand — not part of `/feature`. It orders the backlog on two independent axes: technical dependency (does this need something that doesn't exist yet) and product value (does this serve a persona `docs/icp/` describes). An item can be clear-to-build and off-ICP, or blocked and on-ICP — those are different findings, not one combined score. `docs/icp/` can hold more than one persona file — a marketplace's buyer and seller, say — and an item is judged against each one, not an averaged composite. If `docs/icp/` is empty or every file in it is stale, roadmap-analyst ranks by dependency only and says so rather than guessing at a customer.
 
@@ -141,7 +141,7 @@ Reads open GitHub issues labeled `bug`, verifies each against the codebase, and 
 **Writes:** `docs/triage.md`
 **Cannot:** Modify application code, close or edit any GitHub issue, or write anywhere except `docs/triage.md` — the one exception is filing a reclassified feature request, and only after the user confirms
 
-Run it via `/triage`, on demand. `/bug` files an issue after a first-pass interview; it doesn't verify anything beyond that or compare one bug against another. Bug triage is the harder-verification pass: it reproduces or confirms each bug from the code before trusting it — "cannot reproduce" is a valid, closing verdict, not a failure to find something. It ranks by severity and blast radius, weighted by whether the broken flow is one a persona in `docs/icp/` actually uses, and recommends one of four routes: a direct fix (`engineer` + the four reviewers, with the issue itself standing in for a spec — no discovery, architect, or design stage), escalation to `/feature` when the fix isn't actually bounded, closing as cannot-reproduce or already-fixed, or reclassifying as a feature request when the "bug" turns out to need a new decision rather than a restored one. It is `roadmap-analyst`'s sibling — same reviewer-class shape, same "propose, don't execute" boundary — but reads the `bug`-labeled half of the GitHub issue board instead of `TODO.md`.
+Run it via `/triage`, on demand. `/bug` files an issue after a first-pass interview; it doesn't verify anything beyond that or compare one bug against another. Bug triage is the harder-verification pass: it reproduces or confirms each bug from the code before trusting it — "cannot reproduce" is a valid, closing verdict, not a failure to find something. It ranks by severity and blast radius, weighted by whether the broken flow is one a persona in `docs/icp/` actually uses, and recommends one of four routes: a direct fix (`engineer` + the four reviewers, with the issue itself standing in for a spec — no discovery, architect, or design stage), escalation to `/feature` when the fix isn't actually bounded, closing as cannot-reproduce or already-fixed, or reclassifying as a feature request when the "bug" turns out to need a new decision rather than a restored one. It is `roadmap-analyst`'s sibling — same reviewer-class shape, same "propose, don't execute" boundary — but reads `bug`-labeled repo issues instead of the `feature`/`tech-debt`-labeled ones on the project board.
 
 ## Intake Agent
 
@@ -168,7 +168,7 @@ Prepares a fresh repo for the team: confirms the target directory, gets `gh` ins
 The agent itself mostly narrates and interprets — the actual OS-level and filesystem work happens in two scripts it runs and reads structured JSON back from:
 
 - **`bin/team-setup-gh`** — installs `gh` if missing (package manager or a direct binary download, no sudo required on Linux), then, if not authenticated, opens a terminal window with `gh auth login` typed and submitted so the user can finish the interactive login themselves. Never runs the login itself — that step is unavoidably a human's.
-- **`bin/team-setup-project`** — detects the repo from `git remote`, writes/updates `team.yml` (a targeted edit that preserves comments and every other field, never a full rewrite), migrates `db/agent_log.sqlite3` by invoking `bin/agent-log` itself (so the schema lives in exactly one place, not duplicated), and creates the `docs/` skeleton (`docs/briefs/`, `docs/icp/`, `docs/agent-analysis/`, `docs/bugfixes/`).
+- **`bin/team-setup-project`** — detects the repo from `git remote`, writes/updates `team.yml` (a targeted edit that preserves comments and every other field, never a full rewrite), creates the `feature`/`bug`/`tech-debt` repo labels if missing, migrates `db/agent_log.sqlite3` by invoking `bin/agent-log` itself (so the schema lives in exactly one place, not duplicated), and creates the `docs/` skeleton (`docs/briefs/`, `docs/icp/`, `docs/agent-analysis/`, `docs/bugfixes/`).
 
 **Reads:** the target directory's `git remote`, `team.yml` (if it exists — to avoid re-asking what's already set), `bin/agent-log` (to confirm it's present before migrating the database)  
 **Writes:** `team.yml`, `db/agent_log.sqlite3`, the `docs/` skeleton directories  
@@ -188,7 +188,7 @@ Eight skill files give agents project-specific knowledge that training data alon
 | `architect-spec-format` | The specification template and field descriptions |
 | `discovery-brief-format` | The brief template and field descriptions |
 | `product-brief-format` | Shared with `agentic-ideation-team`; the section list discovery checks before deciding whether an incoming whole-product brief already answers its own interview questions |
-| `scope-capture` | When to name something out-of-scope in a report instead of building it or letting it evaporate; feeds the orchestrator's TODO.md capture step |
+| `scope-capture` | When to name something out-of-scope in a report instead of building it or letting it evaporate; feeds the orchestrator's scope-capture filing stage, which files it to GitHub |
 | `github-cli` | Verified `gh` CLI recipes for issues, labels, Projects v2 status columns, git worktree isolation, and PRs |
 
 New skill files are added by the skill builder as the learning loop matures.

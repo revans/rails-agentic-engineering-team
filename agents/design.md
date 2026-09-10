@@ -270,7 +270,7 @@ Why key visual and flow choices were made:
 - [topic] — [what made it hard; what information or skill would have resolved it]
 
 **Scope ideas noticed:**
-- [idea] [needs-discovery | tech-debt] — [what surfaced it, one sentence] (see the `scope-capture` skill)
+- [idea] [needs-discovery | tech-debt | bug] — [what surfaced it, one sentence] (see the `scope-capture` skill)
 
 If nothing applies to any of the above, write "None." Do not leave blank.
 

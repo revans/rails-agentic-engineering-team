@@ -241,7 +241,7 @@ Must be empty when this spec is handed to engineering. If any remain, the spec i
 - [topic] — [what made it hard; what information or skill would have resolved it]
 
 **Scope ideas noticed:**
-- [idea] [needs-discovery | tech-debt] — [what surfaced it, one sentence] (see the `scope-capture` skill)
+- [idea] [needs-discovery | tech-debt | bug] — [what surfaced it, one sentence] (see the `scope-capture` skill)
 
 If nothing applies to any of the above, write "None." Do not leave blank.
 

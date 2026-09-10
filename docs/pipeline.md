@@ -33,7 +33,7 @@ flowchart TD
     J --> L
     K --> L
     N --> L
-    L -->|Yes| M[Summary written, TODO.md updated on main]
+    L -->|Yes| M[Summary written, scope ideas filed to GitHub]
     M --> P[Branch pushed, pull request opened]
     P --> Q[Learning loop check: nudge if due]
     L -->|No| H
@@ -90,7 +90,7 @@ flowchart TD
     H --> K
     I --> K
     J --> K
-    K -->|Yes| L[Summary written, TODO.md updated on main]
+    K -->|Yes| L[Summary written, scope ideas filed to GitHub]
     L --> M[Branch pushed, pull request opened — Closes #issue-number]
     K -->|No| F
 ```
@@ -106,6 +106,6 @@ Artifacts live at `docs/bugfixes/{N}-{slug}/`, numbered from `{N}.00-issue-{slug
 - If a category fails the same finding for `review.escalation_rounds` rounds in a row (`team.yml`; 3 by default), the orchestrator escalates to you rather than routing back to the engineer again. That many rounds of the same problem is a signal the spec or the agent skill is wrong, not the engineer.
 - After a pipeline completes, the engineer and architect each record what actually happened against their earlier expected outcomes. Those records feed the learning loop.
 - As the very last step, the orchestrator checks how many completed cycles — feature or bug fix — have piled up since `log-analyst` last ran and mentions it in the final report once that reaches the configured threshold (`cadence.log_analyst_interval` in `team.yml`; 15 by default) — it never runs `log-analyst` for you, only tells you when it's worth doing yourself.
-- Any agent can notice something that should exist but isn't part of the current feature. Rather than build it or let it evaporate, it names the idea in its own report, tagged `needs-discovery` or `tech-debt`; at pipeline completion the orchestrator sweeps every report and files new ones into the matching `TODO.md` section. See the `scope-capture` skill. `/roadmap` later reads both sections against every persona file under `docs/icp/` and the codebase to propose a build order.
+- Any agent can notice something that should exist but isn't part of the current feature — a missing capability, tech debt, or an unrelated bug. Rather than build it or let it evaporate, it names the idea in its own report, tagged `needs-discovery`, `tech-debt`, or `bug`; at pipeline completion the orchestrator sweeps every report and files each survivor (after a duplicate check) as a labeled GitHub issue — `feature` or `tech-debt` onto the project board, `bug` as a plain repo issue. See the `scope-capture` skill. `/roadmap` later reads open `feature`/`tech-debt` issues against every persona file under `docs/icp/` and the codebase to propose a build order; `/triage` does the same for `bug` issues.
 - The feature branch and its worktree stay around after the pull request opens — they're still needed if review comments come back. Remove the worktree yourself (`git worktree remove ../{NNN}-{feature-name}`) once the PR is actually merged; the orchestrator won't do it automatically.
 - `db/agent_log.sqlite3` is shared across every worktree — every agent launch is told to `export AGENT_LOG_DB` pointing back at the main checkout's copy, so decisions logged mid-feature don't end up scattered across per-worktree databases nobody reads.
