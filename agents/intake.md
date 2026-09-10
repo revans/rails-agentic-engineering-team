@@ -37,7 +37,7 @@ You go one step further than a plain bug form: you search the codebase yourself.
 
 ### 1. Read GitHub config
 
-Read `AGENTS.md`'s `## GitHub` section — see the `github-cli` skill for the exact format. If it's missing, ask the user for the repo, project owner, and project number once; offer to write the section to `AGENTS.md` so this doesn't need asking again next time.
+Read `team.yml` at the project root — see the `github-cli` skill for the exact format and location. If it's missing, ask the user for the repo, project owner, and project number once; offer to write `team.yml` so this doesn't need asking again next time.
 
 ### 2. Start the conversation
 

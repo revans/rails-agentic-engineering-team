@@ -1,6 +1,6 @@
 # Agents
 
-Twelve agents handle specific stages of the feature pipeline, the learning loop, backlog strategy, or intake. Each agent has one job, defined inputs, and defined outputs.
+Thirteen agents handle specific stages of the feature pipeline, the learning loop, backlog strategy, or intake. Each agent has one job, defined inputs, and defined outputs.
 
 ## What They Are
 
@@ -90,9 +90,9 @@ Reads the agent database and proposes specific improvements to agent rules.
 **Writes:** `docs/agent-analysis/YYYY-MM-DD.md`  
 **Cannot:** Modify any agent or skill file
 
-Run the log analyst after 10 to 15 completed feature cycles. It looks for six pattern types: decisions that should become standing rules, alternatives that should be documented as anti-patterns, engineer decisions that the architect should have made instead, expected vs. observed outcome mismatches, practices that correlate with high-quality runs, and finding categories that recur across multiple features.
+Run the log analyst after `cadence.log_analyst_interval` completed cycles (`team.yml`; 15 by default — feature and bug fix cycles both count). It looks for six pattern types: decisions that should become standing rules, alternatives that should be documented as anti-patterns, engineer decisions that the architect should have made instead, expected vs. observed outcome mismatches, practices that correlate with high-quality runs, and finding categories that recur across multiple features.
 
-You don't have to track the cycle count yourself — the orchestrator does, as the last thing it does at the end of every pipeline run (Stage 9 in `docs/pipeline.md`), and mentions it in the final report once 10 or more cycles have passed since the last `docs/agent-analysis/` report. It never runs `log-analyst` for you; it only tells you when it's worth doing yourself.
+You don't have to track the cycle count yourself — the orchestrator does, as the last thing it does at the end of every pipeline or bug fix run (Stage 9 / Stage B10 in `docs/pipeline.md`), and mentions it in the final report once the threshold has passed since the last `docs/agent-analysis/` report. It never runs `log-analyst` for you; it only tells you when it's worth doing yourself.
 
 ### Skill Builder
 
@@ -121,7 +121,7 @@ Every agent logs decisions, events, struggles, and skill gaps to the SQLite data
 
 ## Strategy Agents
 
-This agent runs outside the feature pipeline too, but it isn't part of the learning loop — it doesn't read agent behavior, it reads the product backlog.
+These two agents run outside the feature pipeline too, but neither is part of the learning loop — they don't read agent behavior, they read the product backlog and the bug queue.
 
 ### Roadmap Analyst
 
@@ -133,6 +133,16 @@ Reads `TODO.md`'s `Needs Discovery` and `Tech Debt` sections, every persona file
 
 Run it via `/roadmap`, on demand — not part of `/feature`. It orders the backlog on two independent axes: technical dependency (does this need something that doesn't exist yet) and product value (does this serve a persona `docs/icp/` describes). An item can be clear-to-build and off-ICP, or blocked and on-ICP — those are different findings, not one combined score. `docs/icp/` can hold more than one persona file — a marketplace's buyer and seller, say — and an item is judged against each one, not an averaged composite. If `docs/icp/` is empty or every file in it is stale, roadmap-analyst ranks by dependency only and says so rather than guessing at a customer.
 
+### Bug Triage
+
+Reads open GitHub issues labeled `bug`, verifies each against the codebase, and proposes a fix order.
+
+**Reads:** `team.yml`, GitHub issues (label `bug`), `docs/icp/*-icp.md`, the codebase, `docs/triage.md` (if it exists — a refresh)
+**Writes:** `docs/triage.md`
+**Cannot:** Modify application code, close or edit any GitHub issue, or write anywhere except `docs/triage.md` — the one exception is filing a reclassified feature request, and only after the user confirms
+
+Run it via `/triage`, on demand. `/bug` files an issue after a first-pass interview; it doesn't verify anything beyond that or compare one bug against another. Bug triage is the harder-verification pass: it reproduces or confirms each bug from the code before trusting it — "cannot reproduce" is a valid, closing verdict, not a failure to find something. It ranks by severity and blast radius, weighted by whether the broken flow is one a persona in `docs/icp/` actually uses, and recommends one of four routes: a direct fix (`engineer` + the four reviewers, with the issue itself standing in for a spec — no discovery, architect, or design stage), escalation to `/feature` when the fix isn't actually bounded, closing as cannot-reproduce or already-fixed, or reclassifying as a feature request when the "bug" turns out to need a new decision rather than a restored one. It is `roadmap-analyst`'s sibling — same reviewer-class shape, same "propose, don't execute" boundary — but reads the `bug`-labeled half of the GitHub issue board instead of `TODO.md`.
+
 ## Intake Agent
 
 This is the one agent shared behind two commands. `/feature` starts building something now; this agent captures something for later — a bug report or an idea, filed to GitHub instead of a local artifact.
@@ -141,8 +151,8 @@ This is the one agent shared behind two commands. `/feature` starts building som
 
 Interviews the reporter, searches the codebase for supporting context, checks for duplicates, and files a labeled GitHub issue.
 
-**Reads:** `AGENTS.md`'s `GitHub` section, `docs/icp/*-icp.md` (feature mode only), the application codebase, existing GitHub issues  
-**Writes:** A GitHub issue via `gh` — nothing local except, on first run, a `## GitHub` config section appended to `AGENTS.md`  
+**Reads:** `team.yml`, `docs/icp/*-icp.md` (feature mode only), the application codebase, existing GitHub issues  
+**Writes:** A GitHub issue via `gh` — nothing local except, on first run, `team.yml` itself  
 **Cannot:** Modify application code; close, resolve, or edit an existing issue; file before the user confirms
 
 Run via `/bug` (type `bug`) or `/request` (type `feature`) — same identity, same flow, different interview questions and label. Both file into the project's `Ready` column, per the `github-cli` skill. Neither runs as a subagent — the interview needs to be live, the same reason discovery and the orchestrator run directly in the conversation.

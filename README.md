@@ -1,12 +1,12 @@
 # Rails Agentic Engineering Team
 
-A Claude Code plugin that runs twelve specialized AI agents to take Rails features from discovery interview to an open pull request, keep the resulting backlog ordered against who the product is actually for, and turn a bug report or an idea into a triaged GitHub issue in under a minute of conversation.
+A Claude Code plugin that runs thirteen specialized AI agents to take Rails features from discovery interview to an open pull request, keep the resulting backlog ordered against who the product is actually for, turn a bug report or an idea into a labeled GitHub issue in under a minute of conversation, and verify and rank that bug queue on demand.
 
 ## What This Is
 
 Rails Agentic Engineering Team installs a full feature pipeline into any Rails project using Claude Code. You describe a feature, and a team of agents handles the rest: one interviews you to understand the requirement, one reads the codebase and writes a spec, one designs the UI, one builds the feature with test-driven development, and four reviewers check the work in parallel — three for code quality, security issues, and performance problems, and a fourth that checks whether the implementation still matches the plan and the plan still solves the problem the interview captured. The whole pipeline runs isolated in its own git worktree and ends with an open pull request, never a self-merge. Every decision each agent makes is recorded to a SQLite database. After enough runs accumulate, a learning analyst reads those records and proposes improvements to the agents' own rules.
 
-Two things run alongside the pipeline rather than inside it. First, backlog capture: any agent that notices something out of scope names it instead of building it or losing it, and it lands in `TODO.md`; a roadmap analyst can turn that backlog into an actual build order, weighed against one or more `docs/icp/` persona files describing who the product is actually for. Second, GitHub intake: `/bug` and `/request` interview you about a bug or an idea, search the codebase for supporting context, and file a labeled, triage-ready GitHub issue — a separate, lighter front door than starting the full pipeline with `/feature`.
+Two things run alongside the pipeline rather than inside it. First, backlog capture: any agent that notices something out of scope names it instead of building it or losing it, and it lands in `TODO.md`; a roadmap analyst can turn that backlog into an actual build order, weighed against one or more `docs/icp/` persona files describing who the product is actually for. Second, GitHub intake: `/bug` and `/request` interview you about a bug or an idea, search the codebase for supporting context, and file a labeled GitHub issue — a separate, lighter front door than starting the full pipeline with `/feature`. A bug triage agent is the harder-verification pass behind that front door: it reproduces or confirms each open bug against the actual code, ranks the queue by severity and whether the broken flow is one your ICP uses, and recommends a fix route for each — never taking that action itself.
 
 ## Origin
 
@@ -57,7 +57,23 @@ Found a bug, or have an idea that isn't ready to build yet? `/bug` and `/request
 /request A way to bulk-approve pending listings instead of one at a time
 ```
 
-First run of either asks for your GitHub project's owner and number, then remembers it in `AGENTS.md`.
+First run of either asks for your GitHub project's owner and number, then remembers it in `team.yml` at the project root — a small structured config file every GitHub-facing agent reads, alongside `AGENTS.md` and `TODO.md`. See the `github-cli` skill for its full schema.
+
+Once bugs have accumulated on the board, run `/triage` to verify and rank them:
+
+```
+/triage
+```
+
+For each open bug, this confirms it still reproduces against the current code (or says plainly that it doesn't, or that it's already fixed), weighs severity and blast radius against whether the broken flow is one your `docs/icp/` persona actually uses, and recommends a route — a direct fix, escalation to `/feature` when the fix turns out to need a real decision, or closing the issue. It never fixes anything, closes an issue, or files one itself.
+
+When triage recommends a direct fix, run it:
+
+```
+/fix 42
+```
+
+This is the orchestrator's Bug Fix Mode — the same engineer and four parallel reviewers the feature pipeline uses, running against the GitHub issue itself as the spec. No discovery interview, no architect stage, no design stage — the issue already says what's wrong; the pipeline just verifies the fix as rigorously as it verifies a feature. It ends the same way `/feature` does: an open pull request, never a self-merge, with `Closes #42` in the body so the issue closes itself when the PR merges.
 
 ## Documentation
 

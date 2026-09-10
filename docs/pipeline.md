@@ -71,15 +71,41 @@ Start a new feature:
 
 Claude assigns the next feature number, interviews you to produce a brief, then hands the brief to the architect. The architect reads your codebase before writing the spec. From there the pipeline continues automatically.
 
+## Bug Fix Path
+
+A bug fix is the same assembly line with the first three stations removed. `/bug` already interviewed the reporter and filed a GitHub issue; `bug-triage` (`/triage`) already verified it reproduces and confirmed it's worth fixing now. By the time a bug reaches `/fix {issue-number}`, there's nothing left to discover, architect, or design — the issue itself is the full scope, so the orchestrator's Bug Fix Mode skips straight to the engineer and runs the same four parallel reviewers and verdict gate the feature pipeline uses.
+
+```mermaid
+flowchart TD
+    A[/bug files a GitHub issue] --> B[/triage verifies and ranks it]
+    B --> C[/fix issue-number]
+    C --> D[Issue snapshotted, committed to main/master]
+    D --> E[Fix worktree created]
+    E --> F[Engineer implements against the issue]
+    F --> G[Code review]
+    F --> H[Security review]
+    F --> I[Performance review]
+    F --> J[Fidelity review]
+    G --> K{All pass?}
+    H --> K
+    I --> K
+    J --> K
+    K -->|Yes| L[Summary written, TODO.md updated on main]
+    L --> M[Branch pushed, pull request opened — Closes #issue-number]
+    K -->|No| F
+```
+
+Artifacts live at `docs/bugfixes/{N}-{slug}/`, numbered from `{N}.00-issue-{slug}.md` (the issue snapshot, standing in for both the discovery brief and the architect spec) through the same `-eng-`/`-cr-`/`-sec-`/`-perf-`/`-fid-` sequence the feature pipeline uses. Round tracking, the three-strikes escalation rule, and the never-self-merge rule all apply exactly as they do to a feature — see the orchestrator's "Bug Fix Mode" section for the stage-by-stage detail.
+
 ## Things to Know
 
 - The discovery stage runs in the main conversation, not as a subagent. It needs to talk to you interactively.
 - Resume any in-progress pipeline by feature number: `/feature resume 001`
 - Skip discovery if you already have a brief: `/feature architect path/to/brief.md`
 - If the same review category fails in two consecutive rounds, the orchestrator names it explicitly rather than silently re-routing.
-- If a category fails three rounds in a row, the orchestrator escalates to you. Three rounds of the same problem is a signal the spec or the agent skill is wrong, not the engineer.
+- If a category fails the same finding for `review.escalation_rounds` rounds in a row (`team.yml`; 3 by default), the orchestrator escalates to you rather than routing back to the engineer again. That many rounds of the same problem is a signal the spec or the agent skill is wrong, not the engineer.
 - After a pipeline completes, the engineer and architect each record what actually happened against their earlier expected outcomes. Those records feed the learning loop.
-- As the very last step, the orchestrator checks how many completed feature cycles have piled up since `log-analyst` last ran and mentions it in the final report once that's 10 or more — it never runs `log-analyst` for you, only tells you when it's worth doing yourself.
+- As the very last step, the orchestrator checks how many completed cycles — feature or bug fix — have piled up since `log-analyst` last ran and mentions it in the final report once that reaches the configured threshold (`cadence.log_analyst_interval` in `team.yml`; 15 by default) — it never runs `log-analyst` for you, only tells you when it's worth doing yourself.
 - Any agent can notice something that should exist but isn't part of the current feature. Rather than build it or let it evaporate, it names the idea in its own report, tagged `needs-discovery` or `tech-debt`; at pipeline completion the orchestrator sweeps every report and files new ones into the matching `TODO.md` section. See the `scope-capture` skill. `/roadmap` later reads both sections against every persona file under `docs/icp/` and the codebase to propose a build order.
 - The feature branch and its worktree stay around after the pull request opens — they're still needed if review comments come back. Remove the worktree yourself (`git worktree remove ../{NNN}-{feature-name}`) once the PR is actually merged; the orchestrator won't do it automatically.
 - `db/agent_log.sqlite3` is shared across every worktree — every agent launch is told to `export AGENT_LOG_DB` pointing back at the main checkout's copy, so decisions logged mid-feature don't end up scattered across per-worktree databases nobody reads.

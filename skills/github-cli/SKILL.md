@@ -13,17 +13,54 @@ description: gh CLI reference for this team — creating and searching issues, f
 
 ## Where Project Config Lives
 
-`gh project` commands need an **owner** (the org or user that owns the board) and a **project number** — neither is inferable from a git remote the way the repo is. This team stores that config in `AGENTS.md` under a `## GitHub` section:
+`gh project` commands need an **owner** (the org or user that owns the board) and a **project number** — neither is inferable from a git remote the way the repo is. This team stores that, and a handful of other cross-agent settings, in `team.yml` at the project root — a plain root-level file, alongside `AGENTS.md` and `TODO.md`, not under `.claude/` (which holds the agent/skill/command *definitions*, not this team's runtime state — same reason `TODO.md`, `docs/roadmap.md`, and `docs/triage.md` all live at the root too).
 
-```markdown
-## GitHub
+Structured YAML instead of a markdown section in `AGENTS.md` on purpose: every agent that needs a field parses it deterministically (`ruby -ryaml`, always on `PATH` per this team's own install prerequisites) instead of grepping prose for a heading that might have drifted, and the installer (once it exists) can write and verify this file programmatically instead of doing markdown surgery on `AGENTS.md`.
 
-**Repo:** {owner}/{repo}
-**Project:** #{number} (owner: {owner})
-**Default status for new intake:** Ready
+```yaml
+# team.yml — created automatically on first use of /bug, /request, or /triage if missing.
+# Safe to hand-edit; agents read this file, they don't need to ask again once it's populated.
+
+github:
+  repo: owner/repo                # gh infers this from the git remote, but explicit beats guessed
+                                   # once a fork remote or multiple repos make that ambiguous
+  project:
+    owner: owner-or-org            # who the GitHub Project (v2) board belongs to
+    number: 4                      # gh project list --owner OWNER to find it
+  default_status: Ready            # status column new intake issues land in
+  labels:
+    feature: feature
+    bug: bug
+
+review:
+  escalation_rounds: 3             # same [CATEGORY] finding persisting this many consecutive
+                                    # review rounds triggers escalation to the user instead of
+                                    # another automatic engineer re-route — see orchestrator.md
+                                    # "Round Tracking". Naming a persisting category (the warning,
+                                    # not the escalation) still happens the first time any category
+                                    # repeats across two rounds — that part isn't configurable, it's
+                                    # the earliest point repetition can even be detected.
+
+cadence:
+  log_analyst_interval: 15         # completed pipeline/bug-fix cycles between orchestrator nudges
+                                    # to run log-analyst — see orchestrator.md Stage 9/B10. The
+                                    # spec's starting guess, not a law; tune it once real data on
+                                    # real-pattern-vs-noise log-analyst runs accumulates.
 ```
 
-Read this section before running any project command. If it doesn't exist yet, ask the user for the owner and project number once, and offer to write this section to `AGENTS.md` so future runs don't ask again — `gh project list --owner {owner}` will list available projects and their numbers if the user isn't sure.
+Read this file before running any project command. If it doesn't exist yet, ask the user for the owner and project number once, and offer to write `team.yml` so future runs don't ask again — `gh project list --owner {owner}` will list available projects and their numbers if the user isn't sure. Leave `cadence.log_analyst_interval` at its default (`15`) unless the user asks to change it; don't invent a value.
+
+**Reading a field from a script:**
+
+```bash
+ruby -ryaml -e "c = YAML.load_file('team.yml'); puts c.dig('github','repo')"
+ruby -ryaml -e "c = YAML.load_file('team.yml'); puts c.dig('github','project','owner')"
+ruby -ryaml -e "c = YAML.load_file('team.yml'); puts c.dig('github','project','number')"
+```
+
+`.dig` returns `nil` (prints nothing) rather than raising on a missing key — check for an empty result before using a value, don't assume the field is populated.
+
+**Only one GitHub Project board exists in this team's current design** — `feature` and `bug` issues both land on it, distinguished by label, not by separate boards. `docs/triage.md` and `docs/roadmap.md` both read this same `github.project`. If a project later needs bugs kept off the shared board entirely (a plain repo-issues-only path, with its own `bug_project` config block), that's a deliberate design change to make explicitly — not something to infer from this file's shape.
 
 ---
 
