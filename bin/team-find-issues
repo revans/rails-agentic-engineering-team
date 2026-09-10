@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# bin/team-find-issues
+# Read-only duplicate/candidate search, shared by every agent that files an
+# issue (intake, the orchestrator's scope-capture filing, roadmap-analyst,
+# bug-triage) instead of each one re-typing the same `gh issue list --search`
+# recipe. This tool never decides whether a match is a real duplicate — it
+# hands back candidates; the calling agent (or a human, for intake) judges.
+#
+# Usage:
+#   bin/team-find-issues --type {feature|bug|tech-debt} --query "keywords" [--repo owner/repo] [--dir /path]
+#
+# --dir defaults to the current directory; team.yml there supplies --repo
+# and the label name for --type when --repo isn't given explicitly.
+#
+# Output: one JSON object, last line of stdout.
+#   {"status":"ok","matches":[{"number":42,"title":"...","url":"...","state":"OPEN"}]}
+#   matches is [] when nothing turns up — that's a normal, successful result,
+#   not a failure.
+
+require "json"
+require "open3"
+require "yaml"
+
+def parse_args(argv)
+  args = { "dir" => Dir.pwd }
+  i = 0
+  while i < argv.length
+    case argv[i]
+    when "--type"  then args["type"]  = argv[i + 1]; i += 2
+    when "--query" then args["query"] = argv[i + 1]; i += 2
+    when "--repo"  then args["repo"]  = argv[i + 1]; i += 2
+    when "--dir"   then args["dir"]   = argv[i + 1]; i += 2
+    else i += 1
+    end
+  end
+  args
+end
+
+def fail(detail)
+  puts JSON.generate({ status: "failed", detail: detail })
+  exit 1
+end
+
+def sh(*cmd)
+  out, err, status = Open3.capture3(*cmd)
+  [out.strip, err.strip, status.success?]
+end
+
+VALID_TYPES = %w[feature bug tech-debt].freeze
+
+args = parse_args(ARGV)
+fail("--type is required, one of #{VALID_TYPES.join(', ')}") unless VALID_TYPES.include?(args["type"])
+fail("--query is required") unless args["query"] && !args["query"].empty?
+
+team_yml_path = File.join(File.expand_path(args["dir"]), "team.yml")
+config = File.exist?(team_yml_path) ? (YAML.load_file(team_yml_path) rescue {}) : {}
+
+repo = args["repo"] || config.dig("github", "repo")
+fail("no --repo given and github.repo not set in #{team_yml_path}") if repo.nil? || repo == "owner/repo"
+
+label = config.dig("github", "labels", args["type"]) || args["type"]
+
+out, err, ok = sh("gh", "issue", "list", "--repo", repo,
+                   "--search", "#{args["query"]} in:title,body",
+                   "--label", label, "--state", "all", "--limit", "10",
+                   "--json", "number,title,url,state")
+fail("gh issue list failed: #{err}") unless ok
+
+matches = JSON.parse(out.empty? ? "[]" : out)
+puts JSON.generate({ status: "ok", matches: matches })

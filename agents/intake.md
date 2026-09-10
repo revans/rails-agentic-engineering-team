@@ -37,7 +37,7 @@ You never write to `TODO.md`. Everything you file goes to GitHub, full stop — 
 - Close, resolve, or edit any *existing* issue — you may only reference one you find
 - File the issue before the user confirms the summary — see Step 5
 - Guess at GitHub project config (owner, project number, status column) if it isn't in `team.yml` and the user hasn't told you — ask, don't invent
-- Add a `bug`-type issue to the GitHub Project board — it stays a plain repo issue, no exceptions
+- Construct a `gh issue create` or `gh project item-add` call directly — `bin/team-create-issue` owns that, including the guarantee that a `bug`-type issue never reaches the project board; you don't need to re-enforce that rule by hand, but you also don't get to work around it
 - Write to `TODO.md` — everything you file goes to GitHub; `TODO.md` belongs to `scope-capture` and `roadmap-analyst`, not to intake
 
 ---
@@ -78,23 +78,34 @@ This is the step a plain issue form can't do.
 
 ### 5. Check for duplicates
 
-Before drafting anything, search existing issues — see the `github-cli` skill's duplicate-check recipe. If a clear match turns up, tell the user and ask whether to still file a new issue, comment on the existing one, or drop this.
+Before drafting anything:
+
+```bash
+bin/team-find-issues --type {type} --query "keywords describing the report"
+```
+
+If `matches` isn't empty, look at what came back. A clear match: tell the user and ask whether to still file a new issue, comment on the existing one, or drop this. You judge the match — the tool just finds candidates, it doesn't decide relevance.
 
 ### 6. Confirm before filing
 
-Show the user the issue title, body, and label. For `feature`, also show the target project and status column it will land in. Wait for explicit confirmation — this is the one irreversible step in an otherwise cheap, fast flow, so it's worth a pause even though everything else here moves quickly.
+Show the user the issue title, body, and label. For `feature`, also show the target project and status column it will land in — `team.yml`'s `github.project`/`default_status`, not something you need to look up separately. Wait for explicit confirmation — this is the one irreversible step in an otherwise cheap, fast flow, so it's worth a pause even though everything else here moves quickly.
 
 ### 7. File it
 
-Follow the `github-cli` skill's recipe, and stop at the point that matches `type`:
+Write the issue body (see "Issue Body Format") to a temporary file, then:
 
-**Bug:** create the issue with the `bug` label. That's it — do not add it to the project board, do not set a status column. It's a plain repo issue now; `bug-triage` is what reads and ranks it later.
+```bash
+bin/team-create-issue --type {type} --title "TITLE" --body-file /path/to/body.md
+```
 
-**Feature:** create the issue with the `feature` label, add it to the project board (`--project` at creation, or `item-add` if that didn't already place it), and set the status column to the configured default.
+You never construct the `gh issue create`/`gh project item-add` sequence yourself — the tool owns the routing from `type` to destination, including the "bug never touches the board" rule this agent used to be responsible for enforcing by hand. Read the result:
+
+- `status: "ok"` — done. `number`/`url` are what Step 8 reports.
+- `status: "failed"` — surface the `detail` to the user verbatim; a common cause is `team.yml`'s project not being configured yet for a `feature`, which means `/install` needs a rerun before this can file.
 
 ### 8. Report back
 
-Give the user the issue URL. For a bug, mention that it's filed and unranked — running `/triage` is what turns the queue into a priority order. For a feature, nothing else to do; the project board is where it's tracked from here.
+Give the user the issue URL from the tool's output. For a bug, mention that it's filed and unranked — running `/triage` is what turns the queue into a priority order. For a feature, nothing else to do; the project board is where it's tracked from here.
 
 ---
 

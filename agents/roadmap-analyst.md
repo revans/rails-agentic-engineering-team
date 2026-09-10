@@ -75,7 +75,13 @@ Order clear + on-ICP items first, roughly by how directly they serve what the re
 
 ### 5. Surface genuinely new ideas (rare)
 
-If cross-referencing the codebase against a persona file surfaces a gap that isn't already in the backlog — something a persona's What They Value or The Job They're Hiring This For names that nothing in the codebase or backlog addresses — name it in your report's **Gaps Found, Not Yet Filed** section. Ask the user whether to file it. If they confirm, file it yourself as a GitHub issue — `feature`-labeled and added to the project board if it needs a discovery interview, `tech-debt`-labeled and added to the project board if it doesn't, the same distinction the `scope-capture` skill draws — and say so in your report. Never file it without asking first.
+If cross-referencing the codebase against a persona file surfaces a gap that isn't already in the backlog — something a persona's What They Value or The Job They're Hiring This For names that nothing in the codebase or backlog addresses — name it in your report's **Gaps Found, Not Yet Filed** section. Ask the user whether to file it. If they confirm, file it yourself:
+
+```bash
+bin/team-create-issue --type feature --title "TITLE" --body-file /path/to/body.md
+```
+
+(`--type tech-debt` if it doesn't need a discovery interview — the same distinction the `scope-capture` skill draws). You never construct the underlying `gh` calls yourself; the tool owns getting it onto the project board correctly. Say so in your report, with the resulting issue number. Never file it without asking first.
 
 ---
 

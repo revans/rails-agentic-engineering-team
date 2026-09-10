@@ -1,6 +1,5 @@
 ---
-name: github-cli
-description: gh CLI reference for this team — creating and searching issues, filing a feature request to a GitHub Projects (v2) board with a label and status column while a bug stays a plain labeled repo issue, isolating pipeline work in a git worktree, and opening pull requests. Every command here was verified against a real `gh --help`/`git worktree --help` output, not written from memory.
+description: gh CLI reference for this team — how bin/team-create-issue and bin/team-find-issues route a feature request to the GitHub Projects (v2) board while a bug stays a plain labeled repo issue, isolating pipeline work in a git worktree, and opening pull requests. Every command here was verified against a real `gh --help`/`git worktree --help` output, not written from memory.
 ---
 
 # GitHub CLI Reference
@@ -73,68 +72,61 @@ ruby -ryaml -e "c = YAML.load_file('team.yml'); puts c.dig('github','project','n
 
 All three labels can be filed two ways: directly, by a human via `/bug`/`/request`, or automatically, by the orchestrator sweeping a pipeline run's **Scope ideas noticed** entries (see the `scope-capture` skill) once the run reaches a final verdict. Same labels, same destinations, same duplicate-check — the only difference is whether a human confirmed it live or the orchestrator confirmed it against existing issues instead, since Stage 7b can't pause a pipeline mid-run to ask.
 
----
-
-## Creating an Issue
-
-```bash
-gh issue create --repo OWNER/REPO --title "TITLE" --body "BODY" --label LABEL
-```
-
-If the label doesn't exist in the repo yet, this fails. Check first:
-
-```bash
-gh label list --repo OWNER/REPO --search LABEL
-```
-
-If it's not there, create it before filing the issue:
-
-```bash
-gh label create LABEL --repo OWNER/REPO --description "DESCRIPTION" --color HEXCOLOR
-```
-
-`gh issue create` prints the issue URL on success — capture it, every subsequent step needs it.
-
-### Adding straight to a project at creation time
-
-**Feature issues only.** A `bug` issue never takes this step — see "Where Project Config Lives" above.
-
-`gh issue create` also takes `--project TITLE` (the project's *display title*, not its number) to add the issue to a board in the same call:
-
-```bash
-gh issue create --repo OWNER/REPO --title "TITLE" --body "BODY" --label LABEL --project "PROJECT TITLE"
-```
-
-This does **not** set a status column — it just adds the item at whatever the board's default status is. Setting a specific column is a separate step below regardless of which path you used to add it.
+**Neither path constructs the raw `gh` calls below directly anymore.** `bin/team-create-issue` and `bin/team-find-issues` (see the next two sections) are what every agent that files or searches actually runs — `intake`, the orchestrator's scope-capture filing, `roadmap-analyst`, and `bug-triage`'s reclassify case all call the same two scripts. The point isn't just avoiding duplicated code; it's that the routing rule (`feature`/`tech-debt` → project board, `bug` → never) lives in one script a human can read, instead of four call sites each expected to remember it correctly. The raw `gh` recipes further down are what those scripts do internally — read them to understand or modify the scripts, not to reimplement them in a new agent.
 
 ---
 
-## Checking for Duplicates Before Filing
-
-Always search before creating — a report that duplicates an open issue wastes a human's triage time:
+## Creating an Issue — `bin/team-create-issue`
 
 ```bash
-gh issue list --repo OWNER/REPO --search "KEYWORDS in:title,body" --label LABEL --state all --limit 10
+bin/team-create-issue --type {feature|bug|tech-debt} --title "TITLE" \
+  (--body-file /path/to/body.md | --body "inline text") \
+  [--repo owner/repo] [--dir /path] [--dry-run]
 ```
 
-If something clearly matching turns up, surface it to the user and ask whether to still file a new issue, comment on the existing one instead, or drop it. Don't decide silently.
+Reads `team.yml` at `--dir` (default: current directory) for the repo, the label name for `--type`, and — only when `--type` is `feature` or `tech-debt` — the project board and status column. Routing is fixed inside the script, not exposed as a flag: a `bug` cannot reach the project board no matter what's passed, and a `feature`/`tech-debt` cannot skip it — if `team.yml`'s project isn't configured yet, the script fails *before* creating anything rather than filing an orphaned issue that silently misses the board.
 
----
+`--dry-run` runs every check (label exists, project configured if needed) without making any `gh` write call — prints what would happen instead. Use it to preview, or when testing a caller against this script without touching real GitHub state.
 
-## Setting a Project Item's Status Column
+Output, one JSON object on the last line of stdout:
 
-**Feature issues only** — a `bug` issue is never on the board in the first place, so there's no status column to set.
+```json
+{"status":"ok","number":57,"url":"https://github.com/o/r/issues/57","type":"feature","on_project_board":true,"detail":"created #57 labeled 'feature', added to project #4 (Ready)"}
+{"status":"dry_run","would_create":{"repo":"...","label":"...","title":"...","on_project_board":true,"project":{"owner":"...","number":4,"status":"Ready"}}}
+{"status":"failed","detail":"..."}
+```
 
-Once the issue exists and is on the board (via `--project` at creation, or `item-add` below), set its status by **name** — no manual GraphQL ID lookup needed for the normal case:
+A `failed` result after the issue was already created (the board-add step failed, not the issue creation) still includes `number`/`url` — the issue exists, just not on the board yet; the `detail` says what to do about it.
+
+Internally this script does what the two subsections below describe — read them if you're modifying `bin/team-create-issue` itself, not as a recipe to copy into a new agent.
+
+### What it does: label check, then create, then (conditionally) add to the board
 
 ```bash
+gh label list --repo OWNER/REPO --search LABEL --json name   # fails clearly if missing — run /install, doesn't auto-create mid-file
+gh issue create --repo OWNER/REPO --title "TITLE" --body-file PATH --label LABEL
+# feature/tech-debt only, after the issue exists:
 gh project item-add NUMBER --owner OWNER --url ISSUE_URL
 gh project item-edit NUMBER --owner OWNER --url ISSUE_URL --field "Status" --value "Ready"
 ```
 
-`item-add` is a no-op error if the issue is already on the board (e.g. because `gh issue create --project` already added it) — in that case skip straight to `item-edit`.
+`item-add` is a no-op error if the issue is already on the board — the script proceeds to `item-edit` regardless of `item-add`'s own exit code, since only `item-edit`'s result decides whether the board step actually succeeded. `--field`/`--value` take the field's and option's *display names* exactly as they appear on the board. If the target status doesn't exist as an option on the Status field yet, this fails — see "Won't Be Built This Way" in `installer.md` for why that's not something to work around with a GraphQL mutation.
 
-`--field` takes the field's display name (e.g. `"Status"`) and `--value` takes the option's display name (e.g. `"Ready"`) exactly as they appear on the board. If the target status column doesn't exist as an option on the project's Status field yet, this fails — **don't try to invent or auto-create the column via a GraphQL mutation**; tell the user the column is missing and ask them to add it in the GitHub UI (Project → Settings → Status field). Field/option creation isn't a clean single-command operation in `gh project`, and guessing at the GraphQL schema is more likely to corrupt the field than to help.
+---
+
+## Checking for Duplicates Before Filing — `bin/team-find-issues`
+
+```bash
+bin/team-find-issues --type {feature|bug|tech-debt} --query "keywords" [--repo owner/repo] [--dir /path]
+```
+
+Always search before creating — a report that duplicates an open issue wastes a human's triage time. Returns candidates, never decides relevance:
+
+```json
+{"status":"ok","matches":[{"number":42,"title":"...","url":"...","state":"OPEN"}]}
+```
+
+`matches: []` is a normal, successful result. If something clearly matching turns up, the calling agent surfaces it and asks whether to still file, comment on the existing one instead, or drop it (`intake`) — or, where there's no human to ask mid-pipeline, skips filing and notes the existing issue number (the orchestrator's scope-capture filing). Internally: `gh issue list --repo OWNER/REPO --search "QUERY in:title,body" --label LABEL --state all --limit 10 --json number,title,url,state`.
 
 ---
 

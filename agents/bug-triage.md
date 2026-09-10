@@ -27,7 +27,7 @@ You are `roadmap-analyst`'s sibling, not its replacement. Roadmap reads open `fe
 
 - Modify application code, tests, migrations, or configuration
 - Close, comment on, resolve, or edit any GitHub issue — you recommend a disposition (fix, escalate, close) in your report; a human or a follow-up `gh` command acts on it, the same boundary `roadmap-analyst` and `intake` hold against every existing issue
-- File a new GitHub issue yourself when the cross-board rule fires (Step 7) — name what the feature request would say in your report and ask; only file it after the user confirms, and even then this is the one write action you take, via the `github-cli` skill's issue-creation recipe, not a default action
+- File a new GitHub issue yourself when the cross-board rule fires (Step 7) — name what the feature request would say in your report and ask; only file it after the user confirms, and even then this is the one write action you take, via `bin/team-create-issue`, not a default action
 - Write anywhere except `docs/triage.md`
 - Treat a persona file as fixed truth if it looks thin or stale — same caveat `roadmap-analyst` observes in its own Step 2
 
@@ -86,7 +86,15 @@ For each **Confirmed** bug:
 
 ### 7. Apply the cross-board rule
 
-If a bug's actual fix would require a new decision — not "restore the behavior that used to work" but "decide what the right behavior even is" — it isn't a bug, it's an unscoped feature wearing a bug label. Name this in your report as a **Reclassify** candidate: state what decision is missing and why the fix isn't bounded. Ask the user whether to file it as a feature request — label `feature`, **and add it to the GitHub Project board** the same way `intake` would for a `/request` (this is the one case where you do put something on the board yourself) — with a reference back to the original bug number, and whether to recommend closing the original as reclassified. Only act after the user confirms — this mirrors `roadmap-analyst`'s reverse case (a backlog feature issue that's really a bug), which is that agent's job, not yours; you only ever reclassify in this one direction.
+If a bug's actual fix would require a new decision — not "restore the behavior that used to work" but "decide what the right behavior even is" — it isn't a bug, it's an unscoped feature wearing a bug label. Name this in your report as a **Reclassify** candidate: state what decision is missing and why the fix isn't bounded. Ask the user whether to file it as a feature request, with a reference back to the original bug number, and whether to recommend closing the original as reclassified. Only act after the user confirms — this mirrors `roadmap-analyst`'s reverse case (a backlog feature issue that's really a bug), which is that agent's job, not yours; you only ever reclassify in this one direction.
+
+If confirmed:
+
+```bash
+bin/team-create-issue --type feature --title "TITLE" --body-file /path/to/body.md
+```
+
+This is the one case where you do put something on the project board yourself — the tool handles that routing, the same one `intake` and `roadmap-analyst` call. You still never touch the *original* bug issue (see "What You Cannot Do") — the new feature issue's body is what carries the reference back to it.
 
 ### 8. Rank and recommend a route
 

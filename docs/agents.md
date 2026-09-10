@@ -189,6 +189,17 @@ Eight skill files give agents project-specific knowledge that training data alon
 | `discovery-brief-format` | The brief template and field descriptions |
 | `product-brief-format` | Shared with `agentic-ideation-team`; the section list discovery checks before deciding whether an incoming whole-product brief already answers its own interview questions |
 | `scope-capture` | When to name something out-of-scope in a report instead of building it or letting it evaporate; feeds the orchestrator's scope-capture filing stage, which files it to GitHub |
-| `github-cli` | Verified `gh` CLI recipes for issues, labels, Projects v2 status columns, git worktree isolation, and PRs |
+| `github-cli` | How `bin/team-create-issue` and `bin/team-find-issues` route issues, plus `gh` recipes for git worktree isolation and PRs that agents still run directly |
 
 New skill files are added by the skill builder as the learning loop matures.
+
+## Shared Tools
+
+Beyond `bin/agent-log`, two more `bin/` scripts are shared across agents rather than owned by one:
+
+| Tool | Used by | What it guarantees |
+|---|---|---|
+| `bin/team-create-issue` | `intake`, the orchestrator's scope-capture filing, `roadmap-analyst`, `bug-triage`'s reclassify case | A `feature`/`tech-debt` issue always reaches the GitHub Project board; a `bug` issue never does — the routing is fixed inside the script from `--type`, not a flag a caller can get wrong |
+| `bin/team-find-issues` | Same four | A consistent duplicate-check before any of them files something — returns candidates, never decides whether one's a real match |
+
+Both were built specifically because those four call sites were each independently constructing `gh issue create`/`gh project item-add` sequences before this — the same category of drift risk `bin/team-setup-project` already solved for `team.yml` writes.

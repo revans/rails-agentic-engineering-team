@@ -1,0 +1,140 @@
+#!/usr/bin/env ruby
+# bin/team-create-issue
+# The one place this team files a GitHub issue. Every agent that used to
+# construct its own `gh issue create` / `gh project item-add` sequence
+# (intake, the orchestrator's scope-capture filing, roadmap-analyst,
+# bug-triage's reclassify) calls this instead.
+#
+# The routing from --type to destination is NOT a flag a caller sets — it's
+# fixed inside this script. A `bug` cannot reach the project board through
+# this tool no matter what a caller passes; a `feature` or `tech-debt`
+# cannot skip it. That's the actual point of the tool: the guarantee lives
+# in one place a human can read, not in every caller remembering it correctly.
+#
+# Usage:
+#   bin/team-create-issue --type {feature|bug|tech-debt} --title "TITLE" \
+#     (--body-file /path/to/body.md | --body "inline text") \
+#     [--repo owner/repo] [--dir /path] [--dry-run]
+#
+# --dir defaults to the current directory; team.yml there supplies --repo,
+# the project board (owner/number), the status column, and the label name
+# for --type, unless --repo overrides the repo specifically.
+#
+# --dry-run performs every check (label exists, project configured if
+# needed) but makes no gh write calls — useful for testing this script and
+# for a caller that wants to preview before committing.
+#
+# Output: one JSON object, last line of stdout.
+#   {"status":"ok","number":57,"url":"https://github.com/o/r/issues/57","type":"feature","on_project_board":true,"detail":"..."}
+#   {"status":"dry_run","would_create":{...}}
+#   {"status":"failed","detail":"..."}
+
+require "json"
+require "open3"
+require "yaml"
+
+VALID_TYPES = %w[feature bug tech-debt].freeze
+
+def parse_args(argv)
+  args = { "dir" => Dir.pwd, "dry_run" => false }
+  i = 0
+  while i < argv.length
+    case argv[i]
+    when "--type"      then args["type"]      = argv[i + 1]; i += 2
+    when "--title"     then args["title"]     = argv[i + 1]; i += 2
+    when "--body-file" then args["body_file"] = argv[i + 1]; i += 2
+    when "--body"      then args["body"]      = argv[i + 1]; i += 2
+    when "--repo"      then args["repo"]      = argv[i + 1]; i += 2
+    when "--dir"       then args["dir"]       = argv[i + 1]; i += 2
+    when "--dry-run"   then args["dry_run"]   = true; i += 1
+    else i += 1
+    end
+  end
+  args
+end
+
+def fail(detail)
+  puts JSON.generate({ status: "failed", detail: detail })
+  exit 1
+end
+
+def sh(*cmd)
+  out, err, status = Open3.capture3(*cmd)
+  [out.strip, err.strip, status.success?]
+end
+
+args = parse_args(ARGV)
+
+fail("--type is required, one of #{VALID_TYPES.join(', ')}") unless VALID_TYPES.include?(args["type"])
+fail("--title is required") unless args["title"] && !args["title"].empty?
+fail("exactly one of --body-file or --body is required") if [args["body_file"], args["body"]].compact.length != 1
+if args["body_file"]
+  fail("--body-file #{args["body_file"]} does not exist") unless File.exist?(args["body_file"])
+end
+
+dir = File.expand_path(args["dir"])
+team_yml_path = File.join(dir, "team.yml")
+fail("#{team_yml_path} not found — run /install first") unless File.exist?(team_yml_path)
+config = YAML.load_file(team_yml_path) rescue nil
+fail("could not parse #{team_yml_path}") if config.nil?
+
+repo = args["repo"] || config.dig("github", "repo")
+fail("no --repo given and github.repo is still a placeholder in team.yml — run /install") if repo.nil? || repo == "owner/repo"
+
+label = config.dig("github", "labels", args["type"]) || args["type"]
+needs_board = %w[feature tech-debt].include?(args["type"])
+
+if needs_board
+  project_owner = config.dig("github", "project", "owner")
+  project_number = config.dig("github", "project", "number")
+  if project_owner.nil? || project_owner == "owner-or-org" || project_number.nil? || project_number == 4
+    fail("type '#{args["type"]}' must reach the project board, but team.yml's github.project isn't configured yet — run /install and confirm the Project board (Step 3) before filing this")
+  end
+  default_status = config.dig("github", "default_status") || "Ready"
+end
+
+existing_labels, _, list_ok = sh("gh", "label", "list", "--repo", repo, "--search", label, "--json", "name")
+fail("gh label list failed against #{repo} — check gh auth and repo access") unless list_ok
+unless (existing_labels.empty? ? [] : JSON.parse(existing_labels)).any? { |l| l["name"] == label }
+  fail("label '#{label}' does not exist on #{repo} — run /install to create feature/bug/tech-debt")
+end
+
+if args["dry_run"]
+  would = {
+    repo: repo, label: label, title: args["title"],
+    on_project_board: needs_board,
+    project: needs_board ? { owner: project_owner, number: project_number, status: default_status } : nil,
+  }
+  puts JSON.generate({ status: "dry_run", would_create: would })
+  exit 0
+end
+
+create_cmd = ["gh", "issue", "create", "--repo", repo, "--title", args["title"], "--label", label]
+create_cmd += args["body_file"] ? ["--body-file", args["body_file"]] : ["--body", args["body"]]
+issue_url, err, ok = sh(*create_cmd)
+fail("gh issue create failed: #{err}") unless ok
+
+issue_number = issue_url[/\/issues\/(\d+)/, 1]&.to_i
+
+on_board = false
+if needs_board
+  _, add_err, add_ok = sh("gh", "project", "item-add", project_number.to_s, "--owner", project_owner, "--url", issue_url)
+  # item-add fails (harmlessly) if some other path already added it — proceed to item-edit regardless of add_ok,
+  # only the final item-edit result decides whether the board step actually succeeded.
+  _, edit_err, edit_ok = sh("gh", "project", "item-edit", project_number.to_s, "--owner", project_owner,
+                             "--url", issue_url, "--field", "Status", "--value", default_status)
+  unless edit_ok
+    puts JSON.generate({
+      status: "failed",
+      number: issue_number, url: issue_url, type: args["type"], on_project_board: false,
+      detail: "issue #{issue_url} was created but could not be added to the project board: #{add_err.empty? ? edit_err : add_err} / #{edit_err} — file this by hand or fix project access and retry the board step",
+    })
+    exit 1
+  end
+  on_board = true
+end
+
+puts JSON.generate({
+  status: "ok", number: issue_number, url: issue_url, type: args["type"], on_project_board: on_board,
+  detail: "created ##{issue_number} labeled '#{label}'#{on_board ? ", added to project ##{project_number} (#{default_status})" : ", not added to any project board"}",
+})

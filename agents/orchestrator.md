@@ -364,8 +364,6 @@ Every content agent in this pipeline can notice something that should exist but 
 
 These file to GitHub, not `TODO.md` — `TODO.md` at `$PROJECT_ROOT` still exists, but only for `Deferred` entries (a note tied to *this* build, not a backlog candidate); nothing in this stage touches it.
 
-Read `${PROJECT_ROOT}/team.yml` for the repo, project board, and labels — see the `github-cli` skill.
-
 Sweep every artifact in the feature directory, not just the final round — an idea raised in an earlier round that got fixed in code is still worth keeping if it named something adjacent, not the failure itself:
 
 ```bash
@@ -375,13 +373,9 @@ grep -A 3 -i "scope ideas noticed" ${WORKTREE_DIR}/${FEATURE_DIR}/${NNN}.*.md
 For each entry found:
 
 1. Skip "None" and empty sections.
-2. Read the entry's tag and resolve the label and destination:
-   - `[needs-discovery]` → `feature` label, added to the project board (same as `/request`)
-   - `[tech-debt]` → `tech-debt` label, added to the project board
-   - `[bug]` → `bug` label, plain repo issue, no project board (same as `/bug`)
-   - No tag at all (an older report predating this convention) → default to `[needs-discovery]`, the safer bucket; treating an unscoped idea as ready-to-build tech debt would be the wrong default
-3. Duplicate-check before filing — see the `github-cli` skill's recipe (`gh issue list --search "KEYWORDS in:title,body" --label LABEL --state all`). This step can't pause for a live human decision the way `/bug`/`/request` do, so the default on a clear match is to skip filing and note the existing issue number in the final report, not to ask.
-4. File the survivors: `gh issue create` with the resolved label, `--project` for `feature`/`tech-debt`, no `--project` for `bug`. Body format:
+2. Read the entry's tag — `[needs-discovery]` maps to `--type feature`, `[tech-debt]` to `--type tech-debt`, `[bug]` to `--type bug`. No tag at all (an older report predating this convention) → default to `--type feature`, the safer bucket; treating an unscoped idea as ready-to-build tech debt would be the wrong default.
+3. Duplicate-check before filing: `bin/team-find-issues --type {type} --dir "$PROJECT_ROOT" --query "keywords from the idea"`. This step can't pause for a live human decision the way `/bug`/`/request` do, so the default on a clear match is to skip filing and note the existing issue number in the final report, not to ask.
+4. File the survivors: `bin/team-create-issue --type {type} --dir "$PROJECT_ROOT" --title "TITLE" --body-file /path/to/body.md`. This is the same tool `intake` uses — it owns the routing from `type` to destination (project board for `feature`/`tech-debt`, plain repo issue for `bug`), not this stage. Read its JSON result: `status: "ok"` gives you `number`/`url` for the final report; `status: "failed"` means note the `detail` and move on, per the non-blocking rule below. Body format:
 
 ```markdown
 ## Summary
