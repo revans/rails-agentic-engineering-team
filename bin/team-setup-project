@@ -1,0 +1,202 @@
+#!/usr/bin/env ruby
+# bin/team-setup-project
+# Sets up everything about a target project that doesn't need a live human
+# decision: detects the repo from git, writes team.yml, creates and migrates
+# db/agent_log.sqlite3, and creates the docs/ skeleton.
+#
+# Usage:
+#   bin/team-setup-project --dir /path/to/project [--repo owner/repo]
+#
+# --dir defaults to the current directory. Pass it explicitly whenever the
+# installer agent is running from somewhere other than the target project —
+# confirming *which* directory that is is the installer agent's job (a live
+# question to the user), not this script's; this script only ever acts on
+# the directory it's told to.
+#
+# --repo overrides git-remote detection. Pass it on a second call after the
+# installer agent has asked the user for the repo, following a first call
+# that reported repo.status == "needs_input".
+#
+# Output contract: prints exactly one JSON object as the LAST line of stdout.
+# Top-level "status" is the worst of every sub-step's status
+# (failed > needs_input > ok), so the agent can branch on one field; "steps"
+# has the per-item detail for the report.
+
+require "json"
+require "fileutils"
+require "open3"
+
+def parse_args(argv)
+  args = { "dir" => Dir.pwd }
+  i = 0
+  while i < argv.length
+    case argv[i]
+    when "--dir"  then args["dir"]  = argv[i + 1]; i += 2
+    when "--repo" then args["repo"] = argv[i + 1]; i += 2
+    else i += 1
+    end
+  end
+  args
+end
+
+def sh(*cmd, chdir: nil)
+  opts = chdir ? { chdir: chdir } : {}
+  out, _err, status = Open3.capture3(*cmd, **opts)
+  [out.strip, status.success?]
+end
+
+def detect_repo(dir)
+  url, ok = sh("git", "remote", "get-url", "origin", chdir: dir)
+  return nil unless ok && !url.empty?
+
+  case url
+  when %r{github\.com[:/]([^/]+/[^/]+?)(\.git)?$}
+    $1
+  else
+    nil
+  end
+end
+
+TEAM_YML_TEMPLATE = <<~YAML
+  # team.yml — created automatically on first use of /bug, /request, or /triage if missing.
+  # Safe to hand-edit; agents read this file, they don't need to ask again once it's populated.
+
+  github:
+    repo: %<repo>s                # gh infers this from the git remote, but explicit beats guessed
+                                     # once a fork remote or multiple repos make that ambiguous
+    project:
+      owner: owner-or-org            # who the GitHub Project (v2) board belongs to
+      number: 4                      # gh project list --owner OWNER to find it
+    default_status: Ready            # status column new feature-request issues land in — bugs
+                                      # never reach the board, see "Where Project Config Lives" below
+    labels:
+      feature: feature
+      bug: bug
+
+  review:
+    escalation_rounds: 3             # same [CATEGORY] finding persisting this many consecutive
+                                      # review rounds triggers escalation to the user instead of
+                                      # another automatic engineer re-route — see orchestrator.md
+                                      # "Round Tracking". Naming a persisting category (the warning,
+                                      # not the escalation) still happens the first time any category
+                                      # repeats across two rounds — that part isn't configurable, it's
+                                      # the earliest point repetition can even be detected.
+
+  cadence:
+    log_analyst_interval: 15         # completed pipeline/bug-fix cycles between orchestrator nudges
+                                      # to run log-analyst — see orchestrator.md Stage 9/B10. The
+                                      # spec's starting guess, not a law; tune it once real data on
+                                      # real-pattern-vs-noise log-analyst runs accumulates.
+YAML
+
+# Line-based, not a YAML dump — a full parse-and-re-serialize round trip
+# would strip every comment above, which the github-cli skill explicitly
+# promises stays intact ("safe to hand-edit").
+def write_team_yml(dir, repo)
+  path = File.join(dir, "team.yml")
+
+  unless File.exist?(path)
+    File.write(path, format(TEAM_YML_TEMPLATE, repo: repo || "owner/repo"))
+    return { status: "ok", detail: repo ? "created with repo: #{repo}" : "created with repo left as a placeholder — no git remote found" }
+  end
+
+  return { status: "ok", detail: "already exists, no repo value to set" } unless repo
+
+  lines = File.readlines(path)
+  in_github = false
+  repo_line_index = nil
+  lines.each_with_index do |line, idx|
+    if line =~ /^\S/ # top-level key, resets section tracking
+      in_github = (line =~ /^github:/ ? true : false)
+      next
+    end
+    if in_github && line =~ /^(\s+repo:\s*)(\S+)(.*)$/
+      repo_line_index = idx
+      break
+    end
+  end
+
+  if repo_line_index.nil?
+    return { status: "failed", detail: "team.yml exists but has no github.repo line to update — check the file by hand" }
+  end
+
+  current = lines[repo_line_index][/^\s+repo:\s*(\S+)/, 1]
+  if current == repo
+    return { status: "ok", detail: "github.repo already set to #{repo}" }
+  end
+
+  lines[repo_line_index] = lines[repo_line_index].sub(/^(\s+repo:\s*)\S+/, "\\1#{repo}")
+  File.write(path, lines.join)
+  { status: "ok", detail: "updated github.repo: #{current} -> #{repo}" }
+end
+
+def setup_sqlite(dir)
+  agent_log = File.join(dir, "bin", "agent-log")
+  unless File.exist?(agent_log)
+    return { status: "failed", detail: "bin/agent-log not found — it should already be present from installing this team's files; nothing to migrate" }
+  end
+
+  _, sqlite_ok = sh("sqlite3", "-version")
+  unless sqlite_ok
+    return { status: "failed", detail: "sqlite3 CLI not found on PATH — install it and re-run" }
+  end
+  _, ruby_ok = sh("ruby", "-v")
+  unless ruby_ok
+    return { status: "failed", detail: "ruby not found on PATH — bin/agent-log needs it and re-run" }
+  end
+
+  db_path = File.join(dir, "db", "agent_log.sqlite3")
+  existed_before = File.exist?(db_path)
+
+  env = { "AGENT_LOG_DB" => db_path }
+  _, ok = Open3.capture3(env, agent_log, "query", "runs", chdir: dir)
+  unless ok && File.exist?(db_path)
+    return { status: "failed", detail: "bin/agent-log query runs did not create #{db_path} — run it directly to see the error" }
+  end
+
+  tables, _ = sh("sqlite3", db_path, ".tables")
+  { status: "ok", detail: "#{existed_before ? 'already present' : 'created'} at db/agent_log.sqlite3 — tables: #{tables.split.join(', ')}" }
+end
+
+def setup_docs_skeleton(dir)
+  dirs = %w[docs/briefs docs/icp docs/agent-analysis docs/bugfixes]
+  created = []
+  dirs.each do |d|
+    full = File.join(dir, d)
+    was_present = Dir.exist?(full)
+    FileUtils.mkdir_p(full)
+    keep = File.join(full, ".gitkeep")
+    File.write(keep, "") unless File.exist?(keep) || !Dir.glob("#{full}/*").empty?
+    created << d unless was_present
+  end
+  detail = created.empty? ? "all present already (#{dirs.join(', ')})" : "created: #{created.join(', ')}"
+  { status: "ok", detail: detail }
+end
+
+args = parse_args(ARGV)
+dir = File.expand_path(args["dir"])
+
+unless Dir.exist?(dir)
+  puts JSON.generate({ status: "failed", steps: { dir: { status: "failed", detail: "#{dir} does not exist" } } })
+  exit 1
+end
+
+repo = args["repo"] || detect_repo(dir)
+repo_step = if repo
+              { status: "ok", detail: "#{args["repo"] ? "given explicitly" : "detected from git remote"}: #{repo}" }
+            else
+              { status: "needs_input", detail: "no git remote found in #{dir} — ask the user for owner/repo, then re-run with --repo" }
+            end
+
+steps = {
+  repo: repo_step,
+  team_yml: write_team_yml(dir, repo),
+  sqlite: setup_sqlite(dir),
+  docs_skeleton: setup_docs_skeleton(dir),
+}
+
+severity = { "ok" => 0, "needs_input" => 1, "failed" => 2 }
+overall = steps.values.map { |s| s[:status] }.max_by { |s| severity.fetch(s, 0) }
+
+puts JSON.generate({ status: overall, steps: steps })
+exit(overall == "failed" ? 1 : (overall == "needs_input" ? 2 : 0))

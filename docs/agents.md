@@ -1,6 +1,6 @@
 # Agents
 
-Thirteen agents handle specific stages of the feature pipeline, the learning loop, backlog strategy, or intake. Each agent has one job, defined inputs, and defined outputs.
+Fourteen agents handle specific stages of the feature pipeline, the learning loop, backlog strategy, intake, or first-time setup. Each agent has one job, defined inputs, and defined outputs.
 
 ## What They Are
 
@@ -155,7 +155,26 @@ Interviews the reporter, searches the codebase for supporting context, checks fo
 **Writes:** A GitHub issue via `gh` — nothing local except, on first run, `team.yml` itself. Never writes to `TODO.md`.  
 **Cannot:** Modify application code; close, resolve, or edit an existing issue; file before the user confirms
 
-Run via `/bug` (type `bug`) or `/request` (type `feature`) — same identity, same flow, different interview questions and label. Both file into the project's `Ready` column, per the `github-cli` skill. Neither runs as a subagent — the interview needs to be live, the same reason discovery and the orchestrator run directly in the conversation.
+Run via `/bug` (type `bug`) or `/request` (type `feature`) — same identity, same flow, different interview questions, label, and destination: `/request` lands in the project's `Ready` column, `/bug` stays a plain repo issue (see the `github-cli` skill). Neither runs as a subagent — the interview needs to be live, the same reason discovery and the orchestrator run directly in the conversation.
+
+## Setup Agent
+
+This agent doesn't run alongside the pipeline or the learning loop — it runs before either one can, on a repo that's never seen this team before.
+
+### Installer
+
+Prepares a fresh repo for the team: confirms the target directory, gets `gh` installed and authenticated, detects the repo and sets up `team.yml`/`db/agent_log.sqlite3`/the `docs/` skeleton, confirms or creates a GitHub Project board, and verifies Issues are reachable.
+
+The agent itself mostly narrates and interprets — the actual OS-level and filesystem work happens in two scripts it runs and reads structured JSON back from:
+
+- **`bin/team-setup-gh`** — installs `gh` if missing (package manager or a direct binary download, no sudo required on Linux), then, if not authenticated, opens a terminal window with `gh auth login` typed and submitted so the user can finish the interactive login themselves. Never runs the login itself — that step is unavoidably a human's.
+- **`bin/team-setup-project`** — detects the repo from `git remote`, writes/updates `team.yml` (a targeted edit that preserves comments and every other field, never a full rewrite), migrates `db/agent_log.sqlite3` by invoking `bin/agent-log` itself (so the schema lives in exactly one place, not duplicated), and creates the `docs/` skeleton (`docs/briefs/`, `docs/icp/`, `docs/agent-analysis/`, `docs/bugfixes/`).
+
+**Reads:** the target directory's `git remote`, `team.yml` (if it exists — to avoid re-asking what's already set), `bin/agent-log` (to confirm it's present before migrating the database)  
+**Writes:** `team.yml`, `db/agent_log.sqlite3`, the `docs/` skeleton directories  
+**Cannot:** Modify application code, run `gh auth login` on the user's behalf, create a GitHub Project without asking first, act on a directory the user hasn't confirmed, overwrite an existing `team.yml` wholesale, or install `bin/agent-log` itself if it isn't already present — see "Not Yet Built" in `agents/installer.md`
+
+Run via `/install`, idempotent — a second run against an already-configured repo verifies everything live again (GitHub state can drift even when `team.yml` hasn't) and reports it all as already present rather than asking the same questions twice. Still not built: GitHub labels, the Project board's status columns, and installing `bin/agent-log` itself into a repo that doesn't already have it — see `agents/installer.md`'s "Not Yet Built" section.
 
 ## Skills
 

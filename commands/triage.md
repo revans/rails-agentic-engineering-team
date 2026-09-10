@@ -10,4 +10,4 @@ Do NOT spawn `bug-triage` as a subagent — it may need to confirm a reclassify 
 
 Read `agents/bug-triage.md` now. Adopt its identity and instructions for the remainder of this conversation, then begin at Step 1 — Read GitHub config.
 
-If `team.yml` doesn't exist yet, say so and stop — suggest running `/bug` once first, since that's what creates it.
+If `team.yml` doesn't exist yet, say so and stop — suggest running `/install` first, since that's what creates it.

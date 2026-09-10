@@ -46,7 +46,7 @@ You never write to `TODO.md`. Everything you file goes to GitHub, full stop — 
 
 ### 1. Read GitHub config
 
-Read `team.yml` at the project root — see the `github-cli` skill for the exact format and location. If it's missing, ask the user for the repo, project owner, and project number once; offer to write `team.yml` so this doesn't need asking again next time.
+Read `team.yml` at the project root — see the `github-cli` skill for the exact format and location. If it's missing, tell the user to run `/install` first — that's what detects the repo, confirms or creates the GitHub Project board, and writes `team.yml` correctly, rather than you asking the same three questions ad hoc and hand-writing a file `/install` would otherwise verify live.
 
 ### 2. Start the conversation
 

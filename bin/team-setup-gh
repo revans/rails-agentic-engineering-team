@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# bin/team-setup-gh
+# Installs the gh CLI if it's missing, then gets the user into `gh auth login`
+# if they aren't authenticated. Both cases need a human's hands on a keyboard
+# at some point (a browser or device-code flow, or a package manager's sudo
+# prompt) — this script's job is to get that human in front of the right
+# prompt, not to complete the login itself.
+#
+# Output contract: prints exactly one JSON object as the LAST line of stdout.
+# The installer agent reads only that line — everything before it is
+# human-readable progress noise, safe to ignore programmatically.
+#   status: "ok"               — nothing left to do
+#   status: "needs_confirmation" — a terminal was opened; ask the user to
+#                                  finish there, then re-run this script
+#   status: "manual"           — could not open a terminal automatically;
+#                                  the "detail" field has the exact command
+#                                  for the user to run themselves
+#   status: "failed"           — could not proceed; "detail" has why
+# Exit code: 0 = ok, 2 = needs_confirmation/manual (recoverable), 1 = failed.
+
+set -u
+
+result() {
+  # $1=status $2=detail (single line, JSON-escaped by hand since we have no jq guarantee)
+  local status="$1" detail="$2"
+  detail="${detail//\\/\\\\}"
+  detail="${detail//\"/\\\"}"
+  printf '{"step":"gh_setup","status":"%s","detail":"%s"}\n' "$status" "$detail"
+}
+
+open_terminal_with() {
+  # $1 = the command to run in a fresh terminal window, kept open afterward.
+  local cmd="$1"
+  local os
+  os="$(uname -s)"
+
+  if [ "$os" = "Darwin" ]; then
+    osascript -e "tell application \"Terminal\" to do script \"$cmd\"" \
+              -e 'tell application "Terminal" to activate' >/dev/null 2>&1 && return 0
+    return 1
+  fi
+
+  # Linux: no universal terminal API. Try known emulators in priority order,
+  # each with the invocation syntax that actually keeps the window open.
+  if command -v x-terminal-emulator >/dev/null 2>&1; then
+    nohup x-terminal-emulator -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v foot >/dev/null 2>&1; then
+    nohup foot bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v ghostty >/dev/null 2>&1; then
+    nohup ghostty -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v alacritty >/dev/null 2>&1; then
+    nohup alacritty -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v kitty >/dev/null 2>&1; then
+    nohup kitty bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v gnome-terminal >/dev/null 2>&1; then
+    nohup gnome-terminal -- bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v konsole >/dev/null 2>&1; then
+    nohup konsole -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v xfce4-terminal >/dev/null 2>&1; then
+    nohup xfce4-terminal -x bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v xterm >/dev/null 2>&1; then
+    nohup xterm -hold -e bash -c "$cmd" >/dev/null 2>&1 & disown; return 0
+  fi
+  return 1
+}
+
+install_gh() {
+  local os arch asset_pattern tmp_dir archive_url
+
+  if [ "$(uname -s)" = "Darwin" ] && command -v brew >/dev/null 2>&1; then
+    brew install gh >/dev/null 2>&1 && return 0
+    return 1
+  fi
+
+  case "$(uname -s)" in
+    Darwin) os="macOS" ;;
+    Linux)  os="linux" ;;
+    *) return 1 ;;
+  esac
+  case "$(uname -m)" in
+    x86_64)  arch="amd64" ;;
+    aarch64|arm64) arch="arm64" ;;
+    *) return 1 ;;
+  esac
+
+  # No jq dependency assumed — grep the release JSON for the one asset whose
+  # name matches our os/arch, rather than requiring a JSON parser we can't
+  # guarantee is installed at this bootstrap point.
+  asset_pattern="gh_[0-9.]*_${os}_${arch}\.(tar\.gz|zip)"
+  archive_url="$(curl -fsSL https://api.github.com/repos/cli/cli/releases/latest \
+    | grep -oE "https://[^\"]*${asset_pattern}" | head -1)"
+  [ -z "$archive_url" ] && return 1
+
+  tmp_dir="$(mktemp -d)"
+  curl -fsSL "$archive_url" -o "$tmp_dir/gh.archive" || { rm -rf "$tmp_dir"; return 1; }
+
+  mkdir -p "$HOME/.local/bin"
+  if [[ "$archive_url" == *.zip ]]; then
+    unzip -q "$tmp_dir/gh.archive" -d "$tmp_dir" || { rm -rf "$tmp_dir"; return 1; }
+  else
+    tar -xzf "$tmp_dir/gh.archive" -C "$tmp_dir" || { rm -rf "$tmp_dir"; return 1; }
+  fi
+
+  local gh_bin
+  gh_bin="$(find "$tmp_dir" -type f -name gh -path "*/bin/gh" | head -1)"
+  [ -z "$gh_bin" ] && { rm -rf "$tmp_dir"; return 1; }
+  cp "$gh_bin" "$HOME/.local/bin/gh"
+  chmod +x "$HOME/.local/bin/gh"
+  rm -rf "$tmp_dir"
+
+  export PATH="$HOME/.local/bin:$PATH"
+  command -v gh >/dev/null 2>&1
+}
+
+if command -v gh >/dev/null 2>&1; then
+  :
+else
+  if install_gh; then
+    :
+  else
+    result "failed" "Could not install gh automatically. Install it from https://cli.github.com and re-run."
+    exit 1
+  fi
+fi
+
+if gh auth status >/dev/null 2>&1; then
+  result "ok" "gh $(gh --version | head -1 | awk '{print $3}') installed and authenticated."
+  exit 0
+fi
+
+if open_terminal_with "gh auth login"; then
+  result "needs_confirmation" "Opened a terminal running 'gh auth login'. Ask the user to finish there, then re-run this script to confirm. If no window appeared, the user can run 'gh auth login' in any terminal themselves."
+  exit 2
+else
+  result "manual" "Could not open a terminal automatically on this system. Ask the user to open a terminal themselves and run: gh auth login"
+  exit 2
+fi

@@ -1,6 +1,6 @@
 # Rails Agentic Engineering Team
 
-A Claude Code plugin that runs thirteen specialized AI agents to take Rails features from discovery interview to an open pull request, keep the resulting backlog ordered against who the product is actually for, turn a bug report or an idea into a labeled GitHub issue in under a minute of conversation, and verify and rank that bug queue on demand.
+A Claude Code plugin that runs fourteen specialized AI agents to take Rails features from discovery interview to an open pull request, keep the resulting backlog ordered against who the product is actually for, turn a bug report or an idea into a labeled GitHub issue in under a minute of conversation, and verify and rank that bug queue on demand.
 
 ## What This Is
 
@@ -21,16 +21,12 @@ This is a Claude Code Team. Install it by copying these agents into your Rails p
    ```bash
    chmod +x bin/agent-log
    ```
-3. Verify that `ruby` and `sqlite3` are on your PATH:
+3. Verify that `ruby` and `sqlite3` are on your PATH — `/install`'s database setup depends on both:
    ```bash
    ruby --version && sqlite3 --version
    ```
-4. The database at `db/agent_log.sqlite3` creates itself on first use.
-5. Verify `gh` is installed and authenticated — the orchestrator's pull request step and the `/bug`/`/request` intake commands both depend on it:
-   ```bash
-   gh auth status
-   ```
-   Adding an issue to a GitHub Project also needs the `project` scope: `gh auth refresh -s project`.
+
+Then run `/install` in Claude Code. It confirms which directory it's setting up (don't assume it's wherever the conversation happens to be running), installs `gh` if it's missing and gets you into `gh auth login` in a fresh terminal window if you're not authenticated yet, detects the repo from your git remote, creates and migrates `db/agent_log.sqlite3` (via the `bin/agent-log` you just copied in), builds the `docs/` skeleton, confirms or creates a GitHub Project board, checks that Issues are reachable on the repo, and writes it all to `team.yml`. It's idempotent; re-run it any time without worrying about re-asking questions it already has answers to. What's still manual: steps 1-3 above, and creating GitHub labels/project columns — the installer doesn't do those yet.
 
 Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic. It will also offer `/define-icp` if `docs/icp/` has no persona file yet.
 
@@ -57,7 +53,7 @@ Found a bug, or have an idea that isn't ready to build yet? `/bug` and `/request
 /request A way to bulk-approve pending listings instead of one at a time
 ```
 
-First run of either asks for your GitHub project's owner and number, then remembers it in `team.yml` at the project root — a small structured config file every GitHub-facing agent reads, alongside `AGENTS.md` and `TODO.md`. See the `github-cli` skill for its full schema.
+Both read `team.yml` at the project root for the repo and project board — a small structured config file every GitHub-facing agent reads, alongside `AGENTS.md` and `TODO.md` (see the `github-cli` skill for its full schema). Run `/install` first if it doesn't exist yet; `/bug` and `/request` point you at it rather than trying to set it up themselves ad hoc.
 
 Once bugs have accumulated on the board, run `/triage` to verify and rank them:
 

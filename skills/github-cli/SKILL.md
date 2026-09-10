@@ -51,6 +51,8 @@ cadence:
 
 Read this file before running any project command. If it doesn't exist yet, ask the user for the owner and project number once, and offer to write `team.yml` so future runs don't ask again — `gh project list --owner {owner}` will list available projects and their numbers if the user isn't sure. Leave `cadence.log_analyst_interval` at its default (`15`) unless the user asks to change it; don't invent a value.
 
+**`github.repo` specifically is written by `bin/team-setup-project`** (run via `/install`), not by hand-rolled `Edit` calls scattered across agents — it does a comment-preserving targeted line update, not a full YAML re-dump. If you're writing an agent that needs to set this field programmatically, call that script rather than reimplementing the same line-editing logic a second time; `intake` and `installer`'s own `project.owner`/`project.number` fields are the two remaining fields still set by an agent's own targeted `Edit`, since no script covers those yet.
+
 **Reading a field from a script:**
 
 ```bash
