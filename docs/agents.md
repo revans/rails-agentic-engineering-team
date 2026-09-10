@@ -149,10 +149,10 @@ This is the one agent shared behind two commands. `/feature` starts building som
 
 ### Intake
 
-Interviews the reporter, searches the codebase for supporting context, checks for duplicates, and files a labeled GitHub issue.
+Interviews the reporter, searches the codebase for supporting context, checks for duplicates, and files a labeled GitHub issue. Where it lands depends on type: a `bug` stays a plain repo issue for `bug-triage` to work from; a `feature` also gets added to the GitHub Project board for `roadmap-analyst` and a human to weigh.
 
 **Reads:** `team.yml`, `docs/icp/*-icp.md` (feature mode only), the application codebase, existing GitHub issues  
-**Writes:** A GitHub issue via `gh` — nothing local except, on first run, `team.yml` itself  
+**Writes:** A GitHub issue via `gh` — nothing local except, on first run, `team.yml` itself. Never writes to `TODO.md`.  
 **Cannot:** Modify application code; close, resolve, or edit an existing issue; file before the user confirms
 
 Run via `/bug` (type `bug`) or `/request` (type `feature`) — same identity, same flow, different interview questions and label. Both file into the project's `Ready` column, per the `github-cli` skill. Neither runs as a subagent — the interview needs to be live, the same reason discovery and the orchestrator run directly in the conversation.

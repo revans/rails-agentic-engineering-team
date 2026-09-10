@@ -1,6 +1,6 @@
 ---
 name: Bug
-description: "Report a bug. Interviews you for repro steps and context, searches the codebase for a likely culprit, checks for duplicates, and files a GitHub issue labeled bug in the Ready column. Usage: /bug | /bug <description>"
+description: "Report a bug. Interviews you for repro steps and context, searches the codebase for a likely culprit, checks for duplicates, and files a GitHub issue labeled bug — a plain repo issue, not added to the project board; /triage ranks it from there. Usage: /bug | /bug <description>"
 color: red
 ---
 

@@ -50,7 +50,7 @@ Along the way, any agent that notices something out of scope — a real feature 
 /roadmap
 ```
 
-Found a bug, or have an idea that isn't ready to build yet? `/bug` and `/request` interview you, search the codebase for supporting context, and file the result as a labeled GitHub issue in the `Ready` column — separate from this repo's local backlog, for anything that belongs in GitHub's own triage flow instead:
+Found a bug, or have an idea that isn't ready to build yet? `/bug` and `/request` interview you and search the codebase for supporting context — separate from this repo's local backlog, for anything that belongs in GitHub instead. Where the two land is different on purpose: `/bug` files a plain, labeled GitHub issue and stops there — `/triage` is what ranks it, not a board column. `/request` files a labeled issue and also adds it to the GitHub Project board's `Ready` column, where `/roadmap` and you can weigh it against the rest of the backlog:
 
 ```
 /bug The export button on the listings page throws a 500 for large accounts

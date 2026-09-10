@@ -1,6 +1,6 @@
 ---
 name: Request
-description: "Capture a feature idea. Interviews you for who it's for and why, checks whether it already partly exists, checks for duplicates, and files a GitHub issue labeled feature in the Ready column. Usage: /request | /request <description>"
+description: "Capture a feature idea. Interviews you for who it's for and why, checks whether it already partly exists, checks for duplicates, and files a GitHub issue labeled feature, added to the GitHub Project board in the Ready column. Usage: /request | /request <description>"
 color: purple
 ---
 

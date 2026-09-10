@@ -1,6 +1,6 @@
 ---
 name: github-cli
-description: gh CLI reference for this team — creating and searching issues, filing them to a GitHub Projects (v2) board with a label and status column, isolating pipeline work in a git worktree, and opening pull requests. Every command here was verified against a real `gh --help`/`git worktree --help` output, not written from memory.
+description: gh CLI reference for this team — creating and searching issues, filing a feature request to a GitHub Projects (v2) board with a label and status column while a bug stays a plain labeled repo issue, isolating pipeline work in a git worktree, and opening pull requests. Every command here was verified against a real `gh --help`/`git worktree --help` output, not written from memory.
 ---
 
 # GitHub CLI Reference
@@ -27,7 +27,8 @@ github:
   project:
     owner: owner-or-org            # who the GitHub Project (v2) board belongs to
     number: 4                      # gh project list --owner OWNER to find it
-  default_status: Ready            # status column new intake issues land in
+  default_status: Ready            # status column new feature-request issues land in — bugs
+                                    # never reach the board, see "Where Project Config Lives" below
   labels:
     feature: feature
     bug: bug
@@ -60,7 +61,12 @@ ruby -ryaml -e "c = YAML.load_file('team.yml'); puts c.dig('github','project','n
 
 `.dig` returns `nil` (prints nothing) rather than raising on a missing key — check for an empty result before using a value, don't assume the field is populated.
 
-**Only one GitHub Project board exists in this team's current design** — `feature` and `bug` issues both land on it, distinguished by label, not by separate boards. `docs/triage.md` and `docs/roadmap.md` both read this same `github.project`. If a project later needs bugs kept off the shared board entirely (a plain repo-issues-only path, with its own `bug_project` config block), that's a deliberate design change to make explicitly — not something to infer from this file's shape.
+**The project board and the issue board are two different things, and the two intake types split across them on purpose:**
+
+- **`feature` issues** go on the GitHub Project board (`github.project`) — that's what `roadmap-analyst` reads to weigh backlog value, and what a human looks at to decide what to build next.
+- **`bug` issues stay plain repo issues** — no project, no status column. `bug-triage` reads them straight off the repo's Issues tab (`gh issue list --label bug`), verifies and ranks them itself, and writes `docs/triage.md`. Putting a bug on the project board too would just be a second, unranked opinion sitting next to a better one.
+
+`github.project` in `team.yml` is read by feature-filing (`intake`) and `roadmap-analyst` only. `bug-triage` never touches it.
 
 ---
 
@@ -86,6 +92,8 @@ gh label create LABEL --repo OWNER/REPO --description "DESCRIPTION" --color HEXC
 
 ### Adding straight to a project at creation time
 
+**Feature issues only.** A `bug` issue never takes this step — see "Where Project Config Lives" above.
+
 `gh issue create` also takes `--project TITLE` (the project's *display title*, not its number) to add the issue to a board in the same call:
 
 ```bash
@@ -109,6 +117,8 @@ If something clearly matching turns up, surface it to the user and ask whether t
 ---
 
 ## Setting a Project Item's Status Column
+
+**Feature issues only** — a `bug` issue is never on the board in the first place, so there's no status column to set.
 
 Once the issue exists and is on the board (via `--project` at creation, or `item-add` below), set its status by **name** — no manual GraphQL ID lookup needed for the normal case:
 
