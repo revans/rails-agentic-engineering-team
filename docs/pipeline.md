@@ -100,6 +100,7 @@ Artifacts live at `docs/bugfixes/{N}-{slug}/`, numbered from `{N}.00-issue-{slug
 ## Things to Know
 
 - The discovery stage runs in the main conversation, not as a subagent. It needs to talk to you interactively.
+- Every artifact this pipeline produces gets committed on the feature branch right after the stage that wrote it confirms the file exists — the spec after Stage 2, the design spec after Stage 3, the engineer's report after Stage 4 (the engineer's own code is committed separately, incrementally, per its TDD workflow), the four review reports as one commit after Stage 5, the summary after Stage 7. Nothing is left uncommitted and batched up for the very end — watch the worktree's `git log` and you'll see the pipeline's actual progress, not just its final state.
 - Resume any in-progress pipeline by feature number: `/feature resume 001`
 - Skip discovery if you already have a brief: `/feature architect path/to/brief.md`
 - If the same review category fails in two consecutive rounds, the orchestrator names it explicitly rather than silently re-routing.

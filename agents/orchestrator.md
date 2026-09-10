@@ -183,6 +183,13 @@ ls ${FEATURE_DIR}/${NNN}.02-arc-*.md
 
 If no file appears, ask the user what happened before proceeding.
 
+Commit it — the architect itself has no git responsibilities, it only ever `Write`s; every non-code artifact this pipeline produces gets committed by the orchestrator right after the stage that wrote it confirms the file exists, not batched up for later:
+
+```bash
+git add "${FEATURE_DIR}/${NNN}.02-arc-"*.md
+git commit -m "docs: ${NNN} architect spec"
+```
+
 ---
 
 ## Stage 3 — Design
@@ -197,6 +204,13 @@ ls ${FEATURE_DIR}/${NNN}.03-des-*.md
 ```
 
 The design spec must exist before engineering begins — the engineer reads both the feature spec and the design spec.
+
+Commit it, same reasoning as Stage 2:
+
+```bash
+git add "${FEATURE_DIR}/${NNN}.03-des-"*.md
+git commit -m "docs: ${NNN} design spec"
+```
 
 ---
 
@@ -214,6 +228,15 @@ ls ${FEATURE_DIR}/${NNN}.${SEQ}-eng-*.md
 ```
 
 The engineer report must exist before reviews begin — the review agents read it for context.
+
+The engineer already committed its own application code incrementally, per its own TDD Workflow ("commit after each task," not one commit at the end) — that's its domain, don't duplicate it. The report file itself is a separate `Write` the engineer doesn't commit; that's yours:
+
+```bash
+git add "${FEATURE_DIR}/${NNN}.${SEQ}-eng-"*.md
+git commit -m "docs: ${NNN} engineer report, round N"
+```
+
+(`round N` here is whichever round you're actually on — round 1 the first time through Stage 4, incrementing each time Stage 6 routes back. You're already tracking this to know what `$SEQ` is; just write the actual number, not the literal text "N".)
 
 ---
 
@@ -233,6 +256,14 @@ ls ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
    ${FEATURE_DIR}/${NNN}.$(($SEQ+2))-sec-*.md \
    ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md \
    ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md
+```
+
+Commit all four together — they complete as one batch, so one commit for the round is more honest than four races to the same commit:
+
+```bash
+git add "${FEATURE_DIR}/${NNN}."*-cr-*.md "${FEATURE_DIR}/${NNN}."*-sec-*.md \
+        "${FEATURE_DIR}/${NNN}."*-perf-*.md "${FEATURE_DIR}/${NNN}."*-fid-*.md
+git commit -m "docs: ${NNN} reviews, round N"
 ```
 
 ---
@@ -354,6 +385,13 @@ After writing the summary, confirm it exists:
 ls ${FEATURE_DIR}/${NNN}-summary.md
 ```
 
+Commit it, same as every other artifact this stage produces:
+
+```bash
+git add "${FEATURE_DIR}/${NNN}-summary.md"
+git commit -m "docs: ${NNN} feature summary"
+```
+
 Don't add a `Pull Request` field to this template — the PR doesn't exist yet at this point in the pipeline. Stage 7c inserts a `**Pull Request:** {PR_URL}` line right after `**Review rounds:**` once the URL actually exists, and commits that change separately.
 
 ---
@@ -402,18 +440,18 @@ This step never blocks the pipeline and never fails it — if a `gh` call fails 
 
 The pipeline's job is to hand off a mergeable, reviewed unit of work — not to merge it. This stage gets it to the point a human can make that call.
 
-You should be in `$WORKTREE_DIR`. Confirm nothing is left uncommitted — the engineer commits its own code incrementally per its TDD Workflow, but the spec, design spec, and four review reports were only ever `Write`n, never committed:
+You should be in `$WORKTREE_DIR`. By this point everything should already be committed — Stages 2, 3, 4, 5, and 7 each commit their own artifact right after confirming it exists, and the engineer commits its own code incrementally per its TDD Workflow. This check is a safety net, not the primary commit point:
 
 ```bash
 cd "$WORKTREE_DIR"
 git status --porcelain
 ```
 
-If that shows anything, commit it — this is docs, not code, so one commit covering all of it is fine:
+If that's empty, move on. If it shows anything, something upstream skipped its commit step — commit it now so the PR isn't missing content, but treat the fact that this caught something as worth a line in the final report, not a silent catch:
 
 ```bash
 git add -A
-git commit -m "docs: ${NNN} pipeline artifacts — spec, design, reviews, summary"
+git commit -m "docs: ${NNN} pipeline artifacts not caught by an earlier stage"
 ```
 
 Push the branch and open the PR, using the feature summary as the PR body — it already says everything a reviewer needs, no reason to re-derive it. See the `github-cli` skill for the exact recipe (default-branch detection, `--body-file`):
@@ -634,9 +672,24 @@ your report rather than guessing at scope (see the scope-capture skill).
 Write the engineer report to {BUGFIX_DIR}/{N}.01-eng-{slug}.md when the fix is complete.
 ```
 
+Confirm `{BUGFIX_DIR}/{N}.01-eng-{slug}.md` (or the current round's `{N}.{SEQ}-eng-{slug}.md`) exists, then commit it — same reasoning as Stage 4: the engineer already committed its own code incrementally, this is the separate report file it doesn't commit itself.
+
+```bash
+git add "{BUGFIX_DIR}/{N}.${SEQ}-eng-"*.md
+git commit -m "docs: fix #{N} engineer report, round N"
+```
+
 ### Stage B4 — Reviews (Parallel)
 
 Same as Stage 5 — launch all four review agents simultaneously, in one response — substituting `{BUGFIX_DIR}` for `{FEATURE_DIR}` and `{N}` for `{NNN}` in every path. One difference: `fidelity-review`'s launch prompt has no discovery brief to read. Point it at `{BUGFIX_DIR}/{N}.00-issue-{slug}.md` for both inputs it would normally receive (brief and spec), and reframe its check as "does the implementation match the issue's expected behavior, and does it actually resolve what was reported" — the same plan-fidelity-and-problem-coverage lens, aimed at the issue instead of a brief.
+
+Commit all four together once they've all completed, same as Stage 5:
+
+```bash
+git add "{BUGFIX_DIR}/{N}."*-cr-*.md "{BUGFIX_DIR}/{N}."*-sec-*.md \
+        "{BUGFIX_DIR}/{N}."*-perf-*.md "{BUGFIX_DIR}/{N}."*-fid-*.md
+git commit -m "docs: fix #{N} reviews, round N"
+```
 
 ### Stage B5 — Verdict Evaluation
 
@@ -687,6 +740,13 @@ A lighter version of Stage 7 — there's no Key Scenarios or Acceptance Criteria
 ```
 
 The `**Closes:** #{N}` line is not decorative — Stage B8 pulls it into the PR body so GitHub closes the issue automatically on merge.
+
+Commit it right after writing, same as Stage 7:
+
+```bash
+git add "{BUGFIX_DIR}/{N}-summary.md"
+git commit -m "docs: fix #{N} summary"
+```
 
 ### Stage B7 — Scope Capture Filing
 
