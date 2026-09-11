@@ -55,7 +55,7 @@ Found a bug, or have an idea that isn't ready to build yet? `/bug` and `/request
 
 Both read `team.yml` at the project root for the repo and project board — a small structured config file every GitHub-facing agent reads, alongside `AGENTS.md` and `TODO.md` (see the `github-cli` skill for its full schema). Run `/install` first if it doesn't exist yet; `/bug` and `/request` point you at it rather than trying to set it up themselves ad hoc.
 
-Once bugs have accumulated on the board, run `/triage` to verify and rank them:
+Once bugs have accumulated in the issue queue, run `/triage` to verify and rank them:
 
 ```
 /triage
@@ -75,6 +75,8 @@ This is the orchestrator's Bug Fix Mode — the same engineer and four parallel 
 
 | Doc | About |
 |---|---|
-| [Pipeline](docs/pipeline.md) | How a feature moves through all eleven stages, artifact naming, and how to resume a stopped pipeline |
+| [Pipeline](docs/pipeline.md) | How a feature moves through all eleven stages, the bug fix path, artifact naming, and how to resume a stopped pipeline |
 | [Agents](docs/agents.md) | What each agent does, what it reads, and what it produces |
+| [Installer](docs/installer.md) | What `/install` does, the four bootstrap scripts, `team.yml`'s schema, and what's still manual |
+| [Backlog & Triage](docs/backlog.md) | How an idea gets from "someone noticed it" to a ranked GitHub issue — scope capture, `/roadmap`, `/triage`, and the shared filing tools |
 | [Agent Log](docs/agent-log.md) | The logging CLI, database schema, and how to query accumulated run data |
