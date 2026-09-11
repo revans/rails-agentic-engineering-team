@@ -77,8 +77,8 @@ A bug fix is the same assembly line with the first three stations removed. `/bug
 
 ```mermaid
 flowchart TD
-    A[/bug files a GitHub issue] --> B[/triage verifies and ranks it]
-    B --> C[/fix issue-number]
+    A["/bug files a GitHub issue"] --> B["/triage verifies and ranks it"]
+    B --> C["/fix issue-number"]
     C --> D[Issue snapshotted, committed to main/master]
     D --> E[Fix worktree created]
     E --> F[Engineer implements against the issue]
