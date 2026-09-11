@@ -154,7 +154,7 @@ sqlite3 -separator $'\t' $DB \
    ORDER BY features_affected DESC"
 ```
 
-### 3. Analyze for Six Pattern Types
+### 3. Analyze for Seven Pattern Types
 
 Work through the data looking for each type. Take your time — synthesis is the work.
 
@@ -226,6 +226,21 @@ Proposal format:
 High-confidence (≥5 features): recommend building the skill immediately.
 Medium-confidence (3-4 features): flag as candidate; one more occurrence confirms it.
 
+#### Pattern Type 7: Input Quality Trends & Cross-Agent Reality Checks
+
+Every pipeline agent logs an `input_quality` reflection every run, unconditionally — not just when something's wrong (see the `agent-log` skill). This is the one pattern type with two genuinely different analyses under it, both reading the same data.
+
+**7a — Trend, not just a snapshot.** `bin/agent-log query input-quality` returns every rating chronologically per `agent_name` — each description starts `Rating: N/10 —`. Parse the number out and look at the sequence over time for each artifact type being rated (discovery briefs as rated by architect, architect specs as rated by design and by engineer, design specs as rated by engineer, engineer reports as rated by the three reviewers). A flat or improving trend is not a finding — a *declining* one is, even with no single bad run driving it: "architect-spec ratings from engineer averaged 8.1 across features 040-050, 6.3 across 051-060" is worth a proposal on its own, independent of whether any individual review round failed.
+
+**7b — The specific reality check this pattern type exists for.** This is Pattern Type 4 (Outcome Deltas) generalized across an agent boundary instead of staying within one agent's own before/after: Pattern Type 4 asks "did this agent's own bet about its own work pay off"; this asks "did one agent's confidence in *another* agent's artifact hold up once a third agent actually tested it." Concretely: for each feature, compare the engineer's `input_quality` rating of the spec against whether that same feature's review round(s) came back NEEDS WORK on something spec-attributable (a `decision --type gap` logged by a reviewer naming the spec, or a fidelity-review finding like `[SILENT_SCOPE_NARROWING]`). Two outcomes, and they point at different fixes:
+
+- **High spec rating (8+) but the reviews still found a spec-attributable gap** — the engineer trusted an artifact that didn't earn it. If this is a one-off, it's a signal about that specific engineer run (maybe worth an outcome-recording follow-up, not a proposal). If it recurs across multiple features with the same shape of miss, it's evidence the spec template itself has a structural blind spot the engineer's own read-through doesn't catch until implementation — feed it into `architect-spec-format`, not into the engineer's own skill set.
+- **Low spec rating but a clean review round** — the engineer correctly flagged a thin spec and still delivered a clean implementation anyway (via its own `decision --type gap` entries filling the hole). This isn't a problem to fix; it's evidence the engineer's `--type gap` logging is doing its job. Worth noting as a working practice (feeds Pattern Type 5), not a proposal.
+
+Signal for a proposal: 2+ features showing the "high rating, spec-attributable NEEDS WORK anyway" shape, naming the same kind of gap.
+
+Proposal format: name the artifact type and the specific pattern of blind spot (not just "specs are sometimes wrong" — what *kind* of thing keeps surviving an 8+ rating and still causing rework), and the exact addition to that artifact's format skill that would surface it before the rating is given, not after.
+
 ---
 
 ## Output
@@ -241,8 +256,9 @@ Write a single report to `docs/agent-analysis/YYYY-MM-DD.md` (use today's date).
 - Decisions analyzed: N
 - Date range: YYYY-MM-DD to YYYY-MM-DD
 - Observed outcomes populated: N of N decisions (X%)
+- Input-quality reflections logged: N of N runs (X%) — should be 100%, it's unconditional; a gap here means some agent skipped it
 
-Note if observed outcome coverage is low — proposals in Pattern Type 4 will be thin until engineers log outcomes consistently.
+Note if observed outcome coverage is low — proposals in Pattern Type 4 will be thin until engineers log outcomes consistently. Note separately if input-quality coverage is below 100% — unlike outcome recording, this one has no legitimate reason to be skipped, so a gap means an agent definition needs re-reading, not just more data waiting to accumulate.
 
 ## Findings
 

@@ -125,6 +125,8 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 
 Decision ID format: `arch-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `arch-001-001`. Always include rationale, alternatives considered, and expected outcome.
 
+**Always log, before closing — not conditional on anything going wrong:** an `input_quality` reflection rating the discovery brief. Rate 1-10 and name what made it easy or hard to write a spec from; see the `agent-log` skill for the exact format.
+
 **Log events for:** significant bash commands (`bash`), artifact written (`file_write`).
 
 ---

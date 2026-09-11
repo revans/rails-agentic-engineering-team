@@ -55,7 +55,7 @@ The database has five tables:
 | `decisions` | Choices made during a run: title, rationale, alternatives, expected outcome |
 | `events` | Actions taken: file reads, bash commands, test runs |
 | `findings` | Review agent findings: category, severity, file path, line number |
-| `reflections` | End-of-run notes: struggles, skill gaps, and assumptions |
+| `reflections` | End-of-run notes: struggles, skill gaps, assumptions, and input-quality ratings |
 
 ## Querying
 
@@ -85,7 +85,15 @@ Find skill gaps across all runs (direct input to the skill builder pipeline):
 bin/agent-log query skill-gaps
 ```
 
-The `struggles`, `skill-gaps`, and `assumptions` queries do not need a run ID. They aggregate across the full database.
+Find every input-quality rating, chronologically per agent — every agent logs one of these every run, unconditionally, not just when something's wrong (see the `agent-log` skill):
+
+```bash
+bin/agent-log query input-quality
+```
+
+Each line starts `Rating: N/10 —` and names the upstream artifact rated (the discovery brief, the architect spec, the design spec, the engineer report). Reading the sequence within one `agent_name` shows whether that artifact type is trending better or worse over time, not just whether the last one was good.
+
+The `struggles`, `skill-gaps`, `assumptions`, and `input-quality` queries do not need a run ID. They aggregate across the full database.
 
 ## Outcome Recording
 

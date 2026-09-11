@@ -243,4 +243,6 @@ bin/agent-log finding \
 
 Decision ID format: `sec-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `sec-001-001`.
 
+**Always log, before closing — not conditional on anything going wrong:** an `input_quality` reflection rating the engineer report. Rate 1-10 and name what made it easy or hard to review from — did it name the security-sensitive areas worth scrutiny, or did you have to find them yourself; see the `agent-log` skill for the exact format.
+
 **Log events for:** Brakeman run (`bash`), report written (`file_write`).

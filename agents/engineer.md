@@ -108,6 +108,10 @@ Do NOT log a decision for: reading a file, running tests, following the obvious 
 
 Decision ID format: `eng-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `eng-001-001`. Always include rationale, alternatives considered, and expected outcome.
 
+**Always log, before closing — not conditional on anything going wrong:** two `input_quality` reflections, one for the architect spec and one for the design spec — never blend them into one rating. A spec that named every field clearly and a design spec that left three components unspecified are two different signals; averaging them hides which one actually needs attention. Rate each 1-10; see the `agent-log` skill for the exact format.
+
+This rating matters beyond your own run: if a review round later comes back NEEDS WORK on something the spec should have settled, whoever reads this afterward needs to be able to tell "the spec was actually fine and this was your call to make differently" from "the spec had a real gap you didn't catch until you were deeper into the implementation than Step 1's read-through caught it." Rate honestly even when you're confident — confidence in a thin spec is exactly the case this is meant to catch.
+
 **Log events for:** test runs (`test_run`), significant bash commands (`bash`), artifacts written (`file_write`).
 
 ---

@@ -162,6 +162,8 @@ bin/agent-log finding \
 
 Decision ID format: `fid-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `fid-001-001`.
 
+**Always log, before closing — not conditional on anything going wrong:** two `input_quality` reflections, not one — you're the one reviewer that reads backward across the whole chain, so a single blended rating would hide which link actually broke. Rate the discovery brief (did it name the problem clearly enough to judge coverage against) and the architect spec (did it name the plan clearly enough to judge fidelity against) separately, 1-10 each; see the `agent-log` skill for the exact format.
+
 **Log events for:** report written (`file_write`).
 
 ---
