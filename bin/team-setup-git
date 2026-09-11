@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+# bin/team-setup-git
+# Installs git if it's missing. This team's whole pipeline depends on git
+# (worktrees, branches, per-stage commits) more fundamentally than it depends
+# on gh — this check belongs before bin/team-setup-gh, not after it.
+#
+# Unlike gh, git has no clean "download a static binary to a user-owned
+# directory, no sudo" install path — a prebuilt portable git binary with no
+# runtime dependencies isn't a well-supported thing the way single-static-
+# binary Go programs are. Every real install route needs either sudo (Linux
+# package managers) or a GUI installer (macOS Xcode Command Line Tools). That
+# means, unlike gh_setup's binary-download path, this script does not
+# silently run a system-modifying install on Linux — it opens a terminal
+# with the right command typed in and lets the user complete it themselves,
+# same reasoning as gh_setup's `gh auth login` step. The one exception is
+# Homebrew on macOS, which installs to a user-owned prefix, not system paths
+# — same case gh_setup already treats as safe to run directly.
+#
+# Output contract: prints exactly one JSON object as the LAST line of stdout.
+#   status: "ok"               — nothing left to do
+#   status: "needs_confirmation" — a terminal (or macOS's own GUI installer)
+#                                  was opened; ask the user to finish there,
+#                                  then re-run this script
+#   status: "manual"           — could not open a terminal automatically;
+#                                  "detail" has the exact command to run
+#   status: "failed"           — could not proceed; "detail" has why
+# Exit code: 0 = ok, 2 = needs_confirmation/manual (recoverable), 1 = failed.
+
+set -u
+
+result() {
+  local status="$1" detail="$2"
+  detail="${detail//\\/\\\\}"
+  detail="${detail//\"/\\\"}"
+  printf '{"step":"git_setup","status":"%s","detail":"%s"}\n' "$status" "$detail"
+}
+
+open_terminal_with() {
+  local cmd="$1"
+  local os
+  os="$(uname -s)"
+
+  if [ "$os" = "Darwin" ]; then
+    osascript -e "tell application \"Terminal\" to do script \"$cmd\"" \
+              -e 'tell application "Terminal" to activate' >/dev/null 2>&1 && return 0
+    return 1
+  fi
+
+  if command -v x-terminal-emulator >/dev/null 2>&1; then
+    nohup x-terminal-emulator -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v foot >/dev/null 2>&1; then
+    nohup foot bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v ghostty >/dev/null 2>&1; then
+    nohup ghostty -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v alacritty >/dev/null 2>&1; then
+    nohup alacritty -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v kitty >/dev/null 2>&1; then
+    nohup kitty bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v gnome-terminal >/dev/null 2>&1; then
+    nohup gnome-terminal -- bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v konsole >/dev/null 2>&1; then
+    nohup konsole -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v xfce4-terminal >/dev/null 2>&1; then
+    nohup xfce4-terminal -x bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v xterm >/dev/null 2>&1; then
+    nohup xterm -hold -e bash -c "$cmd" >/dev/null 2>&1 & disown; return 0
+  fi
+  return 1
+}
+
+linux_install_command() {
+  if command -v apt-get >/dev/null 2>&1; then
+    echo "sudo apt-get update && sudo apt-get install -y git"
+  elif command -v dnf >/dev/null 2>&1; then
+    echo "sudo dnf install -y git"
+  elif command -v pacman >/dev/null 2>&1; then
+    echo "sudo pacman -S --noconfirm git"
+  elif command -v zypper >/dev/null 2>&1; then
+    echo "sudo zypper install -y git"
+  else
+    echo ""
+  fi
+}
+
+if command -v git >/dev/null 2>&1; then
+  result "ok" "git $(git --version | awk '{print $3}') already installed."
+  exit 0
+fi
+
+os="$(uname -s)"
+
+if [ "$os" = "Darwin" ]; then
+  if command -v brew >/dev/null 2>&1; then
+    if brew install git >/dev/null 2>&1; then
+      result "ok" "installed via Homebrew."
+      exit 0
+    fi
+    result "failed" "brew install git failed — run it yourself to see the error."
+    exit 1
+  fi
+  # No brew: macOS's own installer for git is the Xcode Command Line Tools,
+  # a GUI dialog, not a terminal command — trigger it and let the user finish.
+  xcode-select --install >/dev/null 2>&1
+  result "needs_confirmation" "Triggered the macOS Xcode Command Line Tools installer (a system dialog, not a terminal). Ask the user to complete it, then re-run this script to confirm. If no dialog appeared, they can run 'xcode-select --install' themselves, or install Homebrew and re-run."
+  exit 2
+fi
+
+install_cmd="$(linux_install_command)"
+if [ -z "$install_cmd" ]; then
+  result "manual" "No known package manager found (checked apt-get, dnf, pacman, zypper). Ask the user to install git themselves — https://git-scm.com/downloads — then re-run."
+  exit 2
+fi
+
+if open_terminal_with "$install_cmd"; then
+  result "needs_confirmation" "Opened a terminal running: $install_cmd — this needs the user's own sudo password, so it can't run non-interactively. Ask them to finish there, then re-run this script to confirm."
+  exit 2
+else
+  result "manual" "Could not open a terminal automatically on this system. Ask the user to open a terminal themselves and run: $install_cmd"
+  exit 2
+fi

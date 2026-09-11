@@ -1,0 +1,117 @@
+#!/usr/bin/env bash
+# bin/team-setup-sqlite
+# Installs the sqlite3 CLI if it's missing. bin/agent-log shells out to this
+# binary directly (not a gem) for every write and read — without it, no
+# agent in this team can log a decision, and bin/team-setup-project's
+# database migration step fails outright.
+#
+# Same reasoning as bin/team-setup-git: no clean "download a static binary,
+# no sudo" path exists for sqlite3 the way it does for gh, so this only runs
+# an install directly when it's genuinely safe to (Homebrew on macOS, a
+# user-owned prefix). Everywhere else it opens a terminal with the right
+# package-manager command and waits for the user to complete it themselves —
+# same reasoning as gh_setup's `gh auth login` step.
+#
+# Output contract: prints exactly one JSON object as the LAST line of stdout.
+#   status: "ok"               — nothing left to do
+#   status: "needs_confirmation" — a terminal was opened; ask the user to
+#                                  finish there, then re-run this script
+#   status: "manual"           — could not open a terminal automatically;
+#                                  "detail" has the exact command for the
+#                                  user to run themselves
+#   status: "failed"           — could not proceed; "detail" has why
+# Exit code: 0 = ok, 2 = needs_confirmation/manual (recoverable), 1 = failed.
+
+set -u
+
+result() {
+  local status="$1" detail="$2"
+  detail="${detail//\\/\\\\}"
+  detail="${detail//\"/\\\"}"
+  printf '{"step":"sqlite_setup","status":"%s","detail":"%s"}\n' "$status" "$detail"
+}
+
+open_terminal_with() {
+  local cmd="$1"
+  local os
+  os="$(uname -s)"
+
+  if [ "$os" = "Darwin" ]; then
+    osascript -e "tell application \"Terminal\" to do script \"$cmd\"" \
+              -e 'tell application "Terminal" to activate' >/dev/null 2>&1 && return 0
+    return 1
+  fi
+
+  if command -v x-terminal-emulator >/dev/null 2>&1; then
+    nohup x-terminal-emulator -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v foot >/dev/null 2>&1; then
+    nohup foot bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v ghostty >/dev/null 2>&1; then
+    nohup ghostty -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v alacritty >/dev/null 2>&1; then
+    nohup alacritty -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v kitty >/dev/null 2>&1; then
+    nohup kitty bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v gnome-terminal >/dev/null 2>&1; then
+    nohup gnome-terminal -- bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v konsole >/dev/null 2>&1; then
+    nohup konsole -e bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v xfce4-terminal >/dev/null 2>&1; then
+    nohup xfce4-terminal -x bash -c "$cmd; exec bash" >/dev/null 2>&1 & disown; return 0
+  elif command -v xterm >/dev/null 2>&1; then
+    nohup xterm -hold -e bash -c "$cmd" >/dev/null 2>&1 & disown; return 0
+  fi
+  return 1
+}
+
+linux_install_command() {
+  # Package name varies by distro family: apt/zypper call it sqlite3,
+  # dnf/pacman call it sqlite.
+  if command -v apt-get >/dev/null 2>&1; then
+    echo "sudo apt-get update && sudo apt-get install -y sqlite3"
+  elif command -v dnf >/dev/null 2>&1; then
+    echo "sudo dnf install -y sqlite"
+  elif command -v pacman >/dev/null 2>&1; then
+    echo "sudo pacman -S --noconfirm sqlite"
+  elif command -v zypper >/dev/null 2>&1; then
+    echo "sudo zypper install -y sqlite3"
+  else
+    echo ""
+  fi
+}
+
+if command -v sqlite3 >/dev/null 2>&1; then
+  result "ok" "sqlite3 $(sqlite3 -version | awk '{print $1}') already installed."
+  exit 0
+fi
+
+os="$(uname -s)"
+
+if [ "$os" = "Darwin" ]; then
+  # sqlite3 ships built into macOS by default — reaching this branch at all
+  # means something unusual already happened to this system.
+  if command -v brew >/dev/null 2>&1; then
+    if brew install sqlite >/dev/null 2>&1; then
+      result "ok" "installed via Homebrew."
+      exit 0
+    fi
+    result "failed" "brew install sqlite failed — run it yourself to see the error."
+    exit 1
+  fi
+  result "manual" "sqlite3 normally ships with macOS; its absence here is unusual. Install Homebrew (https://brew.sh) and run 'brew install sqlite', or ask the user to reinstall Xcode Command Line Tools."
+  exit 2
+fi
+
+install_cmd="$(linux_install_command)"
+if [ -z "$install_cmd" ]; then
+  result "manual" "No known package manager found (checked apt-get, dnf, pacman, zypper). Ask the user to install sqlite3 themselves — https://sqlite.org/download.html — then re-run."
+  exit 2
+fi
+
+if open_terminal_with "$install_cmd"; then
+  result "needs_confirmation" "Opened a terminal running: $install_cmd — this needs the user's own sudo password, so it can't run non-interactively. Ask them to finish there, then re-run this script to confirm."
+  exit 2
+else
+  result "manual" "Could not open a terminal automatically on this system. Ask the user to open a terminal themselves and run: $install_cmd"
+  exit 2
+fi
