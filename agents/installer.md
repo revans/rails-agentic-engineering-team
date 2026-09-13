@@ -125,7 +125,17 @@ gh project create --owner OWNER --title "TITLE"
 
 Capture the number `gh` returns.
 
-**Either branch, before moving on:** if Step 2's `gh auth status` output didn't show the `project` OAuth scope, this step's commands will fail with an authorization error. When that happens, tell the user to run `gh auth refresh -s project` themselves, wait for confirmation, then retry this step — don't treat it as a fresh unrelated failure, it's a scope gap, not a new problem.
+**Either branch, before moving on — link the project to the repo:**
+
+A GitHub Project (v2) board is owner-scoped, not repo-scoped, so confirming or creating one (both branches above) does **not** make it appear under the repo's own Projects tab in the UI — that's a separate association, and skipping it is exactly what left an earlier install's board invisible from the repo side until it was linked by hand. Do this every time, for both the "yes, existing board" and "no, just created one" branches — an existing board found via `gh project view` may never have been linked either:
+
+```bash
+gh project link NUMBER --owner OWNER --repo OWNER/REPO
+```
+
+(`OWNER/REPO` is the same `steps.repo` value from Step 4, not just the repo name — the flag accepts the full `owner/repo` form.) This is safe to run even if the board is already linked — it's a no-op, not an error, so don't bother checking first. If it fails, it's almost always the same `project` scope gap the paragraph below covers.
+
+**Also either branch, before moving on:** if Step 2's `gh auth status` output didn't show the `project` OAuth scope, this step's commands (including the link above) will fail with an authorization error. When that happens, tell the user to run `gh auth refresh -s project` themselves, wait for confirmation, then retry this step — don't treat it as a fresh unrelated failure, it's a scope gap, not a new problem.
 
 **Then, before moving on: make sure the Status option `team.yml`'s `default_status` names actually exists on this board's Status field.**
 
@@ -169,6 +179,7 @@ Installer
 ✅ db/agent_log.sqlite3 — created, tables: decisions, events, findings, reflections, runs
 ✅ docs/ skeleton — created: docs/briefs, docs/icp, docs/agent-analysis, docs/bugfixes
 ✅ Project board: #4, owner (confirmed via gh project view)
+✅ Project board linked to repo (gh project link)
 ✅ Status option "Ready" — present
 ✅ Issues reachable
 ✅ team.yml — repo set, project board set
