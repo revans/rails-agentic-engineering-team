@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+# bin/team-setup-project-status
+# Ensures a given status name exists as an option on a GitHub Project (v2)
+# board's Status field, adding it via the GraphQL API if it's missing.
+#
+# There is no `gh project` CLI command for this — `gh project field-create`
+# makes a brand-new field, but nothing edits an option onto a field that
+# already exists (every board is born with one). The only path is the
+# `updateProjectV2Field` GraphQL mutation, and it requires resending the
+# field's ENTIRE option list on every call — any existing option left out
+# is deleted, which would silently break any card already set to it. This
+# script always reads the full existing option set first (via a node query;
+# `gh project field-list` doesn't expose color/description) and only
+# appends the missing option, verified safe against a live, item-free
+# project board before this script existed.
+#
+# Usage:
+#   bin/team-setup-project-status --owner OWNER --number NUMBER --status NAME
+#
+# Output contract: prints exactly one JSON object as the LAST line of
+# stdout, {"status": "ok"|"failed", "detail": "..."}.
+
+require "json"
+require "open3"
+
+def parse_args(argv)
+  args = {}
+  i = 0
+  while i < argv.length
+    case argv[i]
+    when "--owner"  then args["owner"]  = argv[i + 1]; i += 2
+    when "--number" then args["number"] = argv[i + 1]; i += 2
+    when "--status" then args["status"] = argv[i + 1]; i += 2
+    else i += 1
+    end
+  end
+  args
+end
+
+def sh(*cmd, stdin_data: nil)
+  opts = stdin_data ? { stdin_data: stdin_data } : {}
+  out, err, status = Open3.capture3(*cmd, **opts)
+  [out, err, status.success?]
+end
+
+def report(status, detail)
+  puts JSON.generate({ status: status, detail: detail })
+  exit(status == "ok" ? 0 : 1)
+end
+
+args = parse_args(ARGV)
+owner = args["owner"]
+number = args["number"]
+status_name = args["status"]
+
+report("failed", "--owner, --number, and --status are all required") if [owner, number, status_name].any?(&:nil?)
+
+out, err, call_ok = sh("gh", "project", "field-list", number, "--owner", owner, "--format", "json")
+report("failed", "gh project field-list failed for ##{number} owned by #{owner}: #{err.strip}") unless call_ok
+
+fields = begin
+  JSON.parse(out)["fields"]
+rescue JSON::ParserError
+  nil
+end
+report("failed", "could not parse field-list output for project ##{number}") unless fields
+
+status_field = fields.find { |f| f["name"] == "Status" }
+report("failed", "project ##{number} has no Status field") unless status_field
+
+existing_names = (status_field["options"] || []).map { |o| o["name"] }
+report("ok", "Status option '#{status_name}' already present on project ##{number}") if existing_names.include?(status_name)
+
+field_id = status_field["id"]
+
+# field-list doesn't expose color/description — a full node query does, and
+# every existing value must be resent unchanged or the mutation below
+# silently rewrites it.
+node_query = <<~GQL
+  query($id: ID!) {
+    node(id: $id) {
+      ... on ProjectV2SingleSelectField {
+        options { id name color description }
+      }
+    }
+  }
+GQL
+
+body = JSON.generate({ query: node_query, variables: { id: field_id } })
+out, err, call_ok = sh("gh", "api", "graphql", "--input", "-", stdin_data: body)
+report("failed", "could not read existing Status field options: #{err.strip} #{out}") unless call_ok
+
+existing_options = begin
+  JSON.parse(out).dig("data", "node", "options")
+rescue JSON::ParserError
+  nil
+end
+report("failed", "unexpected response reading Status field options: #{out}") unless existing_options
+
+new_options = existing_options.map { |o| { id: o["id"], name: o["name"], color: o["color"], description: o["description"] } }
+new_options << { name: status_name, color: "BLUE", description: "" }
+
+mutation = <<~GQL
+  mutation($fieldId: ID!, $options: [ProjectV2SingleSelectFieldOptionInput!]) {
+    updateProjectV2Field(input: { fieldId: $fieldId, singleSelectOptions: $options }) {
+      projectV2Field {
+        ... on ProjectV2SingleSelectField { options { id name } }
+      }
+    }
+  }
+GQL
+
+body = JSON.generate({ query: mutation, variables: { fieldId: field_id, options: new_options } })
+out, err, call_ok = sh("gh", "api", "graphql", "--input", "-", stdin_data: body)
+report("failed", "failed to add Status option '#{status_name}': #{err.strip} #{out}") unless call_ok
+
+result_options = begin
+  JSON.parse(out).dig("data", "updateProjectV2Field", "projectV2Field", "options")
+rescue JSON::ParserError
+  nil
+end
+
+if result_options && result_options.any? { |o| o["name"] == status_name }
+  preserved = existing_options.map { |o| o["name"] }.join(", ")
+  report("ok", "added Status option '#{status_name}' to project ##{number} — existing options preserved: #{preserved}")
+else
+  report("failed", "mutation returned but '#{status_name}' was not found in the result: #{out}")
+end

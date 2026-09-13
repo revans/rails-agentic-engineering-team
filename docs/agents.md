@@ -165,18 +165,19 @@ This agent doesn't run alongside the pipeline or the learning loop — it runs b
 
 Prepares a fresh repo for the team: confirms the target directory, gets `git`, `gh`, and `sqlite3` installed (and `gh` authenticated), detects the repo and sets up `team.yml`/labels/`db/agent_log.sqlite3`/the `docs/` skeleton, confirms or creates a GitHub Project board, and verifies Issues are reachable.
 
-The agent itself mostly narrates and interprets — the actual OS-level and filesystem work happens in four scripts it runs and reads structured JSON back from:
+The agent itself mostly narrates and interprets — the actual OS-level, filesystem, and GitHub-API work happens in five scripts it runs and reads structured JSON back from:
 
 - **`bin/team-setup-git`** — installs `git` if missing. Unlike `gh`, there's no clean "download a static binary, no sudo" path for git, so this only runs an install directly when it's genuinely safe to (Homebrew on macOS); everywhere else it opens a terminal with the right package-manager command (or triggers macOS's own Xcode Command Line Tools GUI installer) and waits for the user to complete it.
 - **`bin/team-setup-gh`** — installs `gh` if missing (package manager or a direct binary download, no sudo required on Linux), then, if not authenticated, opens a terminal window with `gh auth login` typed and submitted so the user can finish the interactive login themselves. Never runs the login itself — that step is unavoidably a human's.
 - **`bin/team-setup-sqlite`** — installs `sqlite3` if missing, same no-sudo-path-doesn't-exist reasoning as `team-setup-git`. `bin/agent-log` shells out to this binary directly for every read and write; without it, no agent in this team can log anything.
 - **`bin/team-setup-project`** — detects the repo from `git remote`, writes/updates `team.yml` (a targeted edit that preserves comments and every other field, never a full rewrite), creates the `feature`/`bug`/`tech-debt` repo labels if missing, migrates `db/agent_log.sqlite3` by invoking `bin/agent-log` itself (so the schema lives in exactly one place, not duplicated), and creates the `docs/` skeleton (`docs/briefs/`, `docs/icp/`, `docs/agent-analysis/`, `docs/bugfixes/`).
+- **`bin/team-setup-project-status`** — adds a missing option (e.g. `Ready`) to the Project board's Status field via the `updateProjectV2Field` GraphQL mutation, since `gh project` has no CLI command for it. Always reads every existing option's id/name/color/description first and resends the full list plus the new one — leaving any existing option out would silently delete it and orphan any card already set to it. See `docs/installer.md`'s "Status Field Options" for the verification this was checked against before being trusted here.
 
-**Reads:** the target directory's `git remote`, `team.yml` (if it exists — to avoid re-asking what's already set), `bin/agent-log` (to confirm it's present before migrating the database)  
-**Writes:** `team.yml`, the `feature`/`bug`/`tech-debt` labels, `db/agent_log.sqlite3`, the `docs/` skeleton directories  
+**Reads:** the target directory's `git remote`, `team.yml` (if it exists — to avoid re-asking what's already set), `bin/agent-log` (to confirm it's present before migrating the database), the Project board's Status field options  
+**Writes:** `team.yml`, the `feature`/`bug`/`tech-debt` labels, `db/agent_log.sqlite3`, the `docs/` skeleton directories, an option on the Project board's Status field  
 **Cannot:** Modify application code, run `gh auth login` or a system package install on the user's behalf, create a GitHub Project without asking first, act on a directory the user hasn't confirmed, overwrite an existing `team.yml` wholesale, or install `bin/agent-log` itself if it isn't already present — see "Not Yet Built" in `agents/installer.md`
 
-Run via `/install`, idempotent — a second run against an already-configured repo verifies everything live again (GitHub state can drift even when `team.yml` hasn't) and reports it all as already present rather than asking the same questions twice. Still not built: installing `bin/agent-log` itself into a repo that doesn't already have it. The Project board's status columns are a permanent limitation, not a gap — see `agents/installer.md`'s "Won't Be Built This Way."
+Run via `/install`, idempotent — a second run against an already-configured repo verifies everything live again (GitHub state can drift even when `team.yml` hasn't) and reports it all as already present rather than asking the same questions twice. Still not built: installing `bin/agent-log` itself into a repo that doesn't already have it.
 
 ## Skills
 

@@ -110,7 +110,7 @@ gh project item-add NUMBER --owner OWNER --url ISSUE_URL
 gh project item-edit NUMBER --owner OWNER --url ISSUE_URL --field "Status" --value "Ready"
 ```
 
-`item-add` is a no-op error if the issue is already on the board — the script proceeds to `item-edit` regardless of `item-add`'s own exit code, since only `item-edit`'s result decides whether the board step actually succeeded. `--field`/`--value` take the field's and option's *display names* exactly as they appear on the board. If the target status doesn't exist as an option on the Status field yet, this fails — see "Won't Be Built This Way" in `installer.md` for why that's not something to work around with a GraphQL mutation.
+`item-add` is a no-op error if the issue is already on the board — the script proceeds to `item-edit` regardless of `item-add`'s own exit code, since only `item-edit`'s result decides whether the board step actually succeeded. `--field`/`--value` take the field's and option's *display names* exactly as they appear on the board. If the target status doesn't exist as an option on the Status field yet, this fails — `/install`'s `bin/team-setup-project-status` is what adds it (see `docs/installer.md`, "Status Field Options"); a failure here on an already-installed repo usually means `default_status` in `team.yml` was changed by hand without re-running `/install`.
 
 ---
 
