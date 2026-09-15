@@ -1,6 +1,6 @@
 ---
 name: Install
-description: "Prepares a fresh repo for this team: confirms the target directory, gets git, gh, and sqlite3 installed (and gh authenticated), sets up team.yml/db/agent_log.sqlite3/the docs skeleton, confirms or creates a GitHub Project board, and verifies Issues are reachable. Idempotent — safe to re-run. Usage: /install"
+description: "Prepares a fresh repo for this team: confirms the target directory, gets git, gh, and sqlite3 installed (and gh authenticated), sets up team.yml/db/agent_log.sqlite3/the docs skeleton, confirms or creates a GitHub Project board, and verifies Issues are reachable. Idempotent — safe to re-run. Offers to run /init-project once everything checks out clean. Usage: /install"
 color: green
 ---
 

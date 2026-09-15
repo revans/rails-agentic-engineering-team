@@ -72,12 +72,14 @@ What does NOT change in ad-hoc mode:
 
 Repeat this cycle for each task before moving to the next:
 
-1. **Understand** — Read the task. Identify models, controllers, views, and jobs involved. Run existing tests to confirm baseline.
+1. **Understand** — Read the task. Identify models, controllers, views, and jobs involved. Run the **entire** test suite (`bin/rails test`, not just the files you expect this task to touch) before writing a line of code for it. If anything is already red at this point, fix it first — investigate and resolve it before starting the actual task, the same way "Validate" below requires later. A red baseline makes it impossible to tell, once you're done, which failures are yours and which were already there; starting from green is what makes that judgment possible at all.
 2. **Branch** — Check `git branch --show-current` first. In pipeline mode, the orchestrator's worktree already has `feature/{feature-id}-{slug}` checked out before you're launched — stay on it, do not create a new one. Only create a branch yourself (`feature/{feature-id}-{slug}` or `fix/{slug}`) when you're not already on a matching one — ad-hoc mode, or any invocation outside the orchestrator's pipeline.
 3. **Red** — Write the failing test first. Run it. Confirm it fails for the right reason.
 4. **Green** — Write the minimum implementation to make the test pass. Run it. Confirm it passes.
 5. **Refactor** — Once green: check for naming improvements, concern extraction opportunities, N+1 queries. Run tests again after refactoring.
-6. **Validate** — Run `bin/rails test`. Run brakeman. Walk branches: every conditional has a test.
+6. **Validate** — Run `bin/ci` if the project has one (`test -f bin/ci`; Rails 8+ apps ship it — check `config/ci.rb` for the exact steps it runs, typically `bin/rubocop`, `bin/bundler-audit`, `bin/importmap audit`, `brakeman`, and `bin/rails test` together). If there's no `bin/ci`, run the equivalent individually: `bin/rubocop`, `bin/rails test`, `brakeman`. Walk branches: every conditional has a test.
+
+   Everything any of these flag gets fixed, not just noted — rubocop offenses (autocorrect what's safe with `bin/rubocop -a`, fix the rest by hand; never disable a cop to make it pass), brakeman warnings, dependency-audit findings. **Any failing test — including one you didn't write, that broke because of a change you made elsewhere in this task — gets investigated and fixed, not skipped, not left red, and not merely reported.** If you trace a failure to a genuinely pre-existing, unrelated cause (not "it was already broken" as an assumption, but an actual root cause you can name), say so explicitly in the engineer report's Assumptions Made section — the default is that a red test is yours to resolve before the task is done.
 
 Commit after each task that reaches a passing state. Small commits, not one commit at the end.
 
@@ -147,19 +149,20 @@ Read `AGENTS.md` for any additional project-specific constraints beyond these de
 
 After all tasks complete, verify before reporting:
 
-1. All tests passing (`bin/rails test` shows 0 failures, 0 errors)
+1. All tests passing (`bin/rails test` shows 0 failures, 0 errors — including any that were failing before this task started; see "Validate" above, they're yours to have fixed too)
 2. Test coverage walked — every branch has at least one test
 3. No TODO comments in code
 4. All user-facing strings use `t()` where appropriate
-5. Security check applied (run brakeman, verify no new issues)
-6. Decision log written via `bin/agent-log`
-7. Run ended via `bin/agent-log run end`
-8. Query your run's reflections for the engineer report's Assumptions Made and What Was Hard sections:
+5. Style clean — `bin/rubocop` (or `bin/ci`'s Style step) shows 0 offenses
+6. Security check applied (run brakeman, verify no new issues)
+7. Decision log written via `bin/agent-log`
+8. Run ended via `bin/agent-log run end`
+9. Query your run's reflections for the engineer report's Assumptions Made and What Was Hard sections:
    ```bash
    bin/agent-log query reflections --run-id $RUN_ID
    ```
    Filter for `type: assumption` to populate `## Assumptions Made`; filter for `type: struggle` to populate `## What Was Hard`.
-9. Engineer report written to `{FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md`
+10. Engineer report written to `{FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md`
 
 ### Engineer Report Format
 

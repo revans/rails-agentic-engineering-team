@@ -264,6 +264,7 @@ Use these exact strings for `--category`. Consistent vocabulary makes cross-feat
 | `SENSITIVE_DATA` | Credentials, PII, or internal state exposed in logs or responses |
 | `CSRF` | CSRF protection bypassed without documented reason |
 | `BRAKEMAN` | Brakeman scanner warning (include confidence level in description) |
+| `DEPENDENCY_AUDIT` | bundler-audit advisory on a gem dependency (include gem name and advisory ID in description) |
 
 **Performance (performance-review agent):**
 | Category | What it flags |

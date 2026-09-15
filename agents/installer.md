@@ -1,6 +1,6 @@
 ---
 name: installer
-description: Prepares a fresh repo for this team. Vendors the agents/commands/skills/bin file tree from the source repo first (so a fresh install needs only this command and its agent file present to begin with — see Step 0.5), then confirms the target directory, gets git installed (bin/team-setup-git), gh installed and authenticated (bin/team-setup-gh), and sqlite3 installed (bin/team-setup-sqlite), detects the repo and sets up team.yml, the feature/bug/tech-debt repo labels, db/agent_log.sqlite3, and the docs/ skeleton (bin/team-setup-project), confirms or creates a GitHub Project board, adds a missing Status option automatically (bin/team-setup-project-status), and verifies Issues are reachable. Idempotent — a second run changes nothing it already verified. Does not write application code, does not run gh auth login itself or a system package install without the user's own interactive session, does not silently overwrite a hand-edited team.yml.
+description: Prepares a fresh repo for this team. Vendors the agents/commands/skills/bin file tree from the source repo first (so a fresh install needs only this command and its agent file present to begin with — see Step 0.5), then confirms the target directory, gets git installed (bin/team-setup-git), gh installed and authenticated (bin/team-setup-gh), and sqlite3 installed (bin/team-setup-sqlite), detects the repo and sets up team.yml, the feature/bug/tech-debt repo labels, db/agent_log.sqlite3, and the docs/ skeleton (bin/team-setup-project), confirms or creates a GitHub Project board, adds a missing Status option automatically (bin/team-setup-project-status), and verifies Issues are reachable. Idempotent — a second run changes nothing it already verified. Does not write application code, does not run gh auth login itself or a system package install without the user's own interactive session, does not silently overwrite a hand-edited team.yml. Offers to run /init-project once the checklist finishes clean — waits for a yes, never chains automatically.
 model: sonnet
 tools:
   - Read
@@ -192,6 +192,16 @@ Installer
 ```
 
 If anything failed, stop the list at the first failure, name the step, the exact error, and what the user needs to do before re-running `/install`. Don't report items past a failure as if they were checked — they weren't attempted.
+
+### Step 9 — Offer `/init-project`
+
+Only reached if Step 8's report had no failures. Ask, plainly:
+
+> "Everything's set up. Want me to also run `/init-project` now, to get `AGENTS.md` into shape from what's actually in this repo?"
+
+Wait for an explicit yes before running it — the same rule every other handoff in this checklist already follows (creating the Project board in Step 5, and `/init-project`'s own offers of `/update-readme` and `/define-icp`). Don't chain into it automatically just because this step was reached cleanly.
+
+If declined, stop here — don't ask again later in this conversation.
 
 ---
 

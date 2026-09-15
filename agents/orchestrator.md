@@ -43,10 +43,11 @@ If ambiguous, ask.
 ```
 discovery → [brief] → commit brief to main/master → create feature worktree
   → architect → [spec] → design → [design-spec] → engineer → [engineer-report]
+  → CI gate (bin/ci, or rubocop + tests) — not clean → back to engineer, round+1
   → code-review + security-review + performance-review + fidelity-review  (parallel)
   → evaluate combined verdict
   → PASS / PASS WITH NOTES → synthesis → TODO capture (on main) → push + open PR → done
-  → NEEDS WORK → engineer (with all four reports + round number) → reviews → loop
+  → NEEDS WORK → engineer (with all four reports + round number) → CI gate → reviews → loop
 ```
 
 ### Worktree Model
@@ -237,6 +238,29 @@ git commit -m "docs: ${NNN} engineer report, round N"
 ```
 
 (`round N` here is whichever round you're actually on — round 1 the first time through Stage 4, incrementing each time Stage 6 routes back. You're already tracking this to know what `$SEQ` is; just write the actual number, not the literal text "N".)
+
+---
+
+## Stage 4b — CI Gate
+
+**Input:** none beyond the worktree itself
+**Produces:** nothing new — this is a verification checkpoint, not an artifact stage
+
+The engineer's own Validate step already runs `bin/ci` (or `bin/rubocop` plus `bin/rails test` and brakeman individually, on a project without one) and is expected to have fixed everything it flagged before reporting done. Don't take that on faith — the same "a logged event is not evidence" principle that governs the review agents' own self-reported completions (see their "Verify before you log" doctrine) applies here too. Re-run it yourself, independently, before spending four parallel review agents' worth of work reviewing code that might not even be lint-clean:
+
+```bash
+cd "$WORKTREE_DIR"
+if [ -f bin/ci ]; then
+  bin/ci
+else
+  bin/rubocop && bin/rails test
+fi
+```
+
+- **Clean (exit 0):** move on to Stage 5.
+- **Not clean:** do not proceed to Stage 5. Treat this exactly like a Stage 6 NEEDS WORK verdict — increment `$SEQ` by 5 and route back to Stage 4, passing the engineer the exact failing output (which step failed, what it said). Rubocop offenses are the most common failure here — no review agent checks style, so this stage is the only gate that catches them before a human ever sees the PR.
+
+Nothing reaches Stage 7c — and so nothing merges into `main`/`master`, whether by a human's click or, in a session with standing merge authorization, by this orchestrator's own local-merge step — without having passed this gate.
 
 ---
 
@@ -678,6 +702,10 @@ Confirm `{BUGFIX_DIR}/{N}.01-eng-{slug}.md` (or the current round's `{N}.{SEQ}-e
 git add "{BUGFIX_DIR}/{N}.${SEQ}-eng-"*.md
 git commit -m "docs: fix #{N} engineer report, round N"
 ```
+
+### Stage B3b — CI Gate
+
+Identical to Stage 4b — same command, same "not clean routes back, incrementing `$SEQ` by 5" logic, just routing back to Stage B3 instead of Stage 4.
 
 ### Stage B4 — Reviews (Parallel)
 

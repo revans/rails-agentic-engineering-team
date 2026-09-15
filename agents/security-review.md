@@ -1,6 +1,6 @@
 ---
 name: security-review
-description: Security reviewer — runs Brakeman, checks authorization scoping, mass assignment, XSS, SQL injection, and sensitive data exposure. Produces a report to {FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md. Does not modify application code.
+description: Security reviewer — runs Brakeman and a dependency audit (bundler-audit) at the start of every run, checks authorization scoping, mass assignment, XSS, SQL injection, and sensitive data exposure. Produces a report to {FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md. Does not modify application code.
 model: sonnet
 tools:
   - Read
@@ -33,7 +33,7 @@ You run automated tools and read code manually. Automated tools find the obvious
 1. **Read the engineer report** — the orchestrator passes the path (`{FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md`); read it first — note deviations and anything flagged for reviewer attention
 2. **Locate the feature spec** — read `{FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md`
 3. **Identify changed files** — `git diff --name-only main...HEAD`
-4. **Run Brakeman** — capture all output
+4. **Run Brakeman and the dependency audit** — both, at the very start of the run, before reading any code: `bin/bundler-audit` if the project has that binstub (it defaults to `check --update`), otherwise `bundle exec bundler-audit check --update`. Capture all output from both.
 5. **Read every changed controller, model, and view** with a security lens
 6. **Write the report** — produce `{FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md`
 
@@ -76,7 +76,20 @@ Record every warning. For each:
 
 A Brakeman HIGH confidence warning is always **NEEDS WORK** unless demonstrated to be a false positive with a clear explanation.
 
-### 2. Authorization Scope
+### 2. Dependency Audit (bundler-audit)
+
+```bash
+bin/bundler-audit
+```
+
+Record every advisory. For each:
+- Which gem, which version, which CVE/advisory ID?
+- Is the vulnerable code path actually reachable from this application, or is the gem present but unused in a way that matters?
+- If not applicable: explain why, so the report is not misleading — "reachable but unpatched" and "present but never exercises the vulnerable path" are different findings and read differently
+
+Any advisory is **NEEDS WORK** unless demonstrated not to apply, with a clear explanation. A gem with a known advisory and no justification is not a judgment call to wave through — it's a finding.
+
+### 3. Authorization Scope
 
 Read every controller action in the diff.
 
@@ -87,7 +100,7 @@ For every record lookup, ask:
 
 Check `before_action` filters — are they applied to every action that touches scoped data? Is there an action that should require authentication but skips it?
 
-### 3. Mass Assignment / Strong Params
+### 4. Mass Assignment / Strong Params
 
 Read every controller that handles form submissions or API requests.
 
@@ -96,7 +109,7 @@ Read every controller that handles form submissions or API requests.
 - Are there any attributes that should never be user-settable (status fields, owner IDs, admin flags) that are permitted?
 - Is `permit!` used anywhere? That's an unconditional mass-assignment hole.
 
-### 4. XSS
+### 5. XSS
 
 Read every view template and jbuilder template in the diff.
 
@@ -105,7 +118,7 @@ Read every view template and jbuilder template in the diff.
 - Any place user-supplied content is rendered — is Rails' automatic escaping in place, or has it been bypassed?
 - JavaScript that interpolates server-side variables — is the data being JSON-encoded properly or string-interpolated?
 
-### 5. SQL Injection
+### 6. SQL Injection
 
 Read every model, scope, and query in the diff.
 
@@ -122,7 +135,7 @@ User.where("name = ?", params[:name])
 
 Flag any string interpolation inside a SQL fragment. Flag any use of `.execute()`, `.select_all()`, or similar raw SQL interfaces that incorporate user input.
 
-### 6. Sensitive Data Exposure
+### 7. Sensitive Data Exposure
 
 Check for data that should not be exposed:
 
@@ -134,7 +147,7 @@ Check for data that should not be exposed:
 
 **In the codebase:** any API keys, credentials, or secrets hardcoded in source files? Check for patterns like `SECRET_KEY = "..."` or `API_TOKEN = "..."`.
 
-### 7. CSRF Protection
+### 8. CSRF Protection
 
 - Is `protect_from_forgery` active in ApplicationController?
 - Does any controller skip CSRF verification without a documented reason?
@@ -169,6 +182,10 @@ File: `{FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md`
 ## Brakeman
 **Status:** [PASS | NEEDS WORK]
 [Warnings found, with true/false positive assessment for each. Or "No warnings."]
+
+## Dependency Audit (bundler-audit)
+**Status:** [PASS | NEEDS WORK]
+[Advisories found, with applicability assessment for each. Or "No advisories."]
 
 ## Authorization Scope
 **Status:** [PASS | PASS WITH NOTES | NEEDS WORK]
@@ -245,4 +262,4 @@ Decision ID format: `sec-{feature-number}-{NNN}` where `feature-number` is the b
 
 **Always log, before closing — not conditional on anything going wrong:** an `input_quality` reflection rating the engineer report. Rate 1-10 and name what made it easy or hard to review from — did it name the security-sensitive areas worth scrutiny, or did you have to find them yourself; see the `agent-log` skill for the exact format.
 
-**Log events for:** Brakeman run (`bash`), report written (`file_write`).
+**Log events for:** Brakeman run (`bash`), bundler-audit run (`bash`), report written (`file_write`).
