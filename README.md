@@ -79,3 +79,4 @@ This is the orchestrator's Bug Fix Mode — the same engineer and four parallel 
 | [Updates](docs/updates.md) | How `/deploy` publishes `manifest.yml` and `/update` syncs against it — the hash comparison, conflict handling, and `team.lock.yml`'s schema |
 | [Backlog & Triage](docs/backlog.md) | How an idea gets from "someone noticed it" to a ranked GitHub issue — scope capture, `/roadmap`, `/triage`, and the shared filing tools |
 | [Agent Log](docs/agent-log.md) | The logging CLI, database schema, and how to query accumulated run data |
+| [Changelog](CHANGELOG.md) | What changed in each version of this project itself, maintained by `/deploy` |

@@ -84,13 +84,35 @@ def resolve_source_repo(dir, cli_value)
   cli_value || team_source_repo(dir) || DEFAULT_SOURCE_REPO
 end
 
+# Returns {"files" => {}} when there's genuinely no lock yet — a fresh
+# repo that's never synced, a legitimate case handled the same way
+# throughout this script. A file that EXISTS but fails to parse, or
+# doesn't come back as a hash, is a different situation and must not be
+# folded into that same fallback: doing so would silently discard every
+# file's sync history and make every real difference look like a
+# no-history conflict, with no indication anything went wrong. Returns
+# nil for that case instead, so callers can fail loudly.
 def load_lock(dir)
   path = File.join(dir, "team.lock.yml")
   return { "files" => {} } unless File.exist?(path)
 
-  YAML.load_file(path) || { "files" => {} }
+  lock = YAML.load_file(path)
+  return nil unless lock.is_a?(Hash)
+
+  lock["files"] = {} unless lock["files"].is_a?(Hash)
+  lock
 rescue StandardError
-  { "files" => {} }
+  nil
+end
+
+def load_lock!(dir)
+  lock = load_lock(dir)
+  if lock.nil?
+    path = File.join(dir, "team.lock.yml")
+    result("failed", detail: "#{path} exists but could not be parsed — check it for an accidental hand-edit, or remove it to force a fresh sync (this loses conflict history for every file)")
+    exit 1
+  end
+  lock
 end
 
 LOCK_HEADER = <<~HEADER
@@ -180,7 +202,7 @@ def cmd_plan(flags)
   end
 
   manifest = load_manifest!(snapshot_dir)
-  lock = load_lock(dir)
+  lock = load_lock!(dir)
   lock_files = lock["files"] || {}
 
   new_files = []
@@ -236,7 +258,7 @@ def cmd_apply(flags)
   end
 
   manifest = load_manifest!(snapshot_dir)
-  lock = load_lock(dir)
+  lock = load_lock!(dir)
   lock["files"] ||= {}
 
   take_upstream = csv(flags["take-upstream"])

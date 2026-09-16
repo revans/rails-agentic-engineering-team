@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.14.0
-generated_at: '2026-09-16T22:07:20Z'
+version: 1.16.0
+generated_at: '2026-09-16T22:20:37Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: bc31f2337067eea4e43ae9be3ac133c3797f42e75650a26d6b99468ef377f191
@@ -31,10 +31,9 @@ files:
   bin/team-setup-project: 1a69aa8cbf850d92e3f689156b7864aabdc3a7d805e79ccd09cf1903335bc55d
   bin/team-setup-project-status: 9cdbe638463a2d14a9dab31491a0793b388917b6f992563b23f46eaacae5618e
   bin/team-setup-sqlite: b8fbb8cf6193f13504e35698c40d9de6f4eb9877890b095296d66d5738f2a087
-  bin/team-update: 1b9420f3414d3ef2283267724aa9fcbdb6989760ef56c02edfcb09aaf1259a58
+  bin/team-update: 04360ccdb4bae873ca1fcf28ec286b463b4736ad980793258af06e1f2d63225c
   commands/bug.md: 1c65baa8a6d27b0f5724b642a35606cfe81436a50102311b925d9a3d42d2da76
   commands/define-icp.md: 55c8b3b8b16cdec8b64e26d2f3688e2be19c16dcb1206dc820b730cef96ec766
-  commands/deploy.md: 30d03168f15c83b78f48732524143a6214ce5d15a3053ac51dc3fc0bfceae686
   commands/feature.md: 9690da077305107e7542a1bc5376b1872ef3e6ce3bfe336b97dc98534b125941
   commands/fix.md: 2f00ae38d73f00740ab69cd00faa7bec80886aff8f7cd53ee9016db3baac1f46
   commands/init-project.md: b5f8da51d3ef13df8afd0bd7cab8afac1547e62a75c961d7f5470bf058b5aa3a

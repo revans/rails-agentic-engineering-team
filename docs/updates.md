@@ -15,9 +15,12 @@ flowchart TD
     A["bin/team-manifest"] --> B[Summarize what changed]
     B --> C{Structural change?}
     C -->|yes, not bumped yet| D[Offer to bump VERSION]
-    C -->|no| E[Ask before commit]
+    C -->|no| E{VERSION changed?}
     D --> E
-    E --> F["git add + git commit (never push)"]
+    E -->|yes| F[Draft a CHANGELOG.md entry]
+    E -->|no| G[Ask before commit]
+    F --> G
+    G --> H["git add + git commit (never push)"]
 ```
 
 `bin/team-manifest` hashes every tracked file (see "Tracked Files" below) with SHA-256 and writes `manifest.yml` at the repo root:
@@ -34,7 +37,9 @@ files:
   # ...every tracked file, sorted by path
 ```
 
-`manifest.yml` is generated — don't hand-edit it, `/deploy` regenerates it wholesale every run. `version` comes from the `VERSION` file, not bumped automatically; this repo's own history (`git log -p -- VERSION`) shows bumps ride along with the commit that makes a structural change, so `/deploy` only offers to bump it, never does so on its own. `/deploy` also never commits or pushes without asking first, same as every other action in this repo that touches shared state.
+`manifest.yml` is generated — don't hand-edit it, `/deploy` regenerates it wholesale every run. `version` comes from the `VERSION` file, not bumped automatically; this repo's own history (`git log -p -- VERSION`) shows bumps ride along with the commit that makes a structural change, so `/deploy` only offers to bump it, never does so on its own.
+
+When `VERSION` did change, `/deploy` also drafts and asks about adding a `CHANGELOG.md` entry — human-readable release notes for this project itself (newest first, one entry per version), distinct from `docs/updates-log.md` (below), which is a mechanical per-file record generated in each *target* repo, not this one. `/deploy` also never commits or pushes without asking first, same as every other action in this repo that touches shared state.
 
 ## `/install` — First Vendor
 
@@ -64,7 +69,9 @@ Steps A and E–F are conversational — the updater agent asks and waits. C is 
 
 ### Tracked Files
 
-`agents/**`, `commands/**`, `skills/**`, `bin/*` — everything this team vendors into a target repo except `bin/team-manifest` itself, which only exists in the source repo. `docs/`, `README.md`, and `VERSION` aren't tracked as files; `VERSION`'s value travels as `manifest.yml`'s top-level `version` field instead, since a target repo's own `docs/` holds project-specific content (briefs, ICP personas, bug triage) that has nothing to do with the source repo's copy.
+`agents/**`, `commands/**`, `skills/**`, `bin/*` — everything this team vendors into a target repo except two files that only make sense in *this* repo: `bin/team-manifest` (the build tool that produces `manifest.yml` — a target repo never needs to produce one) and `commands/deploy.md` (`/deploy` reads `bin/team-manifest`, so a `/deploy` command vendored into a target repo without that script would just be dead). `docs/`, `README.md`, and `VERSION` aren't tracked as files either; `VERSION`'s value travels as `manifest.yml`'s top-level `version` field instead, since a target repo's own `docs/` holds project-specific content (briefs, ICP personas, bug triage) that has nothing to do with the source repo's copy.
+
+A target repo that vendored `commands/deploy.md` before this exclusion existed isn't stuck with it forever: the next `/update` sees it in `team.lock.yml` but no longer in the manifest, classifies it under `removed_upstream` the same as any other file dropped upstream, and asks whether to delete it.
 
 ### `team.lock.yml`
 
@@ -134,3 +141,4 @@ The five possible sections are **Vendored** (never-seen-before files), **Updated
 - `apply` always seeds `team.lock.yml` with a baseline hash for every file that already matches upstream, even ones nobody had to decide anything about — a file with no recorded baseline reads as an unexplained conflict the next time either side touches it, so `apply` runs every time `plan` does, even when nothing needed a decision.
 - Neither script ever pushes to a remote or force-overwrites a file `/update` can't classify with confidence — a conflict always gets a human answer.
 - `bin/team-update` never assumes it's running from inside the repo it's syncing — every path is an explicit `--dir`/`--snapshot-dir` argument. That's what makes `/install`'s bootstrap-clone trick possible: the exact same script, invoked from a scratch temp directory, works identically.
+- A `team.lock.yml` or `manifest.yml` that exists but fails to parse (an accidental hand-edit, a wrong-shaped file) fails the sync cleanly with `{"status":"failed"}` rather than silently being treated the same as "nothing here yet" — that distinction matters, since the latter would quietly discard every file's sync history instead of surfacing the problem.

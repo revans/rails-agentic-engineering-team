@@ -1,6 +1,6 @@
 ---
 name: Deploy
-description: "Regenerates manifest.yml (the sha256 of every agent/skill/command/bin file this team vendors into installed repos), summarizes what changed since the last commit, and asks before staging and committing it. Source-repo maintainer tool, not something an installed target repo runs. Usage: /deploy"
+description: "Regenerates manifest.yml (the sha256 of every agent/skill/command/bin file this team vendors into installed repos), summarizes what changed since the last commit, drafts a CHANGELOG.md entry if VERSION was bumped, and asks before staging and committing it all. Source-repo maintainer tool, not something an installed target repo runs. Usage: /deploy"
 color: blue
 ---
 
@@ -38,12 +38,16 @@ Compare the two `files:` maps (by key) and report three lists: added, removed, c
 
 Report the current value. This repo's convention (see `git log -p -- VERSION`) is that version bumps ride along with the commit that makes the structural change, not a mechanical action on every deploy — so don't bump it automatically. If the changes summarized in Step 2 look like a structural change (new agent/skill/command, not just a wording tweak) and `VERSION` hasn't already been bumped as part of this same change, mention that and offer to bump it (a plain `Edit` to the `VERSION` file) before continuing. Wait for a yes.
 
-### Step 4 — Ask before committing
+### Step 4 — Update `CHANGELOG.md`
 
-Show the final file list (`manifest.yml`, and `VERSION` if it changed) and ask explicitly whether to stage and commit them — never commit without that, per this session's git safety conventions. If yes:
+Only if `VERSION` changed (this run's own bump, or one already made earlier in the same session) — a deploy with no version bump gets no changelog entry, same as it gets no `VERSION` diff. Read `CHANGELOG.md`'s existing top entry for the format (newest first, `## [X.Y.Z] - YYYY-MM-DD`, `### Added`/`### Changed`/`### Fixed` subsections as applicable). Draft a new entry summarizing what actually changed for someone syncing via `/update` — pull from this session's own commit messages if there are any for this change already, or from what Step 2's file diff and the conversation actually did; don't pad it with routine housekeeping. Show the drafted entry and ask before adding it — same as any other file change, this isn't exempt from confirmation.
+
+### Step 5 — Ask before committing
+
+Show the final file list (`manifest.yml`, `VERSION` and `CHANGELOG.md` if they changed) and ask explicitly whether to stage and commit them — never commit without that, per this session's git safety conventions. If yes:
 
 ```bash
-git add manifest.yml VERSION   # only VERSION if it actually changed
+git add manifest.yml VERSION CHANGELOG.md   # only the ones that actually changed
 git commit -m "..."
 ```
 
