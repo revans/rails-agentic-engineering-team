@@ -74,6 +74,8 @@ bin/team-update cleanup --snapshot-dir "{snapshot_dir}"
 
 Read the apply result's last line as JSON; `status: "failed"` — report `detail` verbatim. The snapshot directory is left in place on failure so a corrected re-run of `apply` doesn't require re-cloning.
 
+`apply` also prepends a dated entry to `docs/updates-log.md` (created on first use) recording exactly what it did — vendored, updated, took-upstream, kept-local, and removed paths, each listed by name. Nothing to do here; it's automatic and skipped entirely when a sync changes nothing.
+
 ## Logging
 
 Log a decision whenever a conflict is resolved (which side was taken, and why if a reason was given) — that's the signal worth keeping, not the mechanical clean-update applies.

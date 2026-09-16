@@ -97,6 +97,32 @@ For every file in the source repo's manifest, `bin/team-update plan` compares th
 
 A file on disk that appears in neither the manifest nor `team.lock.yml` is never touched or reported — that's the target repo's own project-specific addition, not this tool's concern. Resolving a conflict as "keep local" updates `team.lock.yml`'s recorded hash to the current upstream value, which means it stops being flagged — it will correctly surface as a conflict again only if upstream changes that file further while the local version still differs.
 
+### `docs/updates-log.md`
+
+Every `apply` that actually changes something prepends a dated entry to `docs/updates-log.md` in the target repo (created on first use, newest entry first) — a running record of what each sync did, replacing the ad hoc "what did that upgrade actually change" question the old `docs/portable-upgrades/*.md` documents existed to answer by hand:
+
+```markdown
+## 2026-09-16T22:06:41Z — synced to 1.13.0
+
+**Updated from upstream:**
+
+- commands/bug.md
+
+**Conflicts resolved — took upstream:**
+
+- commands/roadmap.md
+
+**Conflicts resolved — kept local (upstream change acknowledged, not applied):**
+
+- commands/triage.md
+
+**Removed (deleted upstream):**
+
+- commands/feature.md
+```
+
+The five possible sections are **Vendored** (never-seen-before files), **Updated from upstream** (clean updates), **Conflicts resolved — took upstream**, **Conflicts resolved — kept local**, and **Removed (deleted upstream)** — only non-empty sections appear, and a sync that changes nothing at all (every file already matched) writes no entry rather than an empty one. `apply` derives these categories itself from `team.lock.yml`'s state *before* it starts writing, so nothing the calling agent passes in needs to distinguish "new" from "updated" — both arrive as plain `--take-upstream` paths. Don't hand-edit this file; a sync only ever prepends, never rewrites, an existing entry.
+
 ### Snapshot Reuse
 
 `plan` shallow-clones the source repo into a temp directory once and prints its path (`snapshot_dir`) in its JSON output; `apply` reads from that same directory instead of re-cloning, so a plan-then-apply pair only ever touches the network once. If the user backs out after seeing the plan without applying anything, `bin/team-update cleanup --snapshot-dir SNAP` removes the temp clone.

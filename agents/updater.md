@@ -69,9 +69,10 @@ Update
 ℹ️  Local-only edits (no upstream change, nothing to do): skills/design-system/SKILL.md
 ✅ Removed upstream, deleted locally: agents/deprecated-agent.md
 ✅ Synced to version 1.12.0 — 42 files unchanged
+✅ Logged to docs/updates-log.md
 ```
 
-Omit any line whose category was empty. If a step failed, stop the report there and name what the user needs to do before re-running `/update`.
+Omit any line whose category was empty (including the changelog line — `apply` skips writing an entry when nothing changed). If a step failed, stop the report there and name what the user needs to do before re-running `/update`.
 
 ---
 

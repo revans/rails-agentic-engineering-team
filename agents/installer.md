@@ -176,7 +176,7 @@ One line per item, in order, each marked present / created / failed:
 ```
 Installer
 
-✅ Vendored 43 files from the source repo (team-sync)
+✅ Vendored 43 files from the source repo (team-sync, logged to docs/updates-log.md)
 ✅ git installed (2.55.0)
 ✅ gh installed (2.63.0), authenticated (project scope present)
 ✅ sqlite3 installed (3.53.4)

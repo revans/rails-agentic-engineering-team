@@ -75,7 +75,7 @@ This is the orchestrator's Bug Fix Mode — the same engineer and four parallel 
 |---|---|
 | [Pipeline](docs/pipeline.md) | How a feature moves through all eleven stages, the bug fix path, artifact naming, and how to resume a stopped pipeline |
 | [Agents](docs/agents.md) | What each agent does, what it reads, and what it produces |
-| [Installer](docs/installer.md) | What `/install` does, the four bootstrap scripts, `team.yml`'s schema, and what's still manual |
+| [Installer](docs/installer.md) | What `/install` does, the five bootstrap scripts, `team.yml`'s schema, and what's still manual |
 | [Updates](docs/updates.md) | How `/deploy` publishes `manifest.yml` and `/update` syncs against it — the hash comparison, conflict handling, and `team.lock.yml`'s schema |
 | [Backlog & Triage](docs/backlog.md) | How an idea gets from "someone noticed it" to a ranked GitHub issue — scope capture, `/roadmap`, `/triage`, and the shared filing tools |
 | [Agent Log](docs/agent-log.md) | The logging CLI, database schema, and how to query accumulated run data |
