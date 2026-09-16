@@ -1,6 +1,6 @@
 # Rails Agentic Engineering Team
 
-A Claude Code plugin that runs fourteen specialized AI agents to take Rails features from discovery interview to an open pull request, keep the resulting backlog ordered against who the product is actually for, turn a bug report or an idea into a labeled GitHub issue in under a minute of conversation, and verify and rank that bug queue on demand.
+A Claude Code plugin that runs fifteen specialized AI agents to take Rails features from discovery interview to an open pull request, keep the resulting backlog ordered against who the product is actually for, turn a bug report or an idea into a labeled GitHub issue in under a minute of conversation, and verify and rank that bug queue on demand.
 
 ## What This Is
 
@@ -29,6 +29,8 @@ This is a Claude Code Team. Install it by copying these agents into your Rails p
 Then run `/install` in Claude Code. It confirms which directory it's setting up (don't assume it's wherever the conversation happens to be running), then gets `git`, `gh`, and `sqlite3` in place — installing each one that's missing where that's safe to do without asking (Homebrew on macOS), and otherwise opening a terminal with the right command typed in (a package-manager install needing your sudo password, or `gh auth login`) for you to finish yourself. From there it detects the repo from your git remote, creates the `feature`/`bug`/`tech-debt` repo labels, creates and migrates `db/agent_log.sqlite3` (via the `bin/agent-log` you just copied in), builds the `docs/` skeleton, confirms or creates a GitHub Project board, checks that Issues are reachable on the repo, and writes it all to `team.yml`. It's idempotent; re-run it any time without worrying about re-asking questions it already has answers to. What's still manual: `ruby` (step 3 above), copying `bin/agent-log` in (step 1), and adding a status option to an existing Project board's Status field — `gh` has no command for that one, so it's a permanent one-time step in the GitHub UI, not something `/install` will ever automate.
 
 Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic. It will also offer `/define-icp` if `docs/icp/` has no persona file yet.
+
+Whenever this source repo publishes changes — a new agent, a fixed skill, an updated script — run `/update` to pick them up. It re-verifies `git`/`gh`/`sqlite3` the same way `/install` does, then hashes every vendored `agents/`/`commands/`/`skills/`/`bin/` file against the source repo's manifest: new files get vendored in, clean upstream changes apply automatically, and anything that conflicts with a local hand-edit is shown as a diff and resolved per file — never silently overwritten. See [Updates](docs/updates.md).
 
 ## How to Use
 
@@ -78,5 +80,6 @@ This is the orchestrator's Bug Fix Mode — the same engineer and four parallel 
 | [Pipeline](docs/pipeline.md) | How a feature moves through all eleven stages, the bug fix path, artifact naming, and how to resume a stopped pipeline |
 | [Agents](docs/agents.md) | What each agent does, what it reads, and what it produces |
 | [Installer](docs/installer.md) | What `/install` does, the four bootstrap scripts, `team.yml`'s schema, and what's still manual |
+| [Updates](docs/updates.md) | How `/deploy` publishes `manifest.yml` and `/update` syncs against it — the hash comparison, conflict handling, and `team.lock.yml`'s schema |
 | [Backlog & Triage](docs/backlog.md) | How an idea gets from "someone noticed it" to a ranked GitHub issue — scope capture, `/roadmap`, `/triage`, and the shared filing tools |
 | [Agent Log](docs/agent-log.md) | The logging CLI, database schema, and how to query accumulated run data |

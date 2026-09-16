@@ -1,6 +1,6 @@
 # Agents
 
-Fourteen agents handle specific stages of the feature pipeline, the learning loop, backlog strategy, intake, or first-time setup. Each agent has one job, defined inputs, and defined outputs.
+Fifteen agents handle specific stages of the feature pipeline, the learning loop, backlog strategy, intake, or first-time setup and updates. Each agent has one job, defined inputs, and defined outputs.
 
 ## What They Are
 
@@ -157,9 +157,9 @@ Interviews the reporter, searches the codebase for supporting context, checks fo
 
 Run via `/bug` (type `bug`) or `/request` (type `feature`) — same identity, same flow, different interview questions, label, and destination: `/request` lands in the project's `Ready` column, `/bug` stays a plain repo issue (see the `github-cli` skill). Neither runs as a subagent — the interview needs to be live, the same reason discovery and the orchestrator run directly in the conversation.
 
-## Setup Agent
+## Setup & Update Agents
 
-This agent doesn't run alongside the pipeline or the learning loop — it runs before either one can, on a repo that's never seen this team before.
+These two agents don't run alongside the pipeline or the learning loop. One runs before either one can, on a repo that's never seen this team before; the other keeps an already-set-up repo's vendored files current afterward.
 
 ### Installer
 
@@ -177,7 +177,17 @@ The agent itself mostly narrates and interprets — the actual OS-level, filesys
 **Writes:** `team.yml`, the `feature`/`bug`/`tech-debt` labels, `db/agent_log.sqlite3`, the `docs/` skeleton directories, an option on the Project board's Status field  
 **Cannot:** Modify application code, run `gh auth login` or a system package install on the user's behalf, create a GitHub Project without asking first, act on a directory the user hasn't confirmed, overwrite an existing `team.yml` wholesale, or install `bin/agent-log` itself if it isn't already present — see "Not Yet Built" in `agents/installer.md`
 
-Run via `/install`, idempotent — a second run against an already-configured repo verifies everything live again (GitHub state can drift even when `team.yml` hasn't) and reports it all as already present rather than asking the same questions twice. Still not built: installing `bin/agent-log` itself into a repo that doesn't already have it.
+Run via `/install`, idempotent — a second run against an already-configured repo verifies everything live again (GitHub state can drift even when `team.yml` hasn't) and reports it all as already present rather than asking the same questions twice. Still not built: installing `bin/agent-log` itself into a repo that doesn't already have it — see the Updater below, which closes that gap on the next `/update` run instead.
+
+### Updater
+
+Keeps an already-installed repo's vendored `agents/`, `commands/`, `skills/`, and `bin/` files in sync with the source repo.
+
+**Reads:** `team.yml` (to confirm `/install` has already run), `team.lock.yml` (the hash each file had as of the last sync), the source repo's `manifest.yml` (via a shallow clone)  
+**Writes:** New or updated files under `agents/`, `commands/`, `skills/`, `bin/`; `team.lock.yml`  
+**Cannot:** Modify application code, run without `team.yml` already present, overwrite a file that conflicts with a local hand-edit or delete a file removed upstream without asking about that specific file first
+
+Run via `/update`, on demand — after the source repo publishes changes (`/deploy`), or just periodically. It re-verifies `git`, `gh`, and `sqlite3` the same three scripts `/install` uses, then runs `bin/team-update` to hash every local file against the source repo's manifest and its own `team.lock.yml`: files that exist upstream but were never vendored here get added (this is what actually closes the installer's long-standing "install `bin/agent-log` itself" gap, and covers any other file added upstream since), files upstream changed with no local edits apply automatically, and anything that changed on both sides is a conflict — shown as a diff, resolved per file (take upstream, keep local, or skip), never silently overwritten. See `docs/updates.md` for the manifest/lock format and the full classification logic.
 
 ## Skills
 
