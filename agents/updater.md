@@ -11,6 +11,7 @@ tools:
   - Grep
 skills:
   - agent-log
+  - team-sync
 ---
 
 # Updater
@@ -50,45 +51,9 @@ If `missing`: tell the user `/update` keeps an already-installed copy in sync, a
 
 Run these exactly as `agents/installer.md` Steps 1–3 describe: `bin/team-setup-git`, `bin/team-setup-gh`, `bin/team-setup-sqlite`, in that order, same JSON-status branching (`ok` / `needs_confirmation` / `manual` / `failed`), same escalation to the user for anything that isn't `ok`. Don't restate that logic here — read it there if you need the exact wording. This is the "make sure what needs to be installed is installed" half of `/update`; the file-sync half starts at Step 5.
 
-### Step 5 — Plan the sync
+### Steps 5–6 — Sync
 
-```bash
-bin/team-update plan --dir "$TARGET_DIR"
-```
-
-Read the last line of output as JSON.
-
-- **`status: "failed"`** — report `detail` verbatim and stop. The most common cause is the source repo being unreachable (network, or a stale `team.source_repo` in `team.yml` if one was ever set by hand) — see the `github-cli` skill's pattern for reading an optional `team.yml` field if you need to check what's configured.
-- **`status: "ok"`** — present each non-empty category plainly, in this order:
-
-  1. **`new_files`** — files that exist upstream but were never vendored here (a first sync picks up everything this way, including `bin/agent-log` itself if it somehow isn't present — this is exactly the gap `installer.md`'s "Not Yet Built" note used to describe). Nothing local to lose; ask once whether to vendor all of them in, default yes.
-  2. **`clean_updates`** — upstream changed these and nothing local touched them since the last sync. Ask once whether to apply all, default yes (recommended) — offer to review the list first if the user wants to see it.
-  3. **`conflicts`** — both the local file and upstream changed since the last sync. For each one: run `diff -u "$TARGET_DIR/{path}" "{snapshot_dir}/{path}"` and show it, then ask: take upstream, keep local, or skip for now. A `conflicts` entry with `base_sha: null` means there's no sync history for this file at all (likely hand-edited during initial vendoring, before `/update` ever ran) — say that plainly rather than implying it's a recent edit.
-  4. **`local_only_edits`** — hand-edited locally, upstream hasn't touched them. Report only; no action to offer, nothing is out of date.
-  5. **`removed_upstream`** — tracked before, gone from the source repo now. Ask per file: delete it locally too, or keep it.
-
-  If every category is empty except `unchanged_count`, say so plainly — there's nothing to decide — but still continue to Step 6: `apply` needs to run once regardless, to record `synced_at`/`synced_version` and to seed `team.lock.yml` with a baseline for every already-matching file (a file with no sync history yet reads as an unexplained conflict the *next* time either side touches it, even though nothing needs deciding *this* time).
-
-### Step 6 — Apply the decisions
-
-Collect the resulting lists (comma-separated paths) and call once — even when every list is empty, per the note above:
-
-```bash
-bin/team-update apply --dir "$TARGET_DIR" --snapshot-dir "{snapshot_dir}" \
-  --take-upstream "path,path,..." \
-  --keep-local "path,path,..." \
-  --remove "path,path,..."
-```
-
-Omit a flag entirely if its list is empty. `new_files` and `clean_updates` the user approved both go under `--take-upstream`; a conflict resolved as "keep local" goes under `--keep-local` (this records that you've seen and accepted the current upstream version, so it won't re-surface as a conflict unless upstream changes again); a conflict or `removed_upstream` entry the user chose to leave alone entirely goes under neither flag — it's simply not included, and will be reported again next run.
-
-If the user backs out before deciding anything, clean up instead of leaving a stray temp clone:
-
-```bash
-bin/team-update cleanup --snapshot-dir "{snapshot_dir}"
-```
-
-Read the apply result's last line as JSON. `status: "failed"` — report `detail` verbatim; the snapshot dir is left in place so a re-run of `apply` with corrected flags doesn't require re-cloning.
+Follow the `team-sync` skill's procedure now, targeting `$TARGET_DIR`. `bin/team-update` is guaranteed to already be present here (Step 1 already confirmed `/install` has run, and `/install` vendors it on first use — see `agents/installer.md`'s Step 0.5) — invoke it directly, no bootstrap clone needed.
 
 ### Step 7 — Report
 

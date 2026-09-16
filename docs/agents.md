@@ -163,9 +163,9 @@ These two agents don't run alongside the pipeline or the learning loop. One runs
 
 ### Installer
 
-Prepares a fresh repo for the team: confirms the target directory, gets `git`, `gh`, and `sqlite3` installed (and `gh` authenticated), detects the repo and sets up `team.yml`/labels/`db/agent_log.sqlite3`/the `docs/` skeleton, confirms or creates a GitHub Project board, and verifies Issues are reachable.
+Prepares a fresh repo for the team: vendors the `agents`/`commands`/`skills`/`bin` file tree from the source repo (Step 0.5 — see the Updater below and `docs/updates.md`), confirms the target directory, gets `git`, `gh`, and `sqlite3` installed (and `gh` authenticated), detects the repo and sets up `team.yml`/labels/`db/agent_log.sqlite3`/the `docs/` skeleton, confirms or creates a GitHub Project board, and verifies Issues are reachable.
 
-The agent itself mostly narrates and interprets — the actual OS-level, filesystem, and GitHub-API work happens in five scripts it runs and reads structured JSON back from:
+The agent itself mostly narrates and interprets — Step 0.5 follows the `team-sync` skill's plan/apply procedure (the same one the Updater uses), and the rest of the OS-level, filesystem, and GitHub-API work happens in five scripts it runs and reads structured JSON back from:
 
 - **`bin/team-setup-git`** — installs `git` if missing. Unlike `gh`, there's no clean "download a static binary, no sudo" path for git, so this only runs an install directly when it's genuinely safe to (Homebrew on macOS); everywhere else it opens a terminal with the right package-manager command (or triggers macOS's own Xcode Command Line Tools GUI installer) and waits for the user to complete it.
 - **`bin/team-setup-gh`** — installs `gh` if missing (package manager or a direct binary download, no sudo required on Linux), then, if not authenticated, opens a terminal window with `gh auth login` typed and submitted so the user can finish the interactive login themselves. Never runs the login itself — that step is unavoidably a human's.
@@ -173,11 +173,11 @@ The agent itself mostly narrates and interprets — the actual OS-level, filesys
 - **`bin/team-setup-project`** — detects the repo from `git remote`, writes/updates `team.yml` (a targeted edit that preserves comments and every other field, never a full rewrite), creates the `feature`/`bug`/`tech-debt` repo labels if missing, migrates `db/agent_log.sqlite3` by invoking `bin/agent-log` itself (so the schema lives in exactly one place, not duplicated), and creates the `docs/` skeleton (`docs/briefs/`, `docs/icp/`, `docs/agent-analysis/`, `docs/bugfixes/`).
 - **`bin/team-setup-project-status`** — adds a missing option (e.g. `Ready`) to the Project board's Status field via the `updateProjectV2Field` GraphQL mutation, since `gh project` has no CLI command for it. Always reads every existing option's id/name/color/description first and resends the full list plus the new one — leaving any existing option out would silently delete it and orphan any card already set to it. See `docs/installer.md`'s "Status Field Options" for the verification this was checked against before being trusted here.
 
-**Reads:** the target directory's `git remote`, `team.yml` (if it exists — to avoid re-asking what's already set), `bin/agent-log` (to confirm it's present before migrating the database), the Project board's Status field options  
-**Writes:** `team.yml`, the `feature`/`bug`/`tech-debt` labels, `db/agent_log.sqlite3`, the `docs/` skeleton directories, an option on the Project board's Status field  
-**Cannot:** Modify application code, run `gh auth login` or a system package install on the user's behalf, create a GitHub Project without asking first, act on a directory the user hasn't confirmed, overwrite an existing `team.yml` wholesale, or install `bin/agent-log` itself if it isn't already present — see "Not Yet Built" in `agents/installer.md`
+**Reads:** the target directory's `git remote`, `team.yml` (if it exists — to avoid re-asking what's already set, and for an optional `team.source_repo` override), the source repo's `manifest.yml` (via a shallow clone — its own, or a scratch bootstrap clone if `bin/team-update` isn't vendored yet), the Project board's Status field options  
+**Writes:** The vendored `agents`/`commands`/`skills`/`bin` tree and `team.lock.yml` (Step 0.5), `team.yml`, the `feature`/`bug`/`tech-debt` labels, `db/agent_log.sqlite3`, the `docs/` skeleton directories, an option on the Project board's Status field  
+**Cannot:** Modify application code, run `gh auth login` or a system package install on the user's behalf, create a GitHub Project without asking first, act on a directory the user hasn't confirmed, overwrite an existing `team.yml` wholesale, or overwrite a vendored file that conflicts with a local hand-edit without asking about that specific file first
 
-Run via `/install`, idempotent — a second run against an already-configured repo verifies everything live again (GitHub state can drift even when `team.yml` hasn't) and reports it all as already present rather than asking the same questions twice. Still not built: installing `bin/agent-log` itself into a repo that doesn't already have it — see the Updater below, which closes that gap on the next `/update` run instead.
+Run via `/install`, idempotent — a second run against an already-configured repo verifies everything live again (GitHub state can drift even when `team.yml` hasn't) and reports it all as already present rather than asking the same questions twice. The one thing no in-repo mechanism can automate: `commands/install.md` and `agents/installer.md` themselves have to already exist in the target repo before `/install` is even invocable — everything past that point, including the vendoring itself, is now self-contained.
 
 ### Updater
 
@@ -187,11 +187,11 @@ Keeps an already-installed repo's vendored `agents/`, `commands/`, `skills/`, an
 **Writes:** New or updated files under `agents/`, `commands/`, `skills/`, `bin/`; `team.lock.yml`  
 **Cannot:** Modify application code, run without `team.yml` already present, overwrite a file that conflicts with a local hand-edit or delete a file removed upstream without asking about that specific file first
 
-Run via `/update`, on demand — after the source repo publishes changes (`/deploy`), or just periodically. It re-verifies `git`, `gh`, and `sqlite3` the same three scripts `/install` uses, then runs `bin/team-update` to hash every local file against the source repo's manifest and its own `team.lock.yml`: files that exist upstream but were never vendored here get added (this is what actually closes the installer's long-standing "install `bin/agent-log` itself" gap, and covers any other file added upstream since), files upstream changed with no local edits apply automatically, and anything that changed on both sides is a conflict — shown as a diff, resolved per file (take upstream, keep local, or skip), never silently overwritten. See `docs/updates.md` for the manifest/lock format and the full classification logic.
+Run via `/update`, on demand — after the source repo publishes changes (`/deploy`), or just periodically. It re-verifies `git`, `gh`, and `sqlite3` the same three scripts `/install` uses, then follows the `team-sync` skill's plan/apply procedure — the same one `/install`'s Step 0.5 uses for a repo's first-ever vendor: files that exist upstream but were never vendored here get added, files upstream changed with no local edits apply automatically, and anything that changed on both sides is a conflict — shown as a diff, resolved per file (take upstream, keep local, or skip), never silently overwritten. See `docs/updates.md` for the manifest/lock format and the full classification logic.
 
 ## Skills
 
-Eight skill files give agents project-specific knowledge that training data alone would not provide:
+Nine skill files give agents project-specific knowledge that training data alone would not provide:
 
 | Skill | What it contains |
 |---|---|
@@ -203,6 +203,7 @@ Eight skill files give agents project-specific knowledge that training data alon
 | `product-brief-format` | Shared with `agentic-ideation-team`; the section list discovery checks before deciding whether an incoming whole-product brief already answers its own interview questions |
 | `scope-capture` | When to name something out-of-scope in a report instead of building it or letting it evaporate; feeds the orchestrator's scope-capture filing stage, which files it to GitHub |
 | `github-cli` | How `bin/team-create-issue` and `bin/team-find-issues` route issues, plus `gh` recipes for git worktree isolation and PRs that agents still run directly |
+| `team-sync` | The shared plan/apply procedure for vendoring or updating the file tree from the source repo's `manifest.yml`, used by both the Installer (Step 0.5) and the Updater |
 
 New skill files are added by the skill builder as the learning loop matures.
 

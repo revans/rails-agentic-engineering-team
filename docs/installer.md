@@ -4,13 +4,14 @@
 
 ## What It Is
 
-Think of it as a building inspector walking a new site before anyone moves in: check each item with a real test, in order, and don't let the next step start on a foundation that isn't actually confirmed. The agent itself barely does any of the checking — five small scripts do the actual OS-level, filesystem, and GitHub-API work, and the agent's job is just to run them, read back a JSON status, and decide what a human needs to do about anything that isn't `ok`.
+Think of it as a building inspector walking a new site before anyone moves in: check each item with a real test, in order, and don't let the next step start on a foundation that isn't actually confirmed. The agent itself barely does any of the checking — one shared sync procedure (the `team-sync` skill) vendors the file tree, and five small scripts do the rest of the OS-level, filesystem, and GitHub-API work; the agent's job is just to run them, read back a JSON status, and decide what a human needs to do about anything that isn't `ok`.
 
 ## How It Works
 
 ```mermaid
 flowchart TD
-    A[Confirm target directory] --> B["bin/team-setup-git"]
+    A[Confirm target directory] --> A2[Vendor the file tree — team-sync]
+    A2 --> B["bin/team-setup-git"]
     B --> C["bin/team-setup-gh"]
     C --> D["bin/team-setup-sqlite"]
     D --> E["bin/team-setup-project"]
@@ -21,7 +22,13 @@ flowchart TD
     H --> I[Report]
 ```
 
-Steps A, F, G, and H are conversational — the agent asks something and waits. Steps B through E and F2 are pure script calls; the agent reads one JSON object off the last line of each script's output and branches on its `status` field (`ok`, `needs_input`, `needs_confirmation`, `manual`, or `failed`).
+Steps A, F, G, and H are conversational — the agent asks something and waits. A2 is the `team-sync` skill's plan/apply cycle (see [Updates](updates.md)) — conversational only if something needs a decision (a conflict, a removed file); on a fresh repo it's almost always "vendor everything, no decisions needed." Steps B through E and F2 are pure script calls; the agent reads one JSON object off the last line of each script's output and branches on its `status` field (`ok`, `needs_input`, `needs_confirmation`, `manual`, or `failed`).
+
+## Vendoring the File Tree (Step 0.5)
+
+Before any of the five scripts below can run, they have to actually exist in the target repo — on a truly fresh install, they don't yet. `/install` closes that gap itself now: it resolves the source repo (`team.yml`'s `team.source_repo`, or a hardcoded default), gets a runnable copy of `bin/team-update` (shallow-cloning the source repo into a scratch directory if the target doesn't have one yet — it almost never does on a first install), and runs the same plan/apply cycle `/update` uses going forward. See [Updates](updates.md) for the full mechanism; the only thing specific to `/install` is that it may need to bootstrap a temporary copy of `bin/team-update` to run this the very first time.
+
+The one thing this can't automate away: `commands/install.md` and `agents/installer.md` themselves have to already exist in the target repo before Claude Code can even offer `/install` as a slash command. That's the one irreducible manual seed — everything else, including every `bin/` script below, now vendors itself.
 
 ## The Five Scripts
 
@@ -70,6 +77,6 @@ A second run isn't a no-op — it re-verifies everything live (GitHub state can 
 
 ## Things to Know
 
-- What's still manual, permanently: copying `bin/agent-log` itself into a target repo that doesn't already have it (no script vendors it in yet), and `ruby` being on `PATH` (never auto-installed).
+- What's still manual, permanently: `commands/install.md` and `agents/installer.md` (and enough of `bin/team-update` — or the `team-sync` skill's bootstrap-clone path — to make `/install` invocable at all) have to exist before `/install` can run for the first time; and `ruby` being on `PATH` (never auto-installed).
 - Every script's output is one JSON object on the last line of stdout — everything before that line is human-readable progress noise, safe for the agent to ignore programmatically.
 - None of the five scripts touch application code. The only things they ever write are `team.yml`, repo labels, `db/agent_log.sqlite3`, the `docs/` skeleton directories, and (`team-setup-project-status` only) an option on the Project board's own Status field.

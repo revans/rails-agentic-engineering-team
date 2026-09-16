@@ -1,10 +1,10 @@
 # Updates
 
-`/deploy` and `/update` are the two halves of one mechanism: keeping every repo that vendored a copy of this team's `agents/`, `commands/`, `skills/`, and `bin/` files in sync with this source repo, without a human hand-copying files or writing a one-off upgrade doc each time something changes.
+`/deploy` and `/update` (plus `/install`, which now uses the same mechanism for its very first vendor) are the halves of one system: keeping every repo that has a copy of this team's `agents/`, `commands/`, `skills/`, and `bin/` files in sync with this source repo, without a human hand-copying files or writing a one-off upgrade doc each time something changes. The actual plan/apply procedure — what to run, what to ask about — lives in one place, the `team-sync` skill, so `agents/installer.md` and `agents/updater.md` both reference it instead of each restating it.
 
 ## What This Replaces
 
-Before this existed, getting a change from this repo into an installed target repo meant writing a `docs/portable-upgrades/*.md` instruction document by hand and having an agent apply it file by file — no automated way to tell which files had actually diverged, and no automated way to vendor in a file that was never copied over in the first place (the installer's long-standing "install `bin/agent-log` itself" gap). Those historical documents stay as records of what they did; nothing about them changes. Going forward, a change that needs to reach installed repos goes out via `/deploy` + `/update` instead.
+Before this existed, getting a change from this repo into an installed target repo meant writing a `docs/portable-upgrades/*.md` instruction document by hand and having an agent apply it file by file — no automated way to tell which files had actually diverged, and no automated way to vendor in a file that was never copied over in the first place. Getting the files there in the *first* place was manual too: `/install` never vendored anything, it only assumed `bin/agent-log` and the rest of the tree were already sitting in the repo. Those historical upgrade documents stay as records of what they did; nothing about them changes. Going forward, a change that needs to reach installed repos goes out via `/deploy` + `/update`, and a repo that's never seen this team before gets everything from `/install`'s own first sync.
 
 ## `/deploy` — Source Repo Side
 
@@ -35,6 +35,14 @@ files:
 ```
 
 `manifest.yml` is generated — don't hand-edit it, `/deploy` regenerates it wholesale every run. `version` comes from the `VERSION` file, not bumped automatically; this repo's own history (`git log -p -- VERSION`) shows bumps ride along with the commit that makes a structural change, so `/deploy` only offers to bump it, never does so on its own. `/deploy` also never commits or pushes without asking first, same as every other action in this repo that touches shared state.
+
+## `/install` — First Vendor
+
+`/install`'s Step 0.5 runs the exact same plan/apply cycle the `team-sync` skill describes and `/update` uses below (see "How a File Gets Classified" and "Snapshot Reuse"), with one difference: the target repo almost certainly has no `bin/team-update` yet to run, since nothing has ever been vendored there. To get around that, it shallow-clones the source repo into a scratch directory purely to obtain a runnable copy of the script, then invokes `ruby {scratch}/bin/team-update ...` in place of `bin/team-update ...` — the script never assumes it's running from inside the directory it's operating on, every path is passed explicitly via `--dir`/`--snapshot-dir`, so this works identically. That scratch directory is separate from (and removed independently of) the snapshot directory `plan` itself creates for the actual file diffing.
+
+On a truly fresh repo this makes almost every tracked file a `new_file` — expected, not a conflict, since there's nothing local to lose. A *second* run of `/install` against an already-vendored repo goes through the identical procedure and simply finds the normal mix of clean updates, conflicts, and unchanged files `/update` would also find; `/install` isn't a separate, weaker sync path, it's the same one, just possibly starting from nothing.
+
+The one thing that can't be automated away: `commands/install.md` and `agents/installer.md` themselves have to exist in the target repo before Claude Code can offer `/install` as a slash command at all — no in-repo mechanism can vendor the file that makes vendoring possible. Everything past that point, including every `bin/` script `/install`'s later steps depend on, is now self-vendoring.
 
 ## `/update` — Target Repo Side
 
@@ -99,3 +107,4 @@ A file on disk that appears in neither the manifest nor `team.lock.yml` is never
 - `/update` assumes `/install` has already run (`team.yml` must exist) — it doesn't bootstrap GitHub or system-level setup itself, only re-verifies the three dependencies `/install` already checks.
 - `apply` always seeds `team.lock.yml` with a baseline hash for every file that already matches upstream, even ones nobody had to decide anything about — a file with no recorded baseline reads as an unexplained conflict the next time either side touches it, so `apply` runs every time `plan` does, even when nothing needed a decision.
 - Neither script ever pushes to a remote or force-overwrites a file `/update` can't classify with confidence — a conflict always gets a human answer.
+- `bin/team-update` never assumes it's running from inside the repo it's syncing — every path is an explicit `--dir`/`--snapshot-dir` argument. That's what makes `/install`'s bootstrap-clone trick possible: the exact same script, invoked from a scratch temp directory, works identically.

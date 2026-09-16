@@ -14,19 +14,15 @@ Extracted and generalized from an internal writer application by Robert Evans. T
 
 ## Installation
 
-This is a Claude Code Team. Install it by copying these agents into your Rails project's Claude directory, then copy the logging script:
+This is a Claude Code Team. The only manual step left is getting `/install` itself onto disk — everything else this team needs, including `bin/agent-log` and every other agent, command, and skill file, is vendored automatically the first time `/install` runs.
 
-1. Copy `bin/agent-log` to your Rails project's `bin/` directory.
-2. Make the script executable:
-   ```bash
-   chmod +x bin/agent-log
-   ```
-3. Verify that `ruby` is on your PATH — `/install` doesn't install this one for you:
+1. Copy `commands/install.md`, `agents/installer.md`, and `skills/team-sync/SKILL.md` into your Rails project's Claude directory, preserving their relative paths.
+2. Verify that `ruby` is on your PATH — nothing in this team installs it for you:
    ```bash
    ruby --version
    ```
 
-Then run `/install` in Claude Code. It confirms which directory it's setting up (don't assume it's wherever the conversation happens to be running), then gets `git`, `gh`, and `sqlite3` in place — installing each one that's missing where that's safe to do without asking (Homebrew on macOS), and otherwise opening a terminal with the right command typed in (a package-manager install needing your sudo password, or `gh auth login`) for you to finish yourself. From there it detects the repo from your git remote, creates the `feature`/`bug`/`tech-debt` repo labels, creates and migrates `db/agent_log.sqlite3` (via the `bin/agent-log` you just copied in), builds the `docs/` skeleton, confirms or creates a GitHub Project board, checks that Issues are reachable on the repo, and writes it all to `team.yml`. It's idempotent; re-run it any time without worrying about re-asking questions it already has answers to. What's still manual: `ruby` (step 3 above), copying `bin/agent-log` in (step 1), and adding a status option to an existing Project board's Status field — `gh` has no command for that one, so it's a permanent one-time step in the GitHub UI, not something `/install` will ever automate.
+Then run `/install` in Claude Code. It confirms which directory it's setting up (don't assume it's wherever the conversation happens to be running), vendors the rest of this team's files from the source repo — new files get added in, nothing local ever gets overwritten without asking first (see [Updates](docs/updates.md)) — then gets `git`, `gh`, and `sqlite3` in place: installing each one that's missing where that's safe to do without asking (Homebrew on macOS), and otherwise opening a terminal with the right command typed in (a package-manager install needing your sudo password, or `gh auth login`) for you to finish yourself. From there it detects the repo from your git remote, creates the `feature`/`bug`/`tech-debt` repo labels, creates and migrates `db/agent_log.sqlite3`, builds the `docs/` skeleton, confirms or creates a GitHub Project board, checks that Issues are reachable on the repo, and writes it all to `team.yml`. It's idempotent; re-run it any time without worrying about re-asking questions it already has answers to. What's still manual: `ruby` (step 2 above), the one-time copy above (step 1 — nothing in this team can vendor the file that makes vendoring possible), and adding a status option to an existing Project board's Status field — `gh` has no command for that one, so it's a permanent one-time step in the GitHub UI, not something `/install` will ever automate.
 
 Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic. It will also offer `/define-icp` if `docs/icp/` has no persona file yet.
 
