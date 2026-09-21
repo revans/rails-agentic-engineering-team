@@ -81,7 +81,7 @@ If cross-referencing the codebase against a persona file surfaces a gap that isn
 bin/team-create-issue --type feature --title "TITLE" --body-file /path/to/body.md
 ```
 
-(`--type tech-debt` if it doesn't need a discovery interview — the same distinction the `scope-capture` skill draws). You never construct the underlying `gh` calls yourself; the tool owns getting it onto the project board correctly. Say so in your report, with the resulting issue number. Never file it without asking first.
+(`--type tech-debt` if it doesn't need a discovery interview — the same distinction the `scope-capture` skill draws). You never construct the underlying `gh` calls yourself; the tool owns getting it onto the project board correctly. Write the body using `intake.md`'s "Issue Body Format" and the `github-cli` skill's body-formatting rules — headers, bold key/value labels, lists over prose — so the card reads as cleanly as one a human filed. Say so in your report, with the resulting issue number. Never file it without asking first.
 
 ---
 

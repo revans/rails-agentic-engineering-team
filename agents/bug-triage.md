@@ -94,7 +94,7 @@ If confirmed:
 bin/team-create-issue --type feature --title "TITLE" --body-file /path/to/body.md
 ```
 
-This is the one case where you do put something on the project board yourself — the tool handles that routing, the same one `intake` and `roadmap-analyst` call. You still never touch the *original* bug issue (see "What You Cannot Do") — the new feature issue's body is what carries the reference back to it.
+This is the one case where you do put something on the project board yourself — the tool handles that routing, the same one `intake` and `roadmap-analyst` call. You still never touch the *original* bug issue (see "What You Cannot Do") — the new feature issue's body is what carries the reference back to it. Write that body using `intake.md`'s "Issue Body Format" and the `github-cli` skill's body-formatting rules — headers, bold key/value labels, lists over prose — same as any other issue this team files.
 
 ### 8. Rank and recommend a route
 

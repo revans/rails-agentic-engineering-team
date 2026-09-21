@@ -100,6 +100,18 @@ A `failed` result after the issue was already created (the board-add step failed
 
 Internally this script does what the two subsections below describe — read them if you're modifying `bin/team-create-issue` itself, not as a recipe to copy into a new agent.
 
+### Body formatting
+
+`--body-file`/`--body` is what a human sees first — as the card preview on the project board, and as the rendered issue page. Write it as clean, structured markdown, never a wall of prose:
+
+- Section headers (`##`) per logical chunk — Summary, Steps to Reproduce/User Story, Codebase Context, Additional Notes are the ones `intake`'s "Issue Body Format" already names; keep using headers even in a one-off body a different agent writes (`bug-triage`'s reclassify filing, `roadmap-analyst`'s gap-found filing, the orchestrator's scope-capture filing).
+- **Bold** the label on any key/value line (`**Expected:**`, `**Actual:**`, `**Route:**`) rather than writing it as plain lead-in text.
+- Bullet or numbered lists for anything enumerable — repro steps, affected files, multiple findings — never comma-spliced into one paragraph.
+- Fenced code blocks for error text, stack traces, file paths, or command output — never inlined into prose.
+- Short paragraphs (2-3 sentences) inside a section; split a longer one into a list instead of extending it.
+
+Every agent that calls `bin/team-create-issue` follows this, using `intake.md`'s "Issue Body Format" as the template unless it defines its own equally-structured one.
+
 ### What it does: label check, then create, then (conditionally) add to the board
 
 ```bash

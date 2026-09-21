@@ -111,6 +111,8 @@ Give the user the issue URL from the tool's output. For a bug, mention that it's
 
 ## Issue Body Format
 
+This is the card a human sees first — write it as clean, structured markdown per the `github-cli` skill's body-formatting rules, not a wall of prose: keep the headers below, **bold** the label on every key/value line (`**Expected:**`, `**Actual:**`), use lists for anything enumerable, and fence any error text or command output.
+
 ```markdown
 ## Summary
 
