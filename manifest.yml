@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.16.1
-generated_at: '2026-09-21T17:58:43Z'
+version: 1.16.2
+generated_at: '2026-09-21T18:33:50Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: bc31f2337067eea4e43ae9be3ac133c3797f42e75650a26d6b99468ef377f191
@@ -13,18 +13,18 @@ files:
   agents/code-review.md: faacbf8ae4a5d81276bed4d7df4121e621a06d8546dc9624fae4cb502ae3dea5
   agents/design.md: df003d9fac581065883daaae270f4c9ff003a0262c3fceb138952b5264f4580e
   agents/discovery.md: 54158bd93ce3f0e78f48533a43a719308d351552b0c74a825027cc4023208afc
-  agents/engineer.md: 50a9b9536ee90f4786109a291c82e1bb372bfbae84f24b85f5dcea2f120029fc
+  agents/engineer.md: 3c25d920b8fde88be1b0304d9118ab55df94f01f190db972541e0445b4e0aefd
   agents/fidelity-review.md: 40455b4019bdb9f81718bfe06deb621fb2889a1697f41da957d48eafb4307a0e
-  agents/installer.md: a2b0d0db8c2270761ebc2af9caeb0c82ba12b0888054e678707348d49d1940ae
+  agents/installer.md: 32a87c2380ed4f570112ffc34124c04494b4acc98d9900d30a31d8156cedef55
   agents/intake.md: ae1778a03150b60937f91f78bf3f429e516848025d2a4ea252777e48a114213a
   agents/log-analyst.md: 015fbd825770a0ceacaee4f24eced8097243a6b5558342e45ed9784df31d2c8b
-  agents/orchestrator.md: 4d791b4487bf8e18268150a25b4a75abae3b8dadfa62526469b2c232de216a74
+  agents/orchestrator.md: 50626953fb2c2d37401e6e9b420c07ceb5acc3f0379454e42adb807bed489a1e
   agents/performance-review.md: f3ab473c72a81e2e9a4cfb7a2b8764a49b6303639839e70ef142c596bd3b5fc8
   agents/roadmap-analyst.md: 32322423179d331b6a0acee4d3fdee2538e8362f301c62c7e8cd9af2c1d403e9
-  agents/security-review.md: 2d0ea952fe342e7cf6198ec747a88bbb6f422536cc2973cbbb1dea51c166ecdb
+  agents/security-review.md: efc7b8ff3ae2086105d2069268ada1dec0adc9ff8e91010c9ceda1a845d6b886
   agents/updater.md: 4bbabe384987f77bee7910de796ec6f710a3fe2d636c175e3963d653747541b0
   bin/agent-log: 4947cdf5239958d0e0afcb5e79a94d6397e28d1f4f253fb162e549cdce9f9a9a
-  bin/team-create-issue: a3e02228325fceb4add676ef9979df68505b68aaaed44fbf03c3162cebf7a2f8
+  bin/team-create-issue: c38efd46f6d4db59d847391fb759b14ab256533a0384daf2019a7418c30debd2
   bin/team-find-issues: 21ba5ebaf0868cff9dd660350d53ef3cfa515a00857a777ef0de9ac620bfe3e6
   bin/team-setup-gh: a65b7d872e45cab273bfa627e53f6e6ba8b3cc3dd6425f058073d9a97b4eed66
   bin/team-setup-git: 397d09885f4626e373fe3d3f9f6c0410e2fc35836a51aa68eaa8829d57950d5a
@@ -37,13 +37,13 @@ files:
   commands/feature.md: 9690da077305107e7542a1bc5376b1872ef3e6ce3bfe336b97dc98534b125941
   commands/fix.md: 2f00ae38d73f00740ab69cd00faa7bec80886aff8f7cd53ee9016db3baac1f46
   commands/init-project.md: b5f8da51d3ef13df8afd0bd7cab8afac1547e62a75c961d7f5470bf058b5aa3a
-  commands/install.md: b1e643210b8e8b9573acbe10f998a9820b671c58e71fc45960494ef43cbc73c1
+  commands/install.md: d9eb726af32144cfe3fc9cbacd17bb66091ac8e9a8b419937aa1ea81bfb429ff
   commands/request.md: b404d64779e134def34c724bfa066a49d0de7cd79be0ecaa45df65b3635c29a3
   commands/roadmap.md: dc14609d777f397809e61fa803f643f371ae1181abf08b2086317f3e3d751330
   commands/triage.md: f142d1de21dac11a88756b83e383980ddb2b9de49245395961f436233790125e
   commands/update-readme.md: 651b1d45e36d638aa25ffeb101e3f67f92c9432a4ac07a53b6fe806e303a2ab7
   commands/update.md: bed2933ea20e24bd1e606fd49dddd1f54f0c8e7ddabd35eb399c0733aad0c58c
-  skills/agent-log/SKILL.md: 11f176230d1c29dc5edea3651e33541cc368780ce061d8ac01bc41e8fabe86b4
+  skills/agent-log/SKILL.md: c840aa7fb021dcd1af25674d9e76492e31ae6030ef2a303bb3f7ff5b145b703f
   skills/architect-spec-format/SKILL.md: df9e0ee01897bf3382d65cf260d7a7ee568fdb35139993d32a98b4707e69a6e0
   skills/design-system/SKILL.md: 3bea653bcc940b90949d129d7d15bc364c1dd8539d6e7f989c1fef8816112628
   skills/discovery-brief-format/SKILL.md: 230fab1f3202ee8297a0a6cd859e180410f4ac01fcebd3bc3dcae68946f9872a

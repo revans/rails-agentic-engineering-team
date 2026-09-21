@@ -4,6 +4,19 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/deploy` — see [Updates](docs/updates.md).
 
+## [1.16.2] - 2026-09-21
+
+### Added
+
+- **CI Gate** (`orchestrator.md` Stage 4b / Bug Fix Mode Stage B3b): after the engineer completes and before the four parallel reviewers launch, the orchestrator independently re-runs `bin/ci` (or `bin/rubocop` + `bin/rails test` if the project has no `bin/ci`) rather than trusting the engineer's own self-reported Validate step. Not clean → routes back to the engineer exactly like a Stage 6 NEEDS WORK verdict, incrementing `$SEQ` by 5. Nothing reaches Stage 7c without passing this gate.
+- `engineer.md`'s TDD Workflow now requires running the **entire** test suite before starting a task (not just files expected to be touched) and fixing anything already red before proceeding — a red baseline makes it impossible to tell, once done, which failures are the engineer's own. Its Validate/End-of-Work steps now also run `bin/rubocop` (or `bin/ci`'s style step) and treat any offense, any pre-existing red test surfaced by the change, and any dependency-audit finding as the engineer's own to fix, not to note and defer.
+- `security-review.md` now runs `bin/bundler-audit` (or `bundle exec bundler-audit check --update`) alongside Brakeman at the start of every run, as its own "Dependency Audit" review category — any advisory is NEEDS WORK unless demonstrated inapplicable. New `DEPENDENCY_AUDIT` category added to the `agent-log` skill's finding vocabulary.
+- `/install` (`installer.md` Step 9) now offers to run `/init-project` once its checklist finishes clean — waits for an explicit yes, never chains automatically, same rule every other handoff in the installer follows.
+
+### Fixed
+
+- 1.16.1's fix for `bin/team-create-issue`'s project-board step was itself broken: it swapped `gh project item-edit`'s `--url` for `--id` while keeping the `--field`/`--value` friendly-name flags, but `gh` rejects that combination — `--field`/`--value` only work with `--url`. Corrected to resolve the project's node id and the Status field's real field-id/option-id once (via `gh project view`/`field-list`, a schema read whose cost doesn't grow with board size), then call `item-edit` with the fully-typed `--id`/`--project-id`/`--field-id`/`--single-select-option-id` form. Falls back to the old `--url`/friendly-name path only if that resolution fails. Verified end-to-end against a real board.
+
 ## [1.16.1] - 2026-09-21
 
 ### Fixed

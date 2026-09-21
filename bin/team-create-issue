@@ -118,13 +118,29 @@ issue_number = issue_url[/\/issues\/(\d+)/, 1]&.to_i
 
 on_board = false
 if needs_board
-  # --format json on item-add returns the created (or pre-existing) project item's own id.
-  # Passing that id straight to item-edit (below) instead of --url avoids a second URL-to-item
-  # lookup — item-edit resolving by --url has to search/paginate the project's existing items to
-  # find the match, and that search gets more expensive as the board fills up (fine at a handful
-  # of items, expensive at dozens+: a burst of ~90 issues filed in one run against a growing board
-  # exhausted the account's hourly GraphQL quota partway through). Resolving by --id is a direct
-  # lookup, flat cost regardless of board size.
+  # gh project item-edit rejects --field/--value (friendly names) combined with --id — that
+  # combo only works with --url, which forces gh to search/paginate the project's existing
+  # items to find a content match, and that search gets more expensive as the board fills up
+  # (fine at a handful of items, expensive at dozens+: a burst of ~90 issues filed in one run
+  # against a growing board exhausted the account's hourly GraphQL quota partway through). --id
+  # is a direct lookup, flat cost regardless of board size, but it requires the fully-resolved
+  # --project-id/--field-id/--single-select-option-id form instead of friendly names — resolved
+  # once here via project view + field-list (a project-schema read, not a paginated item search,
+  # so its cost doesn't grow with the board's item count).
+  project_id, _, project_id_ok = sh("gh", "project", "view", project_number.to_s, "--owner", project_owner,
+                                     "--format", "json", "--jq", ".id")
+  fields_out, fields_err, fields_ok = sh("gh", "project", "field-list", project_number.to_s,
+                                          "--owner", project_owner, "--format", "json")
+  status_field_id = nil
+  status_option_id = nil
+  if project_id_ok && fields_ok
+    fields = (JSON.parse(fields_out)["fields"] rescue [])
+    status_field = fields.find { |f| f["name"] == "Status" }
+    status_field_id = status_field && status_field["id"]
+    status_option = status_field && (status_field["options"] || []).find { |o| o["name"] == default_status }
+    status_option_id = status_option && status_option["id"]
+  end
+
   add_out, add_err, add_ok = sh("gh", "project", "item-add", project_number.to_s, "--owner", project_owner,
                                  "--url", issue_url, "--format", "json")
   # item-add fails (harmlessly) if some other path already added it — proceed to item-edit regardless of add_ok,
@@ -133,15 +149,16 @@ if needs_board
 
   edit_ok = false
   edit_err = ""
-  if item_id
-    _, edit_err, edit_ok = sh("gh", "project", "item-edit", project_number.to_s, "--owner", project_owner,
-                               "--id", item_id, "--field", "Status", "--value", default_status)
+  if item_id && project_id_ok && status_field_id && status_option_id
+    _, edit_err, edit_ok = sh("gh", "project", "item-edit", "--id", item_id, "--project-id", project_id.strip,
+                               "--field-id", status_field_id, "--single-select-option-id", status_option_id)
   else
-    # Fall back to the old --url resolution only if item-add didn't hand back a usable id
-    # (e.g. add_ok was false for a reason other than "already on the board") — slower, but
-    # correct, and this path should be rare.
+    # Fall back to the old --url/friendly-name resolution if anything above didn't resolve
+    # (e.g. team.yml's default_status doesn't match a real option name, or item-add didn't hand
+    # back a usable id) — slower, but correct, and this path should be rare.
     _, edit_err, edit_ok = sh("gh", "project", "item-edit", project_number.to_s, "--owner", project_owner,
                                "--url", issue_url, "--field", "Status", "--value", default_status)
+    edit_err = "field/option resolution failed (#{fields_err}); fell back to --url — #{edit_err}" unless status_field_id && status_option_id
   end
 
   unless edit_ok
