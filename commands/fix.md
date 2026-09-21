@@ -1,6 +1,6 @@
 ---
 name: Fix
-description: "Entry point for bug fix work. Routes to the orchestrator's Bug Fix Mode — engineer, then the four parallel reviews and verdict gate, skipping discovery/architect/design since the GitHub issue is the spec. Usage: /fix <issue-number>"
+description: "Entry point for bug fix and tech-debt fix work. Routes to the orchestrator's Bug Fix Mode — engineer, then the four parallel reviews and verdict gate, skipping discovery/architect/design since the GitHub issue is the spec. Accepts issues labeled `bug` or `tech-debt`. Usage: /fix <issue-number>"
 color: red
 ---
 

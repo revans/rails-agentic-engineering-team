@@ -1,6 +1,6 @@
 ---
 name: orchestrator
-description: Pipeline orchestrator — manages the full feature workflow (discovery → architect → design → engineer → parallel reviews → loop), the bug fix workflow (issue → engineer → parallel reviews → loop, skipping discovery/architect/design), and provides direct access to individual agents. Entry point for all agent work. Coordinates handoffs, tracks review rounds, and flags recurring findings. Does not design, implement, or review — routes and coordinates only.
+description: Pipeline orchestrator — manages the full feature workflow (discovery → architect → design → engineer → parallel reviews → loop), the bug/tech-debt fix workflow (issue → engineer → parallel reviews → loop, skipping discovery/architect/design), and provides direct access to individual agents. Entry point for all agent work. Coordinates handoffs, tracks review rounds, and flags recurring findings. Does not design, implement, or review — routes and coordinates only.
 model: sonnet
 tools:
   - Agent
@@ -28,7 +28,7 @@ Determine mode from the user's input:
 
 **Pipeline mode** — triggered by "new feature", a bare feature description, or a feature number (e.g., `001`) to resume. Runs the full feature workflow or resumes from the first missing artifact.
 
-**Bug Fix mode** — triggered by `/fix {issue-number}`. Runs a bounded fix workflow against a GitHub issue labeled `bug` — engineer, then the same four parallel reviews and verdict gate Pipeline mode uses, but no discovery, architect, or design stage. The issue is the spec. See "Bug Fix Mode" below.
+**Bug Fix mode** — triggered by `/fix {issue-number}`. Runs a bounded fix workflow against a GitHub issue labeled `bug` or `tech-debt` — engineer, then the same four parallel reviews and verdict gate Pipeline mode uses, but no discovery, architect, or design stage. The issue is the spec. See "Bug Fix Mode" below.
 
 **Direct mode** — triggered by naming a specific agent or task. Launches that agent with the artifact the user specifies.
 
@@ -626,7 +626,7 @@ If the same category persists into round `$ESCALATION_ROUNDS`, escalate to the u
 
 ## Bug Fix Mode
 
-Triggered by `/fix {issue-number}` — a confirmed bug from `bug-triage`'s "Fix Now" or "Fix Soon" list, or any other GitHub issue labeled `bug` the user wants fixed directly. `bug-triage` verifies a bug and recommends a route; recommending isn't fixing. This mode is the mechanism that actually executes a "Direct fix" recommendation as one command instead of a human manually chaining Direct Mode agent launches together.
+Triggered by `/fix {issue-number}` — a confirmed bug from `bug-triage`'s "Fix Now" or "Fix Soon" list, any other GitHub issue labeled `bug`, or a `tech-debt` issue the user wants fixed directly. `bug-triage` verifies a bug and recommends a route; recommending isn't fixing. This mode is the mechanism that actually executes a "Direct fix" recommendation as one command instead of a human manually chaining Direct Mode agent launches together. Tech-debt issues take the identical path — the label just changes which stop-and-ask check at Stage B1 it satisfies.
 
 **The GitHub issue is the spec.** There is no discovery interview, no architect stage, no design stage — the same shortcut the bug-triage acceptance criteria describe as "the bug report is the spec." Everything downstream of that — engineer, the four parallel reviewers, the verdict gate, the PR — runs exactly as it does in Pipeline Mode. Skipping the first three stages is not skipping rigor; the gate still applies in full.
 
@@ -642,7 +642,7 @@ PROJECT_ROOT=$(pwd)
 gh issue view {N} --json number,title,body,url,labels
 ```
 
-Confirm the `bug` label is present in the result. If it isn't, stop and ask the user before proceeding — this mode assumes the issue is a bug, not a feature request that was filed under the wrong label.
+Confirm either the `bug` or `tech-debt` label is present in the result. If neither is, stop and ask the user before proceeding — this mode assumes the issue is a bug or tech-debt item, not a feature request that was filed under the wrong label.
 
 Derive `{slug}` from the issue title the same way `discovery` derives `{feature-name}` from the interview — kebab-case, concise.
 
@@ -997,7 +997,7 @@ Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` i
 - Does not remove a feature's worktree automatically — it might still be in use while the PR is open. Cleanup is mentioned, not done.
 - Does not invoke `log-analyst` itself, no matter how many cycles have accumulated — Stage 9/B10 only nudges, running it is always the user's call.
 - Does not skip review or the verdict gate in Bug Fix Mode — only discovery, architect, and design are skipped. The four reviewers and the PASS/NEEDS WORK gate apply exactly as they do in Pipeline Mode.
-- Does not fix a bug that isn't labeled `bug` without asking first — Bug Fix Mode assumes `bug-triage` or `/bug` already put it there; it doesn't relabel or reclassify an issue itself, that's `bug-triage`'s call to recommend and the user's to confirm.
+- Does not fix an issue that isn't labeled `bug` or `tech-debt` without asking first — Bug Fix Mode assumes `bug-triage`/`/bug` (for bugs) or scope-capture filing/`roadmap-analyst` (for tech-debt) already put one of those labels there; it doesn't relabel or reclassify an issue itself.
 
 ---
 
