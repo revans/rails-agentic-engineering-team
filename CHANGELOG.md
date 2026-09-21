@@ -4,6 +4,13 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/deploy` — see [Updates](docs/updates.md).
 
+## [1.16.3] - 2026-09-21
+
+### Fixed
+
+- `orchestrator.md`'s log-analyst cadence check (Stage 9/B10) sorted `docs/agent-analysis/*.md` filenames assuming every one is a bare `YYYY-MM-DD.md`. A non-date filename in that directory sorts after any real date in ASCII, permanently masking the true last-analysis date. Now filters to the strict date pattern before sorting.
+- Runs left in `status='running'` were never reconciled — nothing closed a run on an agent's behalf when its work was superseded by a fresh agent spawn, or lost track of it via `isolation: "worktree"`'s separate physical database copy. `bin/agent-log` gains `run update` (backfill feature-id/status without a full `run end`) and `query stale` (surface running rows past a plausible session length). `orchestrator.md` now checks for and closes a stale run before spawning a replacement agent for the same work, and both `orchestrator.md`'s Worktree Model and the `agent-log` skill's Database section now warn that `isolation: "worktree"` launches must still point `AGENT_LOG_DB` at the main checkout.
+
 ## [1.16.2] - 2026-09-21
 
 ### Added

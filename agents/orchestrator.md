@@ -68,6 +68,19 @@ Agent log database: run `export AGENT_LOG_DB={PROJECT_ROOT}/db/agent_log.sqlite3
 
 The `AGENT_LOG_DB` line isn't boilerplate — skipping it is a real, silent failure mode. `bin/agent-log` resolves its database path against the current working directory by default (see the script's own comments on why). An agent that `cd`s into the worktree without this override starts writing decisions into a brand-new, empty database that lives inside the worktree and that `log-analyst` will never read — every decision, finding, and reflection from that run would silently vanish from the shared history the moment the worktree is removed.
 
+The same risk applies, independently, if an agent is ever launched with the Agent tool's own `isolation: "worktree"` parameter instead of (or on top of) this manual `$WORKTREE_DIR` pattern — that gives the agent a separate temporary checkout with its own physical copy of `db/agent_log.sqlite3`, and whether its writes ever reach the main checkout's copy depends on how that binary file's git merge resolves, which is not guaranteed. This orchestrator's own prescribed worktree pattern never sets `isolation: "worktree"` on its Agent tool calls for this reason — if a future change to this file introduces it, the `AGENT_LOG_DB` override above must still be included in that launch prompt.
+
+### Preventing Orphaned Runs
+
+Before launching a replacement agent to redo or continue another agent's in-progress work on the same feature — a re-run because the prior attempt went the wrong direction, a fresh `Agent()` call instead of resuming the same one via `SendMessage`, or any other case where you know a specific agent+feature's prior run is being superseded rather than continued — check for an existing `running` row first and close it explicitly, don't leave it behind:
+
+```bash
+bin/agent-log query runs   # look for a running row matching the agent name + feature you're about to redo
+bin/agent-log run update --run-id {old_id} --status abandoned
+```
+
+This is what keeps `bin/agent-log query stale` meaningful as a health signal instead of a permanent, growing pile of forgotten rows.
+
 ### Artifact Paths
 
 All filenames follow `{NNN}.{SS}-{agent-id}-{feature-name}.md` where `NNN` is the feature number and `SS` is the pipeline sequence number. Every artifact for a feature lives under a single feature directory.
@@ -565,7 +578,7 @@ The threshold itself is configurable — read it from `team.yml` (see the `githu
 cd "$PROJECT_ROOT"
 INTERVAL=$(ruby -ryaml -e "c = (YAML.load_file('team.yml') rescue {}); puts c.dig('cadence','log_analyst_interval') || 15" 2>/dev/null)
 [ -z "$INTERVAL" ] && INTERVAL=15
-LAST_ANALYSIS_DATE=$(ls docs/agent-analysis/*.md 2>/dev/null | sed 's#.*/##; s/\.md$//' | sort | tail -1)
+LAST_ANALYSIS_DATE=$(ls docs/agent-analysis/*.md 2>/dev/null | sed 's#.*/##; s/\.md$//' | grep -E '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' | sort | tail -1)
 if [ -z "$LAST_ANALYSIS_DATE" ]; then
   CYCLES=$(sqlite3 db/agent_log.sqlite3 "SELECT COUNT(DISTINCT feature_id) FROM runs WHERE agent_name='rails-orchestrator' AND status='completed';")
 else

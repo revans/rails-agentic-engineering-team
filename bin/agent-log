@@ -185,8 +185,22 @@ when "run"
     )
     puts "Run #{args[:run_id]} closed."
 
+  when "update"
+    fail!("--run-id required") unless args[:run_id]
+    fail!("at least one of --feature-id or --status required") unless args[:feature_id] || args[:status]
+    sq("UPDATE runs SET feature_id=? WHERE id=?", args[:feature_id], args[:run_id]) if args[:feature_id]
+    if args[:status]
+      terminal = %w[completed failed abandoned].include?(args[:status])
+      if terminal
+        sq("UPDATE runs SET status=?, completed_at=COALESCE(completed_at, ?) WHERE id=?", args[:status], now_iso, args[:run_id])
+      else
+        sq("UPDATE runs SET status=? WHERE id=?", args[:status], args[:run_id])
+      end
+    end
+    puts "Run #{args[:run_id]} updated."
+
   else
-    fail!("Unknown run action: #{action}. Use: start, end")
+    fail!("Unknown run action: #{action}. Use: start, end, update")
   end
 
 # ── decision ─────────────────────────────────────────────────────────────────
@@ -376,8 +390,27 @@ when "query"
     puts "Events:     #{e_count}"
     puts "Summary:    #{run[7]}"
 
+  when "stale"
+    # Running rows past a plausible session length — nothing external ever closes
+    # a run on an agent's behalf (see docs/agent-analysis/2026-09-10-stale-run-status.md),
+    # so these accumulate silently unless something surfaces them on demand.
+    hours = (args[:hours] || 4).to_i
+    cutoff = (Time.now - hours * 3600).strftime("%Y-%m-%dT%H:%M:%S")
+    rows = sq_rows(
+      "SELECT id, agent_name, feature_id, started_at, substr(input_summary,1,50)
+       FROM runs WHERE status='running' AND started_at < ? ORDER BY started_at",
+      cutoff
+    )
+    if rows.empty?
+      puts "(no stale runs — none running longer than #{hours}h)"
+    else
+      puts "%-36s  %-14s  %-8s  %s  %s" % %w[ID Agent Feature Started Summary]
+      puts "-" * 110
+      rows.each { |r| puts "%-36s  %-14s  %-8s  %s  %s" % r.map { |v| v.to_s } }
+    end
+
   else
-    fail!("Unknown query: #{action}. Use: runs, decisions, events, findings, reflections, skill-gaps, struggles, assumptions, summary")
+    fail!("Unknown query: #{action}. Use: runs, decisions, events, findings, reflections, skill-gaps, struggles, assumptions, input-quality, stale, summary")
   end
 
 # ── help / default ────────────────────────────────────────────────────────────
@@ -411,6 +444,11 @@ when "help", nil
       run end    --run-id ID [--status completed|failed|abandoned]
                  [--quality-score 1-10] [--output-summary "..."]
 
+      run update --run-id ID [--feature-id F-001] [--status running|completed|failed|abandoned]
+                 Corrects a run's feature-id or status without going through run end —
+                 for backfilling a feature-id resolved after run start, or closing out
+                 a stale run found via `query stale`.
+
     Logging:
       decision   --run-id ID --title "..." --rationale "..."
                  [--id eng-F001-001] [--alternatives "..."]
@@ -440,6 +478,7 @@ when "help", nil
       query struggles                     # cross-run aggregate
       query assumptions                   # cross-run aggregate
       query input-quality                 # cross-run aggregate, chronological per agent
+      query stale           [--hours N]   # running rows older than N hours (default 4)
       query summary        --run-id ID
 
     Environment:

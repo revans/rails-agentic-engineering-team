@@ -106,6 +106,8 @@ Override: `AGENT_LOG_DB=/path/to/other.sqlite3 bin/agent-log ...`
 
 The database and schema are created automatically on first use. No setup required.
 
+**If you were launched with the Agent tool's `isolation: "worktree"` parameter** (a separate temporary checkout, not the same thing as a manually-created git worktree an orchestrator `cd`s you into), you have your own physical copy of `db/agent_log.sqlite3` in that checkout. Writes there do not automatically reach the main checkout's copy — whether they survive depends on how that binary file's git merge resolves, which is not guaranteed. If the agent that launched you did not already set `AGENT_LOG_DB` to point at the main checkout's path, set it yourself before your first `bin/agent-log` call.
+
 ---
 
 ## Run Lifecycle
