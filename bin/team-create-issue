@@ -118,11 +118,32 @@ issue_number = issue_url[/\/issues\/(\d+)/, 1]&.to_i
 
 on_board = false
 if needs_board
-  _, add_err, add_ok = sh("gh", "project", "item-add", project_number.to_s, "--owner", project_owner, "--url", issue_url)
+  # --format json on item-add returns the created (or pre-existing) project item's own id.
+  # Passing that id straight to item-edit (below) instead of --url avoids a second URL-to-item
+  # lookup — item-edit resolving by --url has to search/paginate the project's existing items to
+  # find the match, and that search gets more expensive as the board fills up (fine at a handful
+  # of items, expensive at dozens+: a burst of ~90 issues filed in one run against a growing board
+  # exhausted the account's hourly GraphQL quota partway through). Resolving by --id is a direct
+  # lookup, flat cost regardless of board size.
+  add_out, add_err, add_ok = sh("gh", "project", "item-add", project_number.to_s, "--owner", project_owner,
+                                 "--url", issue_url, "--format", "json")
   # item-add fails (harmlessly) if some other path already added it — proceed to item-edit regardless of add_ok,
   # only the final item-edit result decides whether the board step actually succeeded.
-  _, edit_err, edit_ok = sh("gh", "project", "item-edit", project_number.to_s, "--owner", project_owner,
-                             "--url", issue_url, "--field", "Status", "--value", default_status)
+  item_id = add_ok ? (JSON.parse(add_out)["id"] rescue nil) : nil
+
+  edit_ok = false
+  edit_err = ""
+  if item_id
+    _, edit_err, edit_ok = sh("gh", "project", "item-edit", project_number.to_s, "--owner", project_owner,
+                               "--id", item_id, "--field", "Status", "--value", default_status)
+  else
+    # Fall back to the old --url resolution only if item-add didn't hand back a usable id
+    # (e.g. add_ok was false for a reason other than "already on the board") — slower, but
+    # correct, and this path should be rare.
+    _, edit_err, edit_ok = sh("gh", "project", "item-edit", project_number.to_s, "--owner", project_owner,
+                               "--url", issue_url, "--field", "Status", "--value", default_status)
+  end
+
   unless edit_ok
     puts JSON.generate({
       status: "failed",

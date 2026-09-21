@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/deploy` — see [Updates](docs/updates.md).
 
+## [1.16.1] - 2026-09-21
+
+### Fixed
+
+- `bin/team-create-issue`'s project-board step resolved the project item to update via `gh project item-edit --url`, which makes `gh` search/paginate the project's existing items to find a match — cost that grows with board size. A burst of ~90 issues filed in one run against a growing board exhausted the account's hourly GraphQL quota partway through. `item-add --format json` now captures the created item's own id, and `item-edit` uses `--id` (a direct lookup, flat cost) instead, falling back to the old `--url` resolution only if `item-add` didn't hand back a usable id.
+
 ## [1.16.0] - 2026-09-16
 
 ### Fixed

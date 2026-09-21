@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.16.0
-generated_at: '2026-09-16T22:20:37Z'
+version: 1.16.1
+generated_at: '2026-09-21T17:58:43Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: bc31f2337067eea4e43ae9be3ac133c3797f42e75650a26d6b99468ef377f191
@@ -24,7 +24,7 @@ files:
   agents/security-review.md: 2d0ea952fe342e7cf6198ec747a88bbb6f422536cc2973cbbb1dea51c166ecdb
   agents/updater.md: 4bbabe384987f77bee7910de796ec6f710a3fe2d636c175e3963d653747541b0
   bin/agent-log: 4947cdf5239958d0e0afcb5e79a94d6397e28d1f4f253fb162e549cdce9f9a9a
-  bin/team-create-issue: a0d50f3f68ddcb4209b83a6f8f8232ffd56df597d46cebcd25f0b49250c7d64f
+  bin/team-create-issue: a3e02228325fceb4add676ef9979df68505b68aaaed44fbf03c3162cebf7a2f8
   bin/team-find-issues: 21ba5ebaf0868cff9dd660350d53ef3cfa515a00857a777ef0de9ac620bfe3e6
   bin/team-setup-gh: a65b7d872e45cab273bfa627e53f6e6ba8b3cc3dd6425f058073d9a97b4eed66
   bin/team-setup-git: 397d09885f4626e373fe3d3f9f6c0410e2fc35836a51aa68eaa8829d57950d5a
