@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/deploy` — see [Updates](docs/updates.md).
 
+## [1.16.4] - 2026-09-21
+
+### Fixed
+
+- `bin/team-update`'s `git clone` call passed `source_repo` (from `--source-repo`, or from `team.yml`'s `team.source_repo` — hand-editable by anyone with write access to the target repo) as a bare positional argument. A value starting with `-` gets parsed as a git flag instead of a repository — flagged by automated security review, on `rails-qa-team`'s ported copy of this same file, as argument injection (`--upload-pack=<cmd>` runs `<cmd>` as the clone's pack generator). Fixed with a `--` separator before the value. Also found, while fixing it, a second gap the `--` fix doesn't touch: `ext::<cmd>` is a git transport scheme that runs a command directly, no flag parsing needed, currently blocked only by this git version's default protocol allowlist rather than by anything in this script. Added a `validate_source_repo!` allowlist (plain `https://` or `git@`-style URLs only) so the fix doesn't depend on git's own defaults staying as they are.
+
 ## [1.16.3] - 2026-09-21
 
 ### Fixed

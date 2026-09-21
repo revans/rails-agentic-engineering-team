@@ -4,24 +4,25 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.16.3
-generated_at: '2026-09-21T20:58:13Z'
+version: 1.16.4
+generated_at: '2026-09-21T23:14:10Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: bc31f2337067eea4e43ae9be3ac133c3797f42e75650a26d6b99468ef377f191
-  agents/bug-triage.md: 4a9f1fe37badce2c63d8b4c9f5e98ea5f95fb1dc83f785e4eb803f51ca969536
+  agents/bug-triage.md: 748dbf3b5f08681856670aff24b8721548be04f3b3ebf3a4691248dea35e7e66
   agents/code-review.md: faacbf8ae4a5d81276bed4d7df4121e621a06d8546dc9624fae4cb502ae3dea5
   agents/design.md: df003d9fac581065883daaae270f4c9ff003a0262c3fceb138952b5264f4580e
   agents/discovery.md: 54158bd93ce3f0e78f48533a43a719308d351552b0c74a825027cc4023208afc
   agents/engineer.md: 3c25d920b8fde88be1b0304d9118ab55df94f01f190db972541e0445b4e0aefd
   agents/fidelity-review.md: 40455b4019bdb9f81718bfe06deb621fb2889a1697f41da957d48eafb4307a0e
   agents/installer.md: 32a87c2380ed4f570112ffc34124c04494b4acc98d9900d30a31d8156cedef55
-  agents/intake.md: ae1778a03150b60937f91f78bf3f429e516848025d2a4ea252777e48a114213a
+  agents/intake.md: 6c1aeea96c2ee15eb31ba5e20724cdd5c202b1299d55ceb4c3d349f6b1bf27c1
   agents/log-analyst.md: 015fbd825770a0ceacaee4f24eced8097243a6b5558342e45ed9784df31d2c8b
-  agents/orchestrator.md: e551062ddfcbc5ef4e97dcc573d53a05c29e0d71e86ffecbd1893fb8ea83cea5
+  agents/orchestrator.md: 70176e6e96925f59a8b1d2921766031b927bcb37f9909f372b6f541ee7b07a50
   agents/performance-review.md: f3ab473c72a81e2e9a4cfb7a2b8764a49b6303639839e70ef142c596bd3b5fc8
-  agents/roadmap-analyst.md: 32322423179d331b6a0acee4d3fdee2538e8362f301c62c7e8cd9af2c1d403e9
+  agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8
   agents/security-review.md: efc7b8ff3ae2086105d2069268ada1dec0adc9ff8e91010c9ceda1a845d6b886
+  agents/skill-builder.md: 9281f9f3d4b0aab3a3e269da4cfe4cfc14036851f4b792a5ffe2771511d6e318
   agents/updater.md: 4bbabe384987f77bee7910de796ec6f710a3fe2d636c175e3963d653747541b0
   bin/agent-log: 222a8c9b9d5f6dc56ad28affde49ec191ba9723135027dccd3d5aa7e3c6ee988
   bin/team-create-issue: c38efd46f6d4db59d847391fb759b14ab256533a0384daf2019a7418c30debd2
@@ -31,11 +32,11 @@ files:
   bin/team-setup-project: 1a69aa8cbf850d92e3f689156b7864aabdc3a7d805e79ccd09cf1903335bc55d
   bin/team-setup-project-status: 9cdbe638463a2d14a9dab31491a0793b388917b6f992563b23f46eaacae5618e
   bin/team-setup-sqlite: b8fbb8cf6193f13504e35698c40d9de6f4eb9877890b095296d66d5738f2a087
-  bin/team-update: 04360ccdb4bae873ca1fcf28ec286b463b4736ad980793258af06e1f2d63225c
+  bin/team-update: 70b58df74eb86384f2970c8b0e759d4e88f0b026f0d52b2d1f3576da49308caf
   commands/bug.md: 1c65baa8a6d27b0f5724b642a35606cfe81436a50102311b925d9a3d42d2da76
   commands/define-icp.md: 55c8b3b8b16cdec8b64e26d2f3688e2be19c16dcb1206dc820b730cef96ec766
   commands/feature.md: 9690da077305107e7542a1bc5376b1872ef3e6ce3bfe336b97dc98534b125941
-  commands/fix.md: 2f00ae38d73f00740ab69cd00faa7bec80886aff8f7cd53ee9016db3baac1f46
+  commands/fix.md: 2d3280e548cf2abbec98fc7e5e71ecaa29df682bb4955175518b00ae3aba5e3b
   commands/init-project.md: b5f8da51d3ef13df8afd0bd7cab8afac1547e62a75c961d7f5470bf058b5aa3a
   commands/install.md: d9eb726af32144cfe3fc9cbacd17bb66091ac8e9a8b419937aa1ea81bfb429ff
   commands/request.md: b404d64779e134def34c724bfa066a49d0de7cd79be0ecaa45df65b3635c29a3
@@ -47,7 +48,7 @@ files:
   skills/architect-spec-format/SKILL.md: df9e0ee01897bf3382d65cf260d7a7ee568fdb35139993d32a98b4707e69a6e0
   skills/design-system/SKILL.md: 3bea653bcc940b90949d129d7d15bc364c1dd8539d6e7f989c1fef8816112628
   skills/discovery-brief-format/SKILL.md: 230fab1f3202ee8297a0a6cd859e180410f4ac01fcebd3bc3dcae68946f9872a
-  skills/github-cli/SKILL.md: 4c7968af3ee7002a0230c0bfbb2377ccd5ee852eea5b31772a41a7c7f7b99515
+  skills/github-cli/SKILL.md: 85af1fa9f09af51479d10885673afd320aef0c98584324b5f148c53ad4b9e8c5
   skills/rails-principles/SKILL.md: d312ffb19aa71a4de1eca86cc0b031a42a546707f6d347188886ce4b3527e083
   skills/scope-capture/SKILL.md: d0dcfe9a21da0063602219f39809642535431e61e4af64e94d6ee05095598bac
   skills/team-sync/SKILL.md: 86eebf47ea87d2af7a9106d8051a49669e507c2fcddfacbb7256f238e9d473f2

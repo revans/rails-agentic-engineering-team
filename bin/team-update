@@ -84,6 +84,24 @@ def resolve_source_repo(dir, cli_value)
   cli_value || team_source_repo(dir) || DEFAULT_SOURCE_REPO
 end
 
+# source_repo can come from a CLI flag or from team.yml's team.source_repo
+# (a file explicitly documented elsewhere as "safe to hand-edit" — i.e. by
+# anyone with write access to the target repo, not just this script's
+# caller). Passed unchecked to `git clone`, a value starting with "-" gets
+# parsed as a flag instead of a repository argument (argument injection —
+# e.g. "--upload-pack=<cmd>" runs <cmd> as the clone's pack generator), and
+# a value using a dangerous transport scheme ("ext::<cmd>") runs a command
+# directly with no flag trickery needed at all. The "--" below stops the
+# first class; this whitelist stops the second regardless of which git
+# protocol defaults happen to be in effect on whatever machine runs this.
+def validate_source_repo!(source_repo)
+  return if source_repo.match?(%r{\Ahttps://[\w.-]+/[\w./-]+(?:\.git)?\z}) ||
+            source_repo.match?(%r{\A[\w.-]+@[\w.-]+:[\w./-]+(?:\.git)?\z})
+
+  result("failed", detail: "source_repo #{source_repo.inspect} doesn't look like a plain https:// or git@ URL — refusing to pass it to git clone")
+  exit 1
+end
+
 # Returns {"files" => {}} when there's genuinely no lock yet — a fresh
 # repo that's never synced, a legitimate case handled the same way
 # throughout this script. A file that EXISTS but fails to parse, or
@@ -193,9 +211,10 @@ def cmd_plan(flags)
   end
 
   source_repo = resolve_source_repo(dir, flags["source-repo"])
+  validate_source_repo!(source_repo)
   snapshot_dir = Dir.mktmpdir("team-update-")
   FileUtils.remove_entry(snapshot_dir) # git clone needs the target to not exist
-  _, clone_ok = sh("git", "clone", "--depth", "1", source_repo, snapshot_dir)
+  _, clone_ok = sh("git", "clone", "--depth", "1", "--", source_repo, snapshot_dir)
   unless clone_ok
     result("failed", detail: "git clone of #{source_repo} failed — check network access and the URL")
     exit 1
