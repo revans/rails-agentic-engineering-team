@@ -4,6 +4,18 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.1] - 2026-09-21
+
+### Fixed
+
+- **`team.lock.yml` was flat and unnamespaced — a real, confirmed bug, found and fixed first on `rails-qa-team`'s ported copy of this same file, mirrored here.** A flat lock file lets one team's recorded hash for a genuinely shared file (`bin/agent-log`, `bin/team-setup-git`/`-gh`/`-sqlite`) be misread by a *different* team's `bin/<team>-team-update` as that team's own prior baseline — a since-diverged copy then silently auto-applies as a routine "clean update" instead of surfacing a conflict. Verified directly in both directions: simulated this team already installed, ran `rails-qa-team`'s `bin/qa-team-update plan` against it (misclassified `bin/agent-log` before the fix, correctly flagged as a conflict after); and the reverse, simulated `rails-qa-team` already installed, ran this team's own `bin/rails-team-update plan` against it (same result). Fixed: `team.lock.yml` namespaced under `teams:`, keyed by `source_repo` — this team's own `bin/rails-team-update` now only reads/writes its own section. A pre-existing flat-format lock file migrates transparently on first read.
+- Same root cause, confirmed separately: `team.lock.yml`'s top-level `source_repo`/`synced_version`/`synced_at` were being silently overwritten by whichever team synced last. Fixed by the same namespacing.
+
+### Added
+
+- `bin/agent-log` gains a `SHARED_TOOL_VERSION` constant (printed by `check` and `help`), matching `rails-qa-team`'s copy, so a human resolving a now-correctly-surfaced conflict on this file has an at-a-glance signal: compare versions, take the higher one by default.
+- `docs/updates.md`: "Keeping Shared Tools in Sync" and "Adding a Team-Specific Database Table" — the latter states the rule directly: a team-specific table must never be added to this team's own `bin/agent-log` schema (makes table existence depend on which team wins a future sync conflict); it must be created by code only that team owns.
+
 ## [1.19.0] - 2026-09-21
 
 ### Changed

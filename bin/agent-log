@@ -16,6 +16,18 @@ require "securerandom"
 require "open3"
 require "fileutils"
 
+# Shared, version-tracked infrastructure: every team's own independent copy
+# of this script (see docs/team-infrastructure-upgrade-playbook.md at the
+# agentic-teams root, Module E) is expected to be identical at a given
+# SHARED_TOOL_VERSION. A mismatch between two teams' copies in the same
+# target project is exactly what /rails-update's per-team-aware conflict
+# detection surfaces (see docs/updates.md, "Keeping Shared Tools in Sync")
+# — when it fires on this file, compare this constant: taking whichever
+# copy has the higher version is the right default resolution unless a
+# specific reason says otherwise. Bump this, in every team's copy together,
+# whenever this file's behavior changes.
+SHARED_TOOL_VERSION = "1.0.0".freeze
+
 # Resolved against the current working directory, not __dir__ — __dir__ follows
 # symlinks to this script's real location, which would make every team's symlinked
 # bin/agent-log collapse onto the same shared agentic-teams/db/agent_log.sqlite3
@@ -427,6 +439,7 @@ when "check"
   end
   if ok
     puts "Environment ready. Database: #{DB}"
+    puts "Shared tool version: #{SHARED_TOOL_VERSION}"
   else
     $stderr.puts "Missing dependencies. Install ruby and sqlite3 before using bin/agent-log."
     exit 1
@@ -486,6 +499,7 @@ when "help", nil
 
     Database: #{DB}
     Override: AGENT_LOG_DB=/path/to/other.sqlite3 bin/agent-log ...
+    Shared tool version: #{SHARED_TOOL_VERSION}
   HELP
 
 else

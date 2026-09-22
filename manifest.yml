@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.19.0
-generated_at: '2026-09-22T00:26:06Z'
+version: 1.19.1
+generated_at: '2026-09-22T00:58:47Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -24,9 +24,9 @@ files:
   agents/rails-updater.md: 2ada9a88a46c7975fd015f896b3808d0e06e758e655d57ed901870b59e10b9a3
   agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8
   agents/security-review.md: 324d7254d3e3248f18c84b7fd5a0b88c0259738c738daf998de29b5c064e11f9
-  bin/agent-log: 222a8c9b9d5f6dc56ad28affde49ec191ba9723135027dccd3d5aa7e3c6ee988
+  bin/agent-log: a44679a4637529dd54c2d35280c08d3078695b37aac287a283c96bfec15de98e
   bin/rails-team-setup-project: efc5a117b64b0d506fd309f91982e3cc9166a70139625c2e551bc20add032c08
-  bin/rails-team-update: 9022518ef47bc351beb660288a23593a3eb4c8b10655ae61785a6777a0ce93bb
+  bin/rails-team-update: 84c205e964249db6cfd42aa4580125512a04ac56ab14de884e8b5184e44aecf0
   bin/team-create-issue: 0eab2be28d07d766a6e9c6cbbe1e39f5b16328292e2de827953bd8816ccd6c3e
   bin/team-find-issues: 21ba5ebaf0868cff9dd660350d53ef3cfa515a00857a777ef0de9ac620bfe3e6
   bin/team-setup-gh: a65b7d872e45cab273bfa627e53f6e6ba8b3cc3dd6425f058073d9a97b4eed66
@@ -51,4 +51,4 @@ files:
   skills/github-cli/SKILL.md: d1cd60ce03524028f79df2b3808c27bed488eb48d856a367b5dca082224e1224
   skills/rails-principles/SKILL.md: d312ffb19aa71a4de1eca86cc0b031a42a546707f6d347188886ce4b3527e083
   skills/scope-capture/SKILL.md: d0dcfe9a21da0063602219f39809642535431e61e4af64e94d6ee05095598bac
-  skills/team-sync/SKILL.md: c6625adaff073b11d668d59eff248ff645689ea1e587dacd09270e293c325138
+  skills/team-sync/SKILL.md: b4e4bb79780425dc3b0797026096ff7ea7076f1efbef4bad4007e1857e978648
