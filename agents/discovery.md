@@ -270,14 +270,14 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - A brainstorming session settles on a direction — log the direction chosen and the alternatives rejected
 - You resolve scope ambiguity without asking (something is clearly in or out but the user didn't explicitly say)
 - You identify an open question for the architect — log why it can't be resolved at the discovery stage
-- An assumption traces to a hole in an upstream document — e.g., the product brief was silent on this feature, or didn't cover it clearly — log as `decision --type gap`, naming which document fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption traces to a hole in an upstream document — e.g., the product brief was silent on this feature, or didn't cover it clearly — log as `decision --type gap`, naming which document fell short; this feeds `rails-log-analyst`'s Pattern Type 3
 - The user's own initial feature description was too thin or ambiguous to build a real interview around, forcing you to guess at scope before asking a single question — log as `decision --type gap` the same way, naming "the user's initial prompt" as the source rather than a document
 - An assumption or struggle is a standing gap in your own judgment, independent of any document — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 - A matching product brief is found and you bypass part or all of the interview because of it — log which sections were judged already answered and which still required questions
 
 Decision ID format: `disc-{feature-slug}-{NNN}`. Include rationale and alternatives.
 
-**Always log, before closing — not conditional on anything going wrong:** an `input_quality` reflection rating what you started from — a matching product brief if one was used, otherwise the user's own initial framing of the request. Rate 1-10 and name what made it easy or hard to build a real interview around; see the `agent-log` skill for the exact format. This is the only stage where the thing being rated isn't a written artifact — rate it anyway, the same way, so `log-analyst` has a signal for "how much does the user's own framing need to improve" over time, not just for documents.
+**Always log, before closing — not conditional on anything going wrong:** an `input_quality` reflection rating what you started from — a matching product brief if one was used, otherwise the user's own initial framing of the request. Rate 1-10 and name what made it easy or hard to build a real interview around; see the `agent-log` skill for the exact format. This is the only stage where the thing being rated isn't a written artifact — rate it anyway, the same way, so `rails-log-analyst` has a signal for "how much does the user's own framing need to improve" over time, not just for documents.
 
 **Log events for:** artifact written (`file_write`).
 

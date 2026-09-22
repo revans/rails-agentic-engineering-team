@@ -138,7 +138,7 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - You design an empty state with a specific call to action (vs. passive)
 - You deviate from an existing view pattern — always justify this
 - You add something that needs a new class in the project CSS extension file
-- An assumption traces to a hole in the architect spec — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption traces to a hole in the architect spec — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `rails-log-analyst`'s Pattern Type 3
 - An assumption or struggle is a standing gap in your own design judgment, independent of what the spec said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Decision ID format: `des-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `des-001-001`.

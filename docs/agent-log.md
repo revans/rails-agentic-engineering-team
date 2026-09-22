@@ -4,7 +4,7 @@ A SQLite-backed CLI tool that records what agents do during feature pipeline run
 
 ## What It Is
 
-The agent log works like a flight recorder for AI agents. Every time an agent makes a decision, logs a struggle, or finds a code review issue, it writes a record to `db/agent_log.sqlite3`. Over time those records accumulate into a dataset the log-analyst agent reads to find patterns and propose improvements.
+The agent log works like a flight recorder for AI agents. Every time an agent makes a decision, logs a struggle, or finds a code review issue, it writes a record to `db/agent_log.sqlite3`. Over time those records accumulate into a dataset the `rails-log-analyst` agent reads to find patterns and propose improvements.
 
 The CLI is a single Ruby script at `bin/agent-log`. It calls the `sqlite3` command-line tool directly. No Ruby gems are required.
 
@@ -114,4 +114,5 @@ This closes the hypothesis/result loop. Without it, the log analyst has no signa
 - **This override is required, not optional, for every agent the orchestrator runs inside a feature's git worktree** (everything from Stage 2 onward — see `docs/pipeline.md`). The database resolves against the current working directory by default, so an agent that `cd`s into a worktree without exporting `AGENT_LOG_DB` back at the main checkout's `db/agent_log.sqlite3` silently starts a second, empty database inside the worktree — one that vanishes, unread, the moment that worktree is removed. The orchestrator's launch prompts always include this export; if you're invoking an agent by hand from inside a worktree, set it yourself.
 - Logging failures do not halt agent work. If a call fails, the agent continues and notes the gap in its final report.
 - Review agents log each finding with a standard category vocabulary (`N+1`, `AUTH_SCOPE`, `MISSING_TEST`, etc.). Consistent categories are what allow the log analyst to detect recurrence across features.
-- You can query the database directly with `sqlite3` for cross-run analysis beyond what the CLI provides. The log-analyst agent does this extensively.
+- You can query the database directly with `sqlite3` for cross-run analysis beyond what the CLI provides. The `rails-log-analyst` agent does this extensively.
+- **This database is shared with any other team installed in the same target project.** If `rails-qa-team` is also installed here, its runs and this team's runs live in the same `db/agent_log.sqlite3`, distinguished by `--agent-name` — this is why this team's own meta agents log as `rails-orchestrator`, `rails-log-analyst`, and `rails-skill-builder` rather than the bare names: a cross-team `query runs` needs each row unambiguous about which team's agent produced it.

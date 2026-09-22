@@ -18,7 +18,7 @@ The argument must be a bare GitHub issue number (e.g. `42`). If it's missing or 
 
 Do NOT spawn the orchestrator as a subagent — same reason `/feature` reads it directly: it needs to report progress and may need to stop and ask (e.g. if the issue isn't labeled `bug`) across multiple turns.
 
-Read `agents/orchestrator.md` now. Adopt the orchestrator's identity and instructions for the remainder of this conversation.
+Read `agents/rails-orchestrator.md` now. Adopt the orchestrator's identity and instructions for the remainder of this conversation.
 
 Once you have adopted the orchestrator identity, enter Bug Fix Mode for issue `{ARGUMENT}` and begin at Stage B1 — Read the Issue, Snapshot It.
 

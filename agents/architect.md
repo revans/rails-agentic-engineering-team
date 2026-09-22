@@ -120,7 +120,7 @@ See the `agent-log` skill for the full lifecycle protocol and CLI reference.
 - You rule out a dependency in favor of Rails-native capability
 - You determine the boundary of a concern extraction
 - You add something to Refactoring Notes — log why it was identified
-- An assumption traces to a hole in the discovery brief — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption traces to a hole in the discovery brief — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `rails-log-analyst`'s Pattern Type 3
 - An assumption or struggle is a standing gap in your own architectural judgment, independent of what the brief said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Decision ID format: `arch-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `arch-001-001`. Always include rationale, alternatives considered, and expected outcome.

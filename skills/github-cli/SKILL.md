@@ -36,7 +36,7 @@ github:
 review:
   escalation_rounds: 3             # same [CATEGORY] finding persisting this many consecutive
                                     # review rounds triggers escalation to the user instead of
-                                    # another automatic engineer re-route — see orchestrator.md
+                                    # another automatic engineer re-route — see rails-orchestrator.md
                                     # "Round Tracking". Naming a persisting category (the warning,
                                     # not the escalation) still happens the first time any category
                                     # repeats across two rounds — that part isn't configurable, it's
@@ -44,9 +44,9 @@ review:
 
 cadence:
   log_analyst_interval: 15         # completed pipeline/bug-fix cycles between orchestrator nudges
-                                    # to run log-analyst — see orchestrator.md Stage 9/B10. The
-                                    # spec's starting guess, not a law; tune it once real data on
-                                    # real-pattern-vs-noise log-analyst runs accumulates.
+                                    # to run rails-log-analyst — see rails-orchestrator.md Stage 9/B10.
+                                    # The spec's starting guess, not a law; tune it once real data on
+                                    # real-pattern-vs-noise rails-log-analyst runs accumulates.
 ```
 
 Read this file before running any project command. If it doesn't exist yet, ask the user for the owner and project number once, and offer to write `team.yml` so future runs don't ask again — `gh project list --owner {owner}` will list available projects and their numbers if the user isn't sure. Leave `cadence.log_analyst_interval` at its default (`15`) unless the user asks to change it; don't invent a value.

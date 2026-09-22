@@ -4,6 +4,14 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/deploy` — see [Updates](docs/updates.md).
 
+## [1.17.0] - 2026-09-21
+
+### Changed
+
+- Renamed this team's three cross-team-collidable agents to carry an explicit `rails-` prefix: `orchestrator` → `rails-orchestrator`, `log-analyst` → `rails-log-analyst`, `skill-builder` → `rails-skill-builder` — both the file (`agents/orchestrator.md` → `agents/rails-orchestrator.md`, etc.) and the `name:` frontmatter, so both the Claude Code identity and the `--agent-name` value logged to `db/agent_log.sqlite3` carry the prefix. This team was the first built, so it kept the bare names while sibling teams (`tauri-agentic-engineering-team`, `go-agentic-engineering-team`, `rails-security-team`, `tauri-security-team`, `tauri-qa-team`, `rails-qa-team`) disambiguated themselves against it — several still collide on bare `log-analyst`/`skill-builder`. This closes the asymmetry from this team's side; see `docs/agents.md`'s "Why `rails-orchestrator`, `rails-log-analyst`, and `rails-skill-builder`, Not the Bare Names" for the full reasoning.
+- `agents/skill-builder.md` was a symlink to a file shared by roughly a dozen other teams at the `agentic-teams` root. Forked it into this team's own independent `agents/rails-skill-builder.md` (same move `rails-qa-team` already made) — required to rename it safely, since a shared symlink can't be given a team-specific identity without breaking it for every other team still using it. This team no longer auto-inherits future edits to that shared file.
+- Updated every in-repo reference to the renamed identities: cross-agent pointers in `architect.md`, `code-review.md`, `design.md`, `discovery.md`, `engineer.md`, `fidelity-review.md`, `performance-review.md`, `security-review.md`; the `agents/rails-orchestrator.md` file path in `commands/feature.md` and `commands/fix.md`; the `team.yml` template comments in `bin/team-setup-project` and `skills/github-cli/SKILL.md`; and `docs/agent-log.md`/`docs/agents.md`/`docs/pipeline.md`. Left untouched, deliberately: bare `orchestrator`/`log-analyst` used as casual prose (e.g. "the orchestrator passes…") rather than as an identifier, `skills/agent-log/SKILL.md`'s generic "each team's `log-analyst`" phrasing (shared boilerplate describing the fleet-wide pattern, not this team specifically), and every historical `CHANGELOG.md` entry and `docs/sessions/`/`docs/portable-upgrades/` file, which describe what was true at the time and stay as written.
+
 ## [1.16.4] - 2026-09-21
 
 ### Fixed

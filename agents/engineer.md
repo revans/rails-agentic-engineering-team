@@ -103,7 +103,7 @@ In **structured feature mode**, logging is mandatory. In **ad-hoc mode**, log if
 - You resolve an ambiguity without asking the user
 - You make a database schema choice (column type, index strategy, constraint)
 - You choose a background job pattern
-- An assumption traces to a hole in the spec or design doc — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption traces to a hole in the spec or design doc — it was silent on this case — log as `decision --type gap`, naming which artifact fell short; this feeds `rails-log-analyst`'s Pattern Type 3
 - An assumption or struggle is a standing gap in your own Rails judgment, independent of what the spec said — log as `reflection --type assumption` / `--type struggle`; the same gap often deserves both, so log both when it does
 
 Do NOT log a decision for: reading a file, running tests, following the obvious single implementation path.

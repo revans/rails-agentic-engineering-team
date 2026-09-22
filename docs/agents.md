@@ -92,7 +92,7 @@ Reads the agent database and proposes specific improvements to agent rules.
 
 Run the log analyst after `cadence.log_analyst_interval` completed cycles (`team.yml`; 15 by default — feature and bug fix cycles both count). It looks for seven pattern types: decisions that should become standing rules, alternatives that should be documented as anti-patterns, engineer decisions that the architect should have made instead, expected vs. observed outcome mismatches, practices that correlate with high-quality runs, finding categories that recur across multiple features, and input-quality trends — including whether an agent's confidence in an upstream artifact (an engineer rating a spec highly) held up once a downstream agent actually tested it (a review round finding a spec-attributable gap anyway).
 
-You don't have to track the cycle count yourself — the orchestrator does, as the last thing it does at the end of every pipeline or bug fix run (Stage 9 / Stage B10 in `docs/pipeline.md`), and mentions it in the final report once the threshold has passed since the last `docs/agent-analysis/` report. It never runs `log-analyst` for you; it only tells you when it's worth doing yourself.
+You don't have to track the cycle count yourself — the orchestrator does, as the last thing it does at the end of every pipeline or bug fix run (Stage 9 / Stage B10 in `docs/pipeline.md`), and mentions it in the final report once the threshold has passed since the last `docs/agent-analysis/` report. It never runs `rails-log-analyst` for you; it only tells you when it's worth doing yourself.
 
 ### Skill Builder
 
@@ -217,3 +217,14 @@ Beyond `bin/agent-log`, two more `bin/` scripts are shared across agents rather 
 | `bin/team-find-issues` | Same four | A consistent duplicate-check before any of them files something — returns candidates, never decides whether one's a real match |
 
 Both were built specifically because those four call sites were each independently constructing `gh issue create`/`gh project item-add` sequences before this — the same category of drift risk `bin/team-setup-project` already solved for `team.yml` writes.
+
+## Why `rails-orchestrator`, `rails-log-analyst`, and `rails-skill-builder`, Not the Bare Names
+
+This team was the first one built, so its orchestrator, log analyst, and skill builder originally registered under the bare names `orchestrator`, `log-analyst`, and `skill-builder`. As sibling teams appeared — `tauri-agentic-engineering-team`, `go-agentic-engineering-team`, `rails-security-team`, `tauri-security-team`, `tauri-qa-team` — most disambiguated their own copies of these same three agents (`tauri-orchestrator`, `go-orchestrator`, `security-orchestrator`, and `rails-qa-team`'s `qa-orchestrator`/`qa-log-analyst`/`qa-skill-builder`), while `log-analyst` and `skill-builder` stayed bare and colliding in several of them. This team's own bare names were the one remaining asymmetry: every other team had to name itself relative to this one, instead of every team — including this one — naming itself the same way.
+
+Two identities are affected by a name like this, not just one:
+
+- **Claude Code identity** — the file and its `name:` frontmatter. Two agents from two different teams vendored into the same project's `agents/` directory under the same bare `name:` would collide silently; whichever file the filesystem happens to load last for that name wins, and the other disappears.
+- **agent-log database identity** — the `--agent-name` value passed to `bin/agent-log`. Two teams installed against the same target project share one `db/agent_log.sqlite3`; a bare `orchestrator` row from this team would be indistinguishable from `rails-qa-team`'s `qa-orchestrator` rows if both ever logged under the same short name — hence `rails-orchestrator`, `rails-log-analyst`, `rails-skill-builder` here, not the bare forms.
+
+`agents/skill-builder.md` was, until this rename, a symlink to a file shared by roughly a dozen other teams at the `agentic-teams` root — renaming it meant forking it into this team's own independent copy first (`rails-qa-team` had already made the same move for the same reason). This team no longer automatically inherits a future edit to that shared file; any such edit now needs porting in by hand.

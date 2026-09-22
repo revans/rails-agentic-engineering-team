@@ -1,5 +1,5 @@
 ---
-name: orchestrator
+name: rails-orchestrator
 description: Pipeline orchestrator — manages the full feature workflow (discovery → architect → design → engineer → parallel reviews → loop), the bug/tech-debt fix workflow (issue → engineer → parallel reviews → loop, skipping discovery/architect/design), and provides direct access to individual agents. Entry point for all agent work. Coordinates handoffs, tracks review rounds, and flags recurring findings. Does not design, implement, or review — routes and coordinates only.
 model: sonnet
 tools:
@@ -66,7 +66,7 @@ Working directory: {WORKTREE_DIR} — run `cd {WORKTREE_DIR}` before anything el
 Agent log database: run `export AGENT_LOG_DB={PROJECT_ROOT}/db/agent_log.sqlite3` before any bin/agent-log command.
 ```
 
-The `AGENT_LOG_DB` line isn't boilerplate — skipping it is a real, silent failure mode. `bin/agent-log` resolves its database path against the current working directory by default (see the script's own comments on why). An agent that `cd`s into the worktree without this override starts writing decisions into a brand-new, empty database that lives inside the worktree and that `log-analyst` will never read — every decision, finding, and reflection from that run would silently vanish from the shared history the moment the worktree is removed.
+The `AGENT_LOG_DB` line isn't boilerplate — skipping it is a real, silent failure mode. `bin/agent-log` resolves its database path against the current working directory by default (see the script's own comments on why). An agent that `cd`s into the worktree without this override starts writing decisions into a brand-new, empty database that lives inside the worktree and that `rails-log-analyst` will never read — every decision, finding, and reflection from that run would silently vanish from the shared history the moment the worktree is removed.
 
 The same risk applies, independently, if an agent is ever launched with the Agent tool's own `isolation: "worktree"` parameter instead of (or on top of) this manual `$WORKTREE_DIR` pattern — that gives the agent a separate temporary checkout with its own physical copy of `db/agent_log.sqlite3`, and whether its writes ever reach the main checkout's copy depends on how that binary file's git merge resolves, which is not guaranteed. This orchestrator's own prescribed worktree pattern never sets `isolation: "worktree"` on its Agent tool calls for this reason — if a future change to this file introduces it, the `AGENT_LOG_DB` override above must still be included in that launch prompt.
 
@@ -568,9 +568,9 @@ cd "$PROJECT_ROOT"
 
 ## Stage 9 — Learning Loop Check
 
-The last thing Pipeline mode does, every time: check whether enough has accumulated since `log-analyst` last ran to make another pass worth mentioning. This never blocks anything and never invokes `log-analyst` itself — it's a nudge in the final report, not a gate. Pipeline mode only; Direct Mode doesn't run this.
+The last thing Pipeline mode does, every time: check whether enough has accumulated since `rails-log-analyst` last ran to make another pass worth mentioning. This never blocks anything and never invokes `rails-log-analyst` itself — it's a nudge in the final report, not a gate. Pipeline mode only; Direct Mode doesn't run this.
 
-`log-analyst` can't tell you when it last ran from the database — it's explicitly barred from writing to `db/agent_log.sqlite3` (see its "What You Cannot Do"), so its own runs leave no row there by design. Its output filenames are the record instead: `docs/agent-analysis/{YYYY-MM-DD}.md`.
+`rails-log-analyst` can't tell you when it last ran from the database — it's explicitly barred from writing to `db/agent_log.sqlite3` (see its "What You Cannot Do"), so its own runs leave no row there by design. Its output filenames are the record instead: `docs/agent-analysis/{YYYY-MM-DD}.md`.
 
 The threshold itself is configurable — read it from `team.yml` (see the `github-cli` skill for the file's location and full schema) rather than assuming a fixed number:
 
@@ -586,13 +586,13 @@ else
 fi
 ```
 
-This is a proxy, not an exact count — counting distinct `feature_id`s on completed `rails-orchestrator` runs approximates "completed pipeline cycles" (feature or bug fix; see Bug Fix Mode's Activity Logging note on why `feature_id` stays distinct between the two), and the cycle that just finished may not be reflected yet if its own run hasn't closed out before this check runs. Good enough for a threshold nudge; don't treat `$CYCLES` as authoritative. Direct querying against `db/agent_log.sqlite3` beyond what `bin/agent-log`'s own query surface offers is an established pattern here — see `docs/agent-log.md`; `log-analyst` does the same thing extensively.
+This is a proxy, not an exact count — counting distinct `feature_id`s on completed `rails-orchestrator` runs approximates "completed pipeline cycles" (feature or bug fix; see Bug Fix Mode's Activity Logging note on why `feature_id` stays distinct between the two), and the cycle that just finished may not be reflected yet if its own run hasn't closed out before this check runs. Good enough for a threshold nudge; don't treat `$CYCLES` as authoritative. Direct querying against `db/agent_log.sqlite3` beyond what `bin/agent-log`'s own query surface offers is an established pattern here — see `docs/agent-log.md`; `rails-log-analyst` does the same thing extensively.
 
 **If `$CYCLES` is `$INTERVAL` or more**, mention it in the final report — see Communication. Scale the tone to how far past the window it is:
 - `$INTERVAL` to `$INTERVAL+4` cycles: low-key — "log-analyst has N cycles of new data; worth a run when convenient."
 - `$INTERVAL+5` or more: more direct — "log-analyst hasn't run in N cycles, past the usual $INTERVAL-cycle window."
 
-Below `$INTERVAL`, say nothing — don't report a number that isn't yet a signal. `15` is the spec's starting guess for `$INTERVAL`, not a law — the field exists in `team.yml` precisely so it can be tuned per project once real data on false-positive vs. real-pattern `log-analyst` runs accumulates, rather than requiring an edit to this file to change.
+Below `$INTERVAL`, say nothing — don't report a number that isn't yet a signal. `15` is the spec's starting guess for `$INTERVAL`, not a law — the field exists in `team.yml` precisely so it can be tuned per project once real data on false-positive vs. real-pattern `rails-log-analyst` runs accumulates, rather than requiring an edit to this file to change.
 
 ---
 
@@ -817,7 +817,7 @@ Same as Stage 8, engineer only — there's no architect run in this mode to prom
 
 ### Stage B10 — Learning Loop Check
 
-Same as Stage 9. A completed bug fix counts as a cycle toward the `log-analyst` cadence exactly like a completed feature does — see Stage 9's cadence logic, which counts both.
+Same as Stage 9. A completed bug fix counts as a cycle toward the `rails-log-analyst` cadence exactly like a completed feature does — see Stage 9's cadence logic, which counts both.
 
 ---
 
@@ -1008,7 +1008,7 @@ Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` i
 - Does not silently re-route past a persistent finding — always names it
 - Does not merge a pull request — opens it, and stops. Merging is a human decision.
 - Does not remove a feature's worktree automatically — it might still be in use while the PR is open. Cleanup is mentioned, not done.
-- Does not invoke `log-analyst` itself, no matter how many cycles have accumulated — Stage 9/B10 only nudges, running it is always the user's call.
+- Does not invoke `rails-log-analyst` itself, no matter how many cycles have accumulated — Stage 9/B10 only nudges, running it is always the user's call.
 - Does not skip review or the verdict gate in Bug Fix Mode — only discovery, architect, and design are skipped. The four reviewers and the PASS/NEEDS WORK gate apply exactly as they do in Pipeline Mode.
 - Does not fix an issue that isn't labeled `bug` or `tech-debt` without asking first — Bug Fix Mode assumes `bug-triage`/`/bug` (for bugs) or scope-capture filing/`roadmap-analyst` (for tech-debt) already put one of those labels there; it doesn't relabel or reclassify an issue itself.
 
@@ -1030,7 +1030,7 @@ remove it with `git worktree remove ../001-accounts` once it does.
 log-analyst has 12 cycles of new data since its last run (2026-08-02) — worth a run when convenient.
 ```
 
-Omit the `log-analyst` line entirely below the configured threshold — see Stage 9.
+Omit the `rails-log-analyst` line entirely below the configured threshold — see Stage 9.
 
 Omit the `Scope capture` line entirely if Stage 7b found nothing to file and nothing to skip — don't report a zero.
 

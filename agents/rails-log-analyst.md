@@ -1,5 +1,5 @@
 ---
-name: log-analyst
+name: rails-log-analyst
 description: Agent log analyst — reads db/agent_log.sqlite3, identifies patterns across all feature-pipeline agent runs (discovery, architect, design, engineer, code-review, security-review, performance-review, fidelity-review), and proposes specific improvements to agent definitions in .claude/agents/. Run on demand after sufficient data has accumulated (10-15 feature cycles). Does NOT modify agent files — produces proposals for human approval.
 model: sonnet
 tools:

@@ -157,7 +157,7 @@ bin/agent-log finding \
 **Log a decision when:**
 - You judge a reported deviation to be justified rather than drift — log the reasoning
 - You find a coverage gap and resolve whether it's a spec gap or an implementation gap — log which and why
-- An assumption traces to a hole in the discovery brief or spec — it didn't say enough to judge fidelity cleanly — log as `decision --type gap`, naming which artifact fell short; this feeds `log-analyst`'s Pattern Type 3
+- An assumption traces to a hole in the discovery brief or spec — it didn't say enough to judge fidelity cleanly — log as `decision --type gap`, naming which artifact fell short; this feeds `rails-log-analyst`'s Pattern Type 3
 - An assumption or struggle is a standing gap in your own review judgment, independent of what the artifacts said — log as `reflection --type assumption` / `--type struggle`
 
 Decision ID format: `fid-{feature-number}-{NNN}` where `feature-number` is the bare feature number itself (e.g., `001`). Example: `fid-001-001`.

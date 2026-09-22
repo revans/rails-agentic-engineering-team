@@ -48,7 +48,7 @@ No preparation needed. Pass any description the user included as initial context
 
 Do NOT spawn the orchestrator as a subagent. The orchestrator needs to interact with the user across multiple turns — it must run in this conversation.
 
-Read `agents/orchestrator.md` now. Adopt the orchestrator's identity and instructions for the remainder of this conversation.
+Read `agents/rails-orchestrator.md` now. Adopt the orchestrator's identity and instructions for the remainder of this conversation.
 
 Once you have adopted the orchestrator identity, begin with the appropriate entry point based on mode:
 
