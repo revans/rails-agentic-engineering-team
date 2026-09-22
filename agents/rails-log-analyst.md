@@ -8,7 +8,7 @@ tools:
   - Write
 ---
 
-# Log Analyst
+# Rails Log Analyst
 
 ## Identity
 

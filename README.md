@@ -14,19 +14,19 @@ Extracted and generalized from an internal writer application by Robert Evans. T
 
 ## Installation
 
-This is a Claude Code Team. The only manual step left is getting `/install` itself onto disk — everything else this team needs, including `bin/agent-log` and every other agent, command, and skill file, is vendored automatically the first time `/install` runs.
+This is a Claude Code Team. The only manual step left is getting `/rails-install` itself onto disk — everything else this team needs, including `bin/agent-log` and every other agent, command, and skill file, is vendored automatically the first time `/rails-install` runs.
 
-1. Copy `commands/install.md`, `agents/installer.md`, and `skills/team-sync/SKILL.md` into your Rails project's Claude directory, preserving their relative paths.
+1. Copy `commands/rails-install.md`, `agents/rails-installer.md`, and `skills/team-sync/SKILL.md` into your Rails project's Claude directory, preserving their relative paths.
 2. Verify that `ruby` is on your PATH — nothing in this team installs it for you:
    ```bash
    ruby --version
    ```
 
-Then run `/install` in Claude Code. It confirms which directory it's setting up (don't assume it's wherever the conversation happens to be running), vendors the rest of this team's files from the source repo — new files get added in, nothing local ever gets overwritten without asking first (see [Updates](docs/updates.md)) — then gets `git`, `gh`, and `sqlite3` in place: installing each one that's missing where that's safe to do without asking (Homebrew on macOS), and otherwise opening a terminal with the right command typed in (a package-manager install needing your sudo password, or `gh auth login`) for you to finish yourself. From there it detects the repo from your git remote, creates the `feature`/`bug`/`tech-debt` repo labels, creates and migrates `db/agent_log.sqlite3`, builds the `docs/` skeleton, confirms or creates a GitHub Project board, checks that Issues are reachable on the repo, and writes it all to `team.yml`. It's idempotent; re-run it any time without worrying about re-asking questions it already has answers to. What's still manual: `ruby` (step 2 above), the one-time copy above (step 1 — nothing in this team can vendor the file that makes vendoring possible), and adding a status option to an existing Project board's Status field — `gh` has no command for that one, so it's a permanent one-time step in the GitHub UI, not something `/install` will ever automate.
+Then run `/rails-install` in Claude Code. It confirms which directory it's setting up (don't assume it's wherever the conversation happens to be running), vendors the rest of this team's files from the source repo — new files get added in, nothing local ever gets overwritten without asking first (see [Updates](docs/updates.md)) — then gets `git`, `gh`, and `sqlite3` in place: installing each one that's missing where that's safe to do without asking (Homebrew on macOS), and otherwise opening a terminal with the right command typed in (a package-manager install needing your sudo password, or `gh auth login`) for you to finish yourself. From there it detects the repo from your git remote, creates the `feature`/`bug`/`tech-debt` repo labels, creates and migrates `db/agent_log.sqlite3`, builds the `docs/` skeleton, confirms or creates a GitHub Project board, checks that Issues are reachable on the repo, and writes it all to `team.yml`. It's idempotent; re-run it any time without worrying about re-asking questions it already has answers to. What's still manual: `ruby` (step 2 above), the one-time copy above (step 1 — nothing in this team can vendor the file that makes vendoring possible), and adding a status option to an existing Project board's Status field — `gh` has no command for that one, so it's a permanent one-time step in the GitHub UI, not something `/rails-install` will ever automate.
 
 Run `/init-project` in Claude Code to generate `AGENTS.md` from your existing codebase, with `CLAUDE.md` kept as a symlink to it for compatibility. This is what makes the agents project-aware rather than generic. It will also offer `/define-icp` if `docs/icp/` has no persona file yet.
 
-Whenever this source repo publishes changes — a new agent, a fixed skill, an updated script — run `/update` to pick them up. It re-verifies `git`/`gh`/`sqlite3` the same way `/install` does, then hashes every vendored `agents/`/`commands/`/`skills/`/`bin/` file against the source repo's manifest: new files get vendored in, clean upstream changes apply automatically, and anything that conflicts with a local hand-edit is shown as a diff and resolved per file — never silently overwritten. See [Updates](docs/updates.md).
+Whenever this source repo publishes changes — a new agent, a fixed skill, an updated script — run `/rails-update` to pick them up. It re-verifies `git`/`gh`/`sqlite3` the same way `/rails-install` does, then hashes every vendored `agents/`/`commands/`/`skills/`/`bin/` file against the source repo's manifest: new files get vendored in, clean upstream changes apply automatically, and anything that conflicts with a local hand-edit is shown as a diff and resolved per file — never silently overwritten. See [Updates](docs/updates.md).
 
 ## How to Use
 
@@ -51,7 +51,7 @@ Found a bug, or have an idea that isn't ready to build yet? `/bug` and `/request
 /request A way to bulk-approve pending listings instead of one at a time
 ```
 
-Both read `team.yml` at the project root for the repo and project board — a small structured config file every GitHub-facing agent reads, alongside `AGENTS.md` and `TODO.md` (see the `github-cli` skill for its full schema). Run `/install` first if it doesn't exist yet; `/bug` and `/request` point you at it rather than trying to set it up themselves ad hoc.
+Both read `team.yml` at the project root for the repo and project board — a small structured config file every GitHub-facing agent reads, alongside `AGENTS.md` and `TODO.md` (see the `github-cli` skill for its full schema). Run `/rails-install` first if it doesn't exist yet; `/bug` and `/request` point you at it rather than trying to set it up themselves ad hoc.
 
 Once bugs have accumulated in the issue queue, run `/triage` to verify and rank them:
 
@@ -75,8 +75,8 @@ This is the orchestrator's Bug Fix Mode — the same engineer and four parallel 
 |---|---|
 | [Pipeline](docs/pipeline.md) | How a feature moves through all eleven stages, the bug fix path, artifact naming, and how to resume a stopped pipeline |
 | [Agents](docs/agents.md) | What each agent does, what it reads, and what it produces |
-| [Installer](docs/installer.md) | What `/install` does, the five bootstrap scripts, `team.yml`'s schema, and what's still manual |
-| [Updates](docs/updates.md) | How `/deploy` publishes `manifest.yml` and `/update` syncs against it — the hash comparison, conflict handling, and `team.lock.yml`'s schema |
+| [Installer](docs/installer.md) | What `/rails-install` does, the five bootstrap scripts, `team.yml`'s schema, and what's still manual |
+| [Updates](docs/updates.md) | How `/rails-deploy` publishes `manifest.yml` and `/rails-update` syncs against it — the hash comparison, conflict handling, and `team.lock.yml`'s schema |
 | [Backlog & Triage](docs/backlog.md) | How an idea gets from "someone noticed it" to a ranked GitHub issue — scope capture, `/roadmap`, `/triage`, and the shared filing tools |
 | [Agent Log](docs/agent-log.md) | The logging CLI, database schema, and how to query accumulated run data |
-| [Changelog](CHANGELOG.md) | What changed in each version of this project itself, maintained by `/deploy` |
+| [Changelog](CHANGELOG.md) | What changed in each version of this project itself, maintained by `/rails-deploy` |

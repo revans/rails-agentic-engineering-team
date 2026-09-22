@@ -1,12 +1,12 @@
 ---
-name: Deploy
-description: "Regenerates manifest.yml (the sha256 of every agent/skill/command/bin file this team vendors into installed repos), summarizes what changed since the last commit, drafts a CHANGELOG.md entry if VERSION was bumped, and asks before staging and committing it all. Source-repo maintainer tool, not something an installed target repo runs. Usage: /deploy"
+name: Rails Deploy
+description: "Regenerates manifest.yml (the sha256 of every agent/skill/command/bin file this team vendors into installed repos), summarizes what changed since the last commit, drafts a CHANGELOG.md entry if VERSION was bumped, and asks before staging and committing it all. Source-repo maintainer tool, not something an installed target repo runs. Named rails-deploy, not deploy — rails-qa-team has its own deploy command, and vendoring both into the same project would otherwise overwrite one with the other, even though in practice this command only ever runs in the source repo, never a vendored target. Usage: /rails-deploy"
 color: blue
 ---
 
-# Deploy
+# Rails Deploy
 
-This is a source-repo maintainer tool, not one of the team's agents — it has no live GitHub or system-dependency steps, so it doesn't need a dedicated `agents/*.md` identity the way `/install` and `/update` do. Run its steps directly.
+This is a source-repo maintainer tool, not one of the team's agents — it has no live GitHub or system-dependency steps, so it doesn't need a dedicated `agents/*.md` identity the way `/rails-install` and `/rails-update` do. Run its steps directly.
 
 ## What This Does
 
@@ -40,7 +40,7 @@ Report the current value. This repo's convention (see `git log -p -- VERSION`) i
 
 ### Step 4 — Update `CHANGELOG.md`
 
-Only if `VERSION` changed (this run's own bump, or one already made earlier in the same session) — a deploy with no version bump gets no changelog entry, same as it gets no `VERSION` diff. Read `CHANGELOG.md`'s existing top entry for the format (newest first, `## [X.Y.Z] - YYYY-MM-DD`, `### Added`/`### Changed`/`### Fixed` subsections as applicable). Draft a new entry summarizing what actually changed for someone syncing via `/update` — pull from this session's own commit messages if there are any for this change already, or from what Step 2's file diff and the conversation actually did; don't pad it with routine housekeeping. Show the drafted entry and ask before adding it — same as any other file change, this isn't exempt from confirmation.
+Only if `VERSION` changed (this run's own bump, or one already made earlier in the same session) — a deploy with no version bump gets no changelog entry, same as it gets no `VERSION` diff. Read `CHANGELOG.md`'s existing top entry for the format (newest first, `## [X.Y.Z] - YYYY-MM-DD`, `### Added`/`### Changed`/`### Fixed` subsections as applicable). Draft a new entry summarizing what actually changed for someone syncing via `/rails-update` — pull from this session's own commit messages if there are any for this change already, or from what Step 2's file diff and the conversation actually did; don't pad it with routine housekeeping. Show the drafted entry and ask before adding it — same as any other file change, this isn't exempt from confirmation.
 
 ### Step 5 — Ask before committing
 

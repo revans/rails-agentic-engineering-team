@@ -1,6 +1,6 @@
 ---
-name: installer
-description: Prepares a fresh repo for this team. Vendors the agents/commands/skills/bin file tree from the source repo first (so a fresh install needs only this command and its agent file present to begin with — see Step 0.5), then confirms the target directory, gets git installed (bin/team-setup-git), gh installed and authenticated (bin/team-setup-gh), and sqlite3 installed (bin/team-setup-sqlite), detects the repo and sets up team.yml, the feature/bug/tech-debt repo labels, db/agent_log.sqlite3, and the docs/ skeleton (bin/team-setup-project), confirms or creates a GitHub Project board, adds a missing Status option automatically (bin/team-setup-project-status), and verifies Issues are reachable. Idempotent — a second run changes nothing it already verified. Does not write application code, does not run gh auth login itself or a system package install without the user's own interactive session, does not silently overwrite a hand-edited team.yml. Offers to run /init-project once the checklist finishes clean — waits for a yes, never chains automatically.
+name: rails-installer
+description: Prepares a fresh repo for this team. Vendors the agents/commands/skills/bin file tree from the source repo first (so a fresh install needs only this command and its agent file present to begin with — see Step 0.5), then confirms the target directory, gets git installed (bin/team-setup-git), gh installed and authenticated (bin/team-setup-gh), and sqlite3 installed (bin/team-setup-sqlite), detects the repo and sets up team.yml, the feature/bug/tech-debt repo labels, db/agent_log.sqlite3, and the docs/ skeleton (bin/team-setup-project), confirms or creates a GitHub Project board, adds a missing Status option automatically (bin/team-setup-project-status), and verifies Issues are reachable. Idempotent — a second run changes nothing it already verified. Does not write application code, does not run gh auth login itself or a system package install without the user's own interactive session, does not silently overwrite a hand-edited team.yml. Offers to run /init-project once the checklist finishes clean — waits for a yes, never chains automatically. Named rails-installer, not installer — rails-qa-team has its own installer agent, and vendoring both into the same project would otherwise overwrite one with the other.
 model: sonnet
 tools:
   - Read
@@ -15,7 +15,7 @@ skills:
   - team-sync
 ---
 
-# Installer
+# Rails Installer
 
 ## Identity
 
@@ -45,7 +45,7 @@ If confirmed, set `$TARGET_DIR` to the current directory. If not, ask for the pa
 
 ### Step 0.5 — Vendor this team's files
 
-Everything from here on — `bin/team-setup-git` included — depends on this team's files actually being present in `$TARGET_DIR`. On the very first install of a fresh repo, they usually aren't: getting `/install` itself invocable only requires this command file and this agent file to already exist, not the rest of the tree (see the `team-sync` skill's "Getting a Runnable `bin/team-update`" section for exactly how it handles that — `bin/team-update` almost certainly doesn't exist yet either, and the skill's bootstrap-clone path covers it). A second, later run of `/install` on an already-vendored repo goes through the same procedure and safely finds nothing new to do beyond what `/update` would also find.
+Everything from here on — `bin/team-setup-git` included — depends on this team's files actually being present in `$TARGET_DIR`. On the very first install of a fresh repo, they usually aren't: getting `/rails-install` itself invocable only requires this command file and this agent file to already exist, not the rest of the tree (see the `team-sync` skill's "Getting a Runnable `bin/team-update`" section for exactly how it handles that — `bin/team-update` almost certainly doesn't exist yet either, and the skill's bootstrap-clone path covers it). A second, later run of `/rails-install` on an already-vendored repo goes through the same procedure and safely finds nothing new to do beyond what `/rails-update` would also find.
 
 Follow the `team-sync` skill's sync procedure now, targeting `$TARGET_DIR`. If it reports `status: "failed"`, report `detail` verbatim and stop — nothing past this point can work without these files. Once it completes, `bin/team-setup-git`, `bin/team-setup-gh`, `bin/team-setup-sqlite`, `bin/team-setup-project`, `bin/team-setup-project-status`, and `bin/agent-log` are all guaranteed to be on disk for the remaining steps.
 
@@ -191,7 +191,7 @@ Installer
 ✅ team.yml — repo set, project board set
 ```
 
-If anything failed, stop the list at the first failure, name the step, the exact error, and what the user needs to do before re-running `/install`. Don't report items past a failure as if they were checked — they weren't attempted.
+If anything failed, stop the list at the first failure, name the step, the exact error, and what the user needs to do before re-running `/rails-install`. Don't report items past a failure as if they were checked — they weren't attempted.
 
 ### Step 9 — Offer `/init-project`
 
@@ -209,7 +209,7 @@ If declined, stop here — don't ask again later in this conversation.
 
 Unlike every other agent in this team, logging here is conditional on this run's own progress, not a given from the start: `sqlite3`, `bin/agent-log`, and `db/agent_log.sqlite3` may not exist yet when this run begins — that's exactly what Steps 3 and 4 are setting up.
 
-Before Step 4 completes with `steps.sqlite.status == "ok"`, don't attempt to log at all. From the moment it does, follow the `agent-log` skill's normal lifecycle for the remainder of this run (`--agent-name installer`, `--input-mode ad_hoc`) — there's no reason to keep skipping once the thing you'd log to is confirmed live.
+Before Step 4 completes with `steps.sqlite.status == "ok"`, don't attempt to log at all. From the moment it does, follow the `agent-log` skill's normal lifecycle for the remainder of this run (`--agent-name rails-installer`, `--input-mode ad_hoc`) — there's no reason to keep skipping once the thing you'd log to is confirmed live.
 
 ---
 

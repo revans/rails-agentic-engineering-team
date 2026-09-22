@@ -74,12 +74,12 @@ end
 
 dir = File.expand_path(args["dir"])
 team_yml_path = File.join(dir, "team.yml")
-fail("#{team_yml_path} not found — run /install first") unless File.exist?(team_yml_path)
+fail("#{team_yml_path} not found — run /rails-install first") unless File.exist?(team_yml_path)
 config = YAML.load_file(team_yml_path) rescue nil
 fail("could not parse #{team_yml_path}") if config.nil?
 
 repo = args["repo"] || config.dig("github", "repo")
-fail("no --repo given and github.repo is still a placeholder in team.yml — run /install") if repo.nil? || repo == "owner/repo"
+fail("no --repo given and github.repo is still a placeholder in team.yml — run /rails-install") if repo.nil? || repo == "owner/repo"
 
 label = config.dig("github", "labels", args["type"]) || args["type"]
 needs_board = %w[feature tech-debt].include?(args["type"])
@@ -88,7 +88,7 @@ if needs_board
   project_owner = config.dig("github", "project", "owner")
   project_number = config.dig("github", "project", "number")
   if project_owner.nil? || project_owner == "owner-or-org" || project_number.nil? || project_number == 4
-    fail("type '#{args["type"]}' must reach the project board, but team.yml's github.project isn't configured yet — run /install and confirm the Project board (Step 3) before filing this")
+    fail("type '#{args["type"]}' must reach the project board, but team.yml's github.project isn't configured yet — run /rails-install and confirm the Project board (Step 3) before filing this")
   end
   default_status = config.dig("github", "default_status") || "Ready"
 end
@@ -96,7 +96,7 @@ end
 existing_labels, _, list_ok = sh("gh", "label", "list", "--repo", repo, "--search", label, "--json", "name")
 fail("gh label list failed against #{repo} — check gh auth and repo access") unless list_ok
 unless (existing_labels.empty? ? [] : JSON.parse(existing_labels)).any? { |l| l["name"] == label }
-  fail("label '#{label}' does not exist on #{repo} — run /install to create feature/bug/tech-debt")
+  fail("label '#{label}' does not exist on #{repo} — run /rails-install to create feature/bug/tech-debt")
 end
 
 if args["dry_run"]

@@ -13,7 +13,7 @@ skills:
   - agent-log
 ---
 
-# Skill Builder
+# Rails Skill Builder
 
 ## Identity
 

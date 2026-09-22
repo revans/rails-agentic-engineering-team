@@ -2,7 +2,16 @@
 
 Notable changes to this project, newest first. Each entry corresponds to a bump in `VERSION`. Version bumps ride along with the commit that makes the structural change rather than a fixed release cadence, so numbering isn't strictly sequential (there is no 1.2.0 or 1.4.0) — see `git log -p -- VERSION` for the exact commit behind any entry below.
 
-Maintained by `/deploy` — see [Updates](docs/updates.md).
+Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
+
+## [1.18.0] - 2026-09-21
+
+### Changed
+
+- Renamed this team's `/install`, `/update`, and `/deploy` commands to `/rails-install`, `/rails-update`, and `/rails-deploy`, and their agents (`installer.md`, `updater.md`) to `rails-installer`/`rails-updater` — same collision-avoidance reason as [1.17.0]'s agent rename, one layer up: `commands/install.md`/`update.md`/`deploy.md` vendor to the same bare path in a target project regardless of which team they came from, and the slash command Claude Code offers resolves from whichever file landed there last. `rails-qa-team` already made the identical move (`/qa-install`/`/qa-update`/`/qa-deploy`, VERSION 0.8.0).
+- Fixed `bin/team-manifest`'s hardcoded `commands/deploy.md` exclusion — it would otherwise have started vendoring `commands/rails-deploy.md` into every installed target repo, a source-repo-only maintainer tool that has no reason to exist there.
+- Fixed two H1 headings in `agents/rails-orchestrator.md` and `agents/rails-log-analyst.md`/`agents/rails-skill-builder.md` (`# Orchestrator` → `# Rails Orchestrator`, etc.) missed in [1.17.0] — `rails-qa-team`'s own agent files prefix this heading too, only `docs/agents.md`'s per-team-agnostic section headings stay bare.
+- Updated every in-repo reference to the renamed identities: `agents/bug-triage.md`, `agents/intake.md`, `bin/team-create-issue`, `bin/team-update`, `commands/roadmap.md`, `commands/triage.md`, `docs/agents.md`, `docs/backlog.md`, `docs/installer.md`, `docs/updates.md`, `README.md`, and `skills/github-cli/SKILL.md`, `skills/team-sync/SKILL.md`.
 
 ## [1.17.0] - 2026-09-21
 

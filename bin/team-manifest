@@ -2,7 +2,7 @@
 # bin/team-manifest
 # Source-repo-only build tool: hashes every file this team vendors into an
 # installed target repo (agents/, commands/, skills/, bin/ minus this script
-# and commands/deploy.md, both of which only make sense in this source repo)
+# and commands/rails-deploy.md, both of which only make sense in this source repo)
 # and writes manifest.yml at the repo root. bin/team-update, which IS
 # vendored into target repos, reads that file to detect drift against this
 # repo — see docs/updates.md for the full sync design.
@@ -26,7 +26,7 @@ require "open3"
 require "time"
 
 TRACKED_GLOBS = %w[agents/**/* commands/**/* skills/**/* bin/*].freeze
-EXCLUDED = %w[bin/team-manifest commands/deploy.md].freeze
+EXCLUDED = %w[bin/team-manifest commands/rails-deploy.md].freeze
 
 def parse_args(argv)
   args = { "dir" => Dir.pwd }

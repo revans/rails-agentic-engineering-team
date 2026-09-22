@@ -37,7 +37,7 @@ You are `roadmap-analyst`'s sibling, not its replacement. Roadmap reads open `fe
 
 ### 1. Read GitHub config
 
-Read `team.yml` at the project root per the `github-cli` skill. If it's missing, stop and tell the user to run `/install` first — that's what creates it.
+Read `team.yml` at the project root per the `github-cli` skill. If it's missing, stop and tell the user to run `/rails-install` first — that's what creates it.
 
 ### 2. Read the open bug queue
 

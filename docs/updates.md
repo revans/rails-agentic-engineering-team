@@ -1,12 +1,12 @@
 # Updates
 
-`/deploy` and `/update` (plus `/install`, which now uses the same mechanism for its very first vendor) are the halves of one system: keeping every repo that has a copy of this team's `agents/`, `commands/`, `skills/`, and `bin/` files in sync with this source repo, without a human hand-copying files or writing a one-off upgrade doc each time something changes. The actual plan/apply procedure — what to run, what to ask about — lives in one place, the `team-sync` skill, so `agents/installer.md` and `agents/updater.md` both reference it instead of each restating it.
+`/rails-deploy` and `/rails-update` (plus `/rails-install`, which now uses the same mechanism for its very first vendor) are the halves of one system: keeping every repo that has a copy of this team's `agents/`, `commands/`, `skills/`, and `bin/` files in sync with this source repo, without a human hand-copying files or writing a one-off upgrade doc each time something changes. The actual plan/apply procedure — what to run, what to ask about — lives in one place, the `team-sync` skill, so `agents/rails-installer.md` and `agents/rails-updater.md` both reference it instead of each restating it.
 
 ## What This Replaces
 
-Before this existed, getting a change from this repo into an installed target repo meant writing a `docs/portable-upgrades/*.md` instruction document by hand and having an agent apply it file by file — no automated way to tell which files had actually diverged, and no automated way to vendor in a file that was never copied over in the first place. Getting the files there in the *first* place was manual too: `/install` never vendored anything, it only assumed `bin/agent-log` and the rest of the tree were already sitting in the repo. Those historical upgrade documents stay as records of what they did; nothing about them changes. Going forward, a change that needs to reach installed repos goes out via `/deploy` + `/update`, and a repo that's never seen this team before gets everything from `/install`'s own first sync.
+Before this existed, getting a change from this repo into an installed target repo meant writing a `docs/portable-upgrades/*.md` instruction document by hand and having an agent apply it file by file — no automated way to tell which files had actually diverged, and no automated way to vendor in a file that was never copied over in the first place. Getting the files there in the *first* place was manual too: `/rails-install` never vendored anything, it only assumed `bin/agent-log` and the rest of the tree were already sitting in the repo. Those historical upgrade documents stay as records of what they did; nothing about them changes. Going forward, a change that needs to reach installed repos goes out via `/rails-deploy` + `/rails-update`, and a repo that's never seen this team before gets everything from `/rails-install`'s own first sync.
 
-## `/deploy` — Source Repo Side
+## `/rails-deploy` — Source Repo Side
 
 Run in *this* repo only — it's a maintainer tool, not one of the team's agents, and an installed target repo never runs it.
 
@@ -37,26 +37,26 @@ files:
   # ...every tracked file, sorted by path
 ```
 
-`manifest.yml` is generated — don't hand-edit it, `/deploy` regenerates it wholesale every run. `version` comes from the `VERSION` file, not bumped automatically; this repo's own history (`git log -p -- VERSION`) shows bumps ride along with the commit that makes a structural change, so `/deploy` only offers to bump it, never does so on its own.
+`manifest.yml` is generated — don't hand-edit it, `/rails-deploy` regenerates it wholesale every run. `version` comes from the `VERSION` file, not bumped automatically; this repo's own history (`git log -p -- VERSION`) shows bumps ride along with the commit that makes a structural change, so `/rails-deploy` only offers to bump it, never does so on its own.
 
-When `VERSION` did change, `/deploy` also drafts and asks about adding a `CHANGELOG.md` entry — human-readable release notes for this project itself (newest first, one entry per version), distinct from `docs/updates-log.md` (below), which is a mechanical per-file record generated in each *target* repo, not this one. `/deploy` also never commits or pushes without asking first, same as every other action in this repo that touches shared state.
+When `VERSION` did change, `/rails-deploy` also drafts and asks about adding a `CHANGELOG.md` entry — human-readable release notes for this project itself (newest first, one entry per version), distinct from `docs/updates-log.md` (below), which is a mechanical per-file record generated in each *target* repo, not this one. `/rails-deploy` also never commits or pushes without asking first, same as every other action in this repo that touches shared state.
 
-## `/install` — First Vendor
+## `/rails-install` — First Vendor
 
-`/install`'s Step 0.5 runs the exact same plan/apply cycle the `team-sync` skill describes and `/update` uses below (see "How a File Gets Classified" and "Snapshot Reuse"), with one difference: the target repo almost certainly has no `bin/team-update` yet to run, since nothing has ever been vendored there. To get around that, it shallow-clones the source repo into a scratch directory purely to obtain a runnable copy of the script, then invokes `ruby {scratch}/bin/team-update ...` in place of `bin/team-update ...` — the script never assumes it's running from inside the directory it's operating on, every path is passed explicitly via `--dir`/`--snapshot-dir`, so this works identically. That scratch directory is separate from (and removed independently of) the snapshot directory `plan` itself creates for the actual file diffing.
+`/rails-install`'s Step 0.5 runs the exact same plan/apply cycle the `team-sync` skill describes and `/rails-update` uses below (see "How a File Gets Classified" and "Snapshot Reuse"), with one difference: the target repo almost certainly has no `bin/team-update` yet to run, since nothing has ever been vendored there. To get around that, it shallow-clones the source repo into a scratch directory purely to obtain a runnable copy of the script, then invokes `ruby {scratch}/bin/team-update ...` in place of `bin/team-update ...` — the script never assumes it's running from inside the directory it's operating on, every path is passed explicitly via `--dir`/`--snapshot-dir`, so this works identically. That scratch directory is separate from (and removed independently of) the snapshot directory `plan` itself creates for the actual file diffing.
 
-On a truly fresh repo this makes almost every tracked file a `new_file` — expected, not a conflict, since there's nothing local to lose. A *second* run of `/install` against an already-vendored repo goes through the identical procedure and simply finds the normal mix of clean updates, conflicts, and unchanged files `/update` would also find; `/install` isn't a separate, weaker sync path, it's the same one, just possibly starting from nothing.
+On a truly fresh repo this makes almost every tracked file a `new_file` — expected, not a conflict, since there's nothing local to lose. A *second* run of `/rails-install` against an already-vendored repo goes through the identical procedure and simply finds the normal mix of clean updates, conflicts, and unchanged files `/rails-update` would also find; `/rails-install` isn't a separate, weaker sync path, it's the same one, just possibly starting from nothing.
 
-The one thing that can't be automated away: `commands/install.md` and `agents/installer.md` themselves have to exist in the target repo before Claude Code can offer `/install` as a slash command at all — no in-repo mechanism can vendor the file that makes vendoring possible. Everything past that point, including every `bin/` script `/install`'s later steps depend on, is now self-vendoring.
+The one thing that can't be automated away: `commands/rails-install.md` and `agents/rails-installer.md` themselves have to exist in the target repo before Claude Code can offer `/rails-install` as a slash command at all — no in-repo mechanism can vendor the file that makes vendoring possible. Everything past that point, including every `bin/` script `/rails-install`'s later steps depend on, is now self-vendoring.
 
-## `/update` — Target Repo Side
+## `/rails-update` — Target Repo Side
 
-Run in an already-installed target repo, on demand — after a `/deploy`, or just periodically.
+Run in an already-installed target repo, on demand — after a `/rails-deploy`, or just periodically.
 
 ```mermaid
 flowchart TD
     A[Confirm target directory] --> B{team.yml exists?}
-    B -->|no| Z[Point at /install, stop]
+    B -->|no| Z[Point at /rails-install, stop]
     B -->|yes| C["bin/team-setup-git / -gh / -sqlite"]
     C --> D["bin/team-update plan"]
     D --> E[Present categorized diff]
@@ -65,17 +65,17 @@ flowchart TD
     G --> H[Report]
 ```
 
-Steps A and E–F are conversational — the updater agent asks and waits. C is the same three scripts `/install` uses, same JSON-status branching. D and G are script calls read as one JSON object off the last line of output.
+Steps A and E–F are conversational — the updater agent asks and waits. C is the same three scripts `/rails-install` uses, same JSON-status branching. D and G are script calls read as one JSON object off the last line of output.
 
 ### Tracked Files
 
-`agents/**`, `commands/**`, `skills/**`, `bin/*` — everything this team vendors into a target repo except two files that only make sense in *this* repo: `bin/team-manifest` (the build tool that produces `manifest.yml` — a target repo never needs to produce one) and `commands/deploy.md` (`/deploy` reads `bin/team-manifest`, so a `/deploy` command vendored into a target repo without that script would just be dead). `docs/`, `README.md`, and `VERSION` aren't tracked as files either; `VERSION`'s value travels as `manifest.yml`'s top-level `version` field instead, since a target repo's own `docs/` holds project-specific content (briefs, ICP personas, bug triage) that has nothing to do with the source repo's copy.
+`agents/**`, `commands/**`, `skills/**`, `bin/*` — everything this team vendors into a target repo except two files that only make sense in *this* repo: `bin/team-manifest` (the build tool that produces `manifest.yml` — a target repo never needs to produce one) and `commands/rails-deploy.md` (`/rails-deploy` reads `bin/team-manifest`, so a `/rails-deploy` command vendored into a target repo without that script would just be dead). `docs/`, `README.md`, and `VERSION` aren't tracked as files either; `VERSION`'s value travels as `manifest.yml`'s top-level `version` field instead, since a target repo's own `docs/` holds project-specific content (briefs, ICP personas, bug triage) that has nothing to do with the source repo's copy.
 
-A target repo that vendored `commands/deploy.md` before this exclusion existed isn't stuck with it forever: the next `/update` sees it in `team.lock.yml` but no longer in the manifest, classifies it under `removed_upstream` the same as any other file dropped upstream, and asks whether to delete it.
+A target repo that vendored `commands/rails-deploy.md` before this exclusion existed isn't stuck with it forever: the next `/rails-update` sees it in `team.lock.yml` but no longer in the manifest, classifies it under `removed_upstream` the same as any other file dropped upstream, and asks whether to delete it.
 
 ### `team.lock.yml`
 
-Generated by `bin/team-update`, lives next to `team.yml` in the target repo — don't hand-edit it. It records the hash each tracked file had immediately after the *last successful sync*, which is what makes a three-way comparison possible: without it, `/update` could only see "local differs from upstream," never *why*.
+Generated by `bin/team-update`, lives next to `team.yml` in the target repo — don't hand-edit it. It records the hash each tracked file had immediately after the *last successful sync*, which is what makes a three-way comparison possible: without it, `/rails-update` could only see "local differs from upstream," never *why*.
 
 ```yaml
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
@@ -136,9 +136,9 @@ The five possible sections are **Vendored** (never-seen-before files), **Updated
 
 ## Things to Know
 
-- `/deploy` never bumps `VERSION` on its own — it's a deliberate, per-change human/agent decision, not a mechanical part of every deploy.
-- `/update` assumes `/install` has already run (`team.yml` must exist) — it doesn't bootstrap GitHub or system-level setup itself, only re-verifies the three dependencies `/install` already checks.
+- `/rails-deploy` never bumps `VERSION` on its own — it's a deliberate, per-change human/agent decision, not a mechanical part of every deploy.
+- `/rails-update` assumes `/rails-install` has already run (`team.yml` must exist) — it doesn't bootstrap GitHub or system-level setup itself, only re-verifies the three dependencies `/rails-install` already checks.
 - `apply` always seeds `team.lock.yml` with a baseline hash for every file that already matches upstream, even ones nobody had to decide anything about — a file with no recorded baseline reads as an unexplained conflict the next time either side touches it, so `apply` runs every time `plan` does, even when nothing needed a decision.
-- Neither script ever pushes to a remote or force-overwrites a file `/update` can't classify with confidence — a conflict always gets a human answer.
-- `bin/team-update` never assumes it's running from inside the repo it's syncing — every path is an explicit `--dir`/`--snapshot-dir` argument. That's what makes `/install`'s bootstrap-clone trick possible: the exact same script, invoked from a scratch temp directory, works identically.
+- Neither script ever pushes to a remote or force-overwrites a file `/rails-update` can't classify with confidence — a conflict always gets a human answer.
+- `bin/team-update` never assumes it's running from inside the repo it's syncing — every path is an explicit `--dir`/`--snapshot-dir` argument. That's what makes `/rails-install`'s bootstrap-clone trick possible: the exact same script, invoked from a scratch temp directory, works identically.
 - A `team.lock.yml` or `manifest.yml` that exists but fails to parse (an accidental hand-edit, a wrong-shaped file) fails the sync cleanly with `{"status":"failed"}` rather than silently being treated the same as "nothing here yet" — that distinction matters, since the latter would quietly discard every file's sync history instead of surfacing the problem.

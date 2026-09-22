@@ -1,6 +1,6 @@
 # Installer
 
-`/install` prepares a fresh repo for this team. It's the first thing a stranger runs, and the only command in this team designed to be safe to run repeatedly without thinking about it first.
+`/rails-install` prepares a fresh repo for this team. It's the first thing a stranger runs, and the only command in this team designed to be safe to run repeatedly without thinking about it first.
 
 ## What It Is
 
@@ -26,9 +26,9 @@ Steps A, F, G, and H are conversational — the agent asks something and waits. 
 
 ## Vendoring the File Tree (Step 0.5)
 
-Before any of the five scripts below can run, they have to actually exist in the target repo — on a truly fresh install, they don't yet. `/install` closes that gap itself now: it resolves the source repo (`team.yml`'s `team.source_repo`, or a hardcoded default), gets a runnable copy of `bin/team-update` (shallow-cloning the source repo into a scratch directory if the target doesn't have one yet — it almost never does on a first install), and runs the same plan/apply cycle `/update` uses going forward. See [Updates](updates.md) for the full mechanism; the only thing specific to `/install` is that it may need to bootstrap a temporary copy of `bin/team-update` to run this the very first time.
+Before any of the five scripts below can run, they have to actually exist in the target repo — on a truly fresh install, they don't yet. `/rails-install` closes that gap itself now: it resolves the source repo (`team.yml`'s `team.source_repo`, or a hardcoded default), gets a runnable copy of `bin/team-update` (shallow-cloning the source repo into a scratch directory if the target doesn't have one yet — it almost never does on a first install), and runs the same plan/apply cycle `/rails-update` uses going forward. See [Updates](updates.md) for the full mechanism; the only thing specific to `/rails-install` is that it may need to bootstrap a temporary copy of `bin/team-update` to run this the very first time.
 
-The one thing this can't automate away: `commands/install.md` and `agents/installer.md` themselves have to already exist in the target repo before Claude Code can even offer `/install` as a slash command. That's the one irreducible manual seed — everything else, including every `bin/` script below, now vendors itself.
+The one thing this can't automate away: `commands/rails-install.md` and `agents/rails-installer.md` themselves have to already exist in the target repo before Claude Code can even offer `/rails-install` as a slash command. That's the one irreducible manual seed — everything else, including every `bin/` script below, now vendors itself.
 
 ## The Five Scripts
 
@@ -69,7 +69,7 @@ cadence:
   log_analyst_interval: 15
 ```
 
-`bin/team-setup-project` writes `github.repo` with a comment-preserving targeted edit, never a full-file rewrite — the file stays safe to hand-edit, which the file's own header comment says explicitly. `github.project.owner`/`number` are filled in later, by the installer agent itself after the human confirms which board to use, using the same targeted-edit approach.
+`bin/team-setup-project` writes `github.repo` with a comment-preserving targeted edit, never a full-file rewrite — the file stays safe to hand-edit, which the file's own header comment says explicitly. `github.project.owner`/`number` are filled in later, by `rails-installer` itself after the human confirms which board to use, using the same targeted-edit approach.
 
 ## Idempotency
 
@@ -77,6 +77,7 @@ A second run isn't a no-op — it re-verifies everything live (GitHub state can 
 
 ## Things to Know
 
-- What's still manual, permanently: `commands/install.md` and `agents/installer.md` (and enough of `bin/team-update` — or the `team-sync` skill's bootstrap-clone path — to make `/install` invocable at all) have to exist before `/install` can run for the first time; and `ruby` being on `PATH` (never auto-installed).
+- What's still manual, permanently: `commands/rails-install.md` and `agents/rails-installer.md` (and enough of `bin/team-update` — or the `team-sync` skill's bootstrap-clone path — to make `/rails-install` invocable at all) have to exist before `/rails-install` can run for the first time; and `ruby` being on `PATH` (never auto-installed).
+- `rails-installer` and `rails-updater` are named that way, not the bare `installer`/`updater`, for the same reason `rails-orchestrator`/`rails-log-analyst`/`rails-skill-builder` are — see `docs/agents.md`'s "Why `rails-orchestrator`..." section. The `/install`, `/update`, and `/deploy` *commands* had the identical problem one level up: vendored to the same bare path in a target project regardless of which team they came from, so the slash command Claude Code offers gets resolved from whichever team's file landed there last. Renamed to `commands/rails-install.md`/`commands/rails-update.md`/`commands/rails-deploy.md`, invoked as `/rails-install`/`/rails-update`/`/rails-deploy`.
 - Every script's output is one JSON object on the last line of stdout — everything before that line is human-readable progress noise, safe for the agent to ignore programmatically.
 - None of the five scripts touch application code. The only things they ever write are `team.yml`, repo labels, `db/agent_log.sqlite3`, the `docs/` skeleton directories, and (`team-setup-project-status` only) an option on the Project board's own Status field.

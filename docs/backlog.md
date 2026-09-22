@@ -60,6 +60,6 @@ Both write a report — `docs/roadmap.md` and `docs/triage.md` — refreshed in 
 
 ## Things to Know
 
-- The three labels — `feature`, `bug`, `tech-debt` — are created by `/install` (see `docs/installer.md`). Filing fails clearly if a label is missing rather than silently creating one mid-file.
+- The three labels — `feature`, `bug`, `tech-debt` — are created by `/rails-install` (see `docs/installer.md`). Filing fails clearly if a label is missing rather than silently creating one mid-file.
 - A `bug` that turns out to need a real decision (not "restore what used to work," but "decide what the right behavior even is") gets reclassified by `bug-triage`, with the user's confirmation — filed as a `feature`, referencing the original bug number. `roadmap-analyst` does the reverse case: a `TODO.md`-era or backlog "feature" idea that's really a bug, though in the current design that mostly surfaces as a judgment call during a roadmap pass, not a dedicated step.
 - Nothing in this whole system auto-triggers a build. `/roadmap` and `/triage` propose an order and a route; a human (or a later `/feature`/`/fix` invocation) decides what actually gets scheduled.

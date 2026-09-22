@@ -10,4 +10,4 @@ Do NOT spawn `roadmap-analyst` as a subagent — it may need to confirm a substa
 
 Read `agents/roadmap-analyst.md` now. Adopt its identity and instructions for the remainder of this conversation, then begin at Step 1 — Read the backlog.
 
-If `team.yml` doesn't exist yet, say so and stop — suggest running `/install` first. If it exists but there are no open `feature`- or `tech-debt`-labeled issues, say so and stop — there's nothing to prioritize yet.
+If `team.yml` doesn't exist yet, say so and stop — suggest running `/rails-install` first. If it exists but there are no open `feature`- or `tech-debt`-labeled issues, say so and stop — there's nothing to prioritize yet.

@@ -51,7 +51,7 @@ cadence:
 
 Read this file before running any project command. If it doesn't exist yet, ask the user for the owner and project number once, and offer to write `team.yml` so future runs don't ask again — `gh project list --owner {owner}` will list available projects and their numbers if the user isn't sure. Leave `cadence.log_analyst_interval` at its default (`15`) unless the user asks to change it; don't invent a value.
 
-**`github.repo` specifically is written by `bin/team-setup-project`** (run via `/install`), not by hand-rolled `Edit` calls scattered across agents — it does a comment-preserving targeted line update, not a full YAML re-dump. If you're writing an agent that needs to set this field programmatically, call that script rather than reimplementing the same line-editing logic a second time; `intake` and `installer`'s own `project.owner`/`project.number` fields are the two remaining fields still set by an agent's own targeted `Edit`, since no script covers those yet.
+**`github.repo` specifically is written by `bin/team-setup-project`** (run via `/rails-install`), not by hand-rolled `Edit` calls scattered across agents — it does a comment-preserving targeted line update, not a full YAML re-dump. If you're writing an agent that needs to set this field programmatically, call that script rather than reimplementing the same line-editing logic a second time; `intake` and `rails-installer`'s own `project.owner`/`project.number` fields are the two remaining fields still set by an agent's own targeted `Edit`, since no script covers those yet.
 
 **Reading a field from a script:**
 
@@ -115,14 +115,14 @@ Every agent that calls `bin/team-create-issue` follows this, using `intake.md`'s
 ### What it does: label check, then create, then (conditionally) add to the board
 
 ```bash
-gh label list --repo OWNER/REPO --search LABEL --json name   # fails clearly if missing — run /install, doesn't auto-create mid-file
+gh label list --repo OWNER/REPO --search LABEL --json name   # fails clearly if missing — run /rails-install, doesn't auto-create mid-file
 gh issue create --repo OWNER/REPO --title "TITLE" --body-file PATH --label LABEL
 # feature/tech-debt only, after the issue exists:
 gh project item-add NUMBER --owner OWNER --url ISSUE_URL
 gh project item-edit NUMBER --owner OWNER --url ISSUE_URL --field "Status" --value "Ready"
 ```
 
-`item-add` is a no-op error if the issue is already on the board — the script proceeds to `item-edit` regardless of `item-add`'s own exit code, since only `item-edit`'s result decides whether the board step actually succeeded. `--field`/`--value` take the field's and option's *display names* exactly as they appear on the board. If the target status doesn't exist as an option on the Status field yet, this fails — `/install`'s `bin/team-setup-project-status` is what adds it (see `docs/installer.md`, "Status Field Options"); a failure here on an already-installed repo usually means `default_status` in `team.yml` was changed by hand without re-running `/install`.
+`item-add` is a no-op error if the issue is already on the board — the script proceeds to `item-edit` regardless of `item-add`'s own exit code, since only `item-edit`'s result decides whether the board step actually succeeded. `--field`/`--value` take the field's and option's *display names* exactly as they appear on the board. If the target status doesn't exist as an option on the Status field yet, this fails — `/rails-install`'s `bin/team-setup-project-status` is what adds it (see `docs/installer.md`, "Status Field Options"); a failure here on an already-installed repo usually means `default_status` in `team.yml` was changed by hand without re-running `/rails-install`.
 
 ---
 

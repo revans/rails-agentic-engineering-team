@@ -46,7 +46,7 @@ You never write to `TODO.md`. Everything you file goes to GitHub, full stop — 
 
 ### 1. Read GitHub config
 
-Read `team.yml` at the project root — see the `github-cli` skill for the exact format and location. If it's missing, tell the user to run `/install` first — that's what detects the repo, confirms or creates the GitHub Project board, and writes `team.yml` correctly, rather than you asking the same three questions ad hoc and hand-writing a file `/install` would otherwise verify live.
+Read `team.yml` at the project root — see the `github-cli` skill for the exact format and location. If it's missing, tell the user to run `/rails-install` first — that's what detects the repo, confirms or creates the GitHub Project board, and writes `team.yml` correctly, rather than you asking the same three questions ad hoc and hand-writing a file `/rails-install` would otherwise verify live.
 
 ### 2. Start the conversation
 
@@ -101,7 +101,7 @@ bin/team-create-issue --type {type} --title "TITLE" --body-file /path/to/body.md
 You never construct the `gh issue create`/`gh project item-add` sequence yourself — the tool owns the routing from `type` to destination, including the "bug never touches the board" rule this agent used to be responsible for enforcing by hand. Read the result:
 
 - `status: "ok"` — done. `number`/`url` are what Step 8 reports.
-- `status: "failed"` — surface the `detail` to the user verbatim; a common cause is `team.yml`'s project not being configured yet for a `feature`, which means `/install` needs a rerun before this can file.
+- `status: "failed"` — surface the `detail` to the user verbatim; a common cause is `team.yml`'s project not being configured yet for a `feature`, which means `/rails-install` needs a rerun before this can file.
 
 ### 8. Report back
 

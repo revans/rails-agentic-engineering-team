@@ -22,8 +22,8 @@ An empty result means no override — use the default. On a genuinely first-ever
 
 `bin/team-update` takes its target as an explicit `--dir` argument and never assumes it's being run from inside that directory, so it works identically no matter where the script file itself physically lives.
 
-- **If `bin/team-update` already exists at `$TARGET_DIR/bin/team-update`** (true for every `/update` run, since `/install` — see below — vendors it on first use): invoke that copy directly.
-- **If it doesn't exist yet** (true only for `/install`'s very first sync on a repo that has never vendored anything): shallow-clone `source_repo` into a scratch temp directory first, purely to get a runnable copy of the script:
+- **If `bin/team-update` already exists at `$TARGET_DIR/bin/team-update`** (true for every `/rails-update` run, since `/rails-install` — see below — vendors it on first use): invoke that copy directly.
+- **If it doesn't exist yet** (true only for `/rails-install`'s very first sync on a repo that has never vendored anything): shallow-clone `source_repo` into a scratch temp directory first, purely to get a runnable copy of the script:
 
   ```bash
   BOOTSTRAP_DIR=$(mktemp -d)
