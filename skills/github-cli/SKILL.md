@@ -187,6 +187,14 @@ gh pr create --title "TITLE" --body-file PATH_TO_BODY_FILE --base "$DEFAULT_BRAN
 
 Reference the closing issue in the body (`Closes #123`) if this PR resolves an issue filed via `/bug` or `/request` — GitHub closes it automatically on merge.
 
+Once the PR exists, request a Copilot code review on it — every PR this team opens gets one:
+
+```bash
+gh pr edit PR_URL_OR_NUMBER --add-reviewer @copilot
+```
+
+`--add-reviewer @copilot` is a `gh` special value (not a literal username) that requests an automated Copilot review, the same as picking "Copilot" from the Reviewers list in the GitHub UI. It only requests the review — it doesn't wait for it or block on it. It fails if Copilot code review isn't enabled for the org/repo; treat that as a real error to surface, not something to retry or silently swallow, and it doesn't mean the PR itself failed to open.
+
 ---
 
 ## Reading Issues

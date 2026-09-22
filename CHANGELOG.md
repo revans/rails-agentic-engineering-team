@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.2] - 2026-09-22
+
+### Added
+
+- `agents/rails-orchestrator.md`'s Stage 7c (and B8, which inherits its mechanics) now requests a Copilot code review right after `gh pr create` succeeds — `gh pr edit "$PR_URL" --add-reviewer @copilot`. It's a fire-and-forget request, not a gate: a failure (Copilot review not enabled for the org/repo) is surfaced to the user rather than retried, and doesn't count as the PR itself failing to open. The `github-cli` skill's "Opening a Pull Request" section documents the same command for direct/manual use.
+
 ## [1.19.1] - 2026-09-21
 
 ### Fixed

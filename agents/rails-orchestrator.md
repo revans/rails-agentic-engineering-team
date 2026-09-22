@@ -501,6 +501,14 @@ PR_URL=$(gh pr create --title "${NNN}: {Feature Name}" --body-file "${FEATURE_DI
 
 `gh pr create` prints the PR URL on success — capture it as `$PR_URL`, not just to read once. It goes in the final report to the user, and it's also the answer to a question nothing else in this pipeline can answer later: whether, and when, this feature actually shipped. `docs/briefs/{NNN}-{feature-name}/` gets committed to `main` piecemeal — the brief immediately, everything else only once this PR merges — so there's no single artifact anywhere that says "this happened" until the summary doc records it.
 
+Once the PR exists, request a Copilot review on it — every PR this pipeline opens gets one, not just ones the user happens to ask about:
+
+```bash
+gh pr edit "$PR_URL" --add-reviewer @copilot
+```
+
+This only requests the review; it does not wait for it or gate anything on it. If it fails (Copilot code review not enabled for this org/repo), surface the actual error to the user rather than retrying or silently skipping it — don't treat it as a PR-creation failure either, the PR itself is still open.
+
 Record it there now, while it's known — this can't happen any earlier, the URL doesn't exist until the PR does. Read `${FEATURE_DIR}/${NNN}-summary.md`, insert a `**Pull Request:** {PR_URL}` line immediately after the `**Review rounds:**` line, and write it back:
 
 ```bash
