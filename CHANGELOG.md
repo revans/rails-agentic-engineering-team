@@ -4,6 +4,13 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.0] - 2026-09-21
+
+### Changed
+
+- Renamed `bin/team-setup-project` → `bin/rails-team-setup-project` and `bin/team-update` → `bin/rails-team-update` — the same collision-avoidance reason as [1.17.0]/[1.18.0]'s agent/command renames, one layer down: unlike `bin/agent-log`, `bin/team-setup-git`, `bin/team-setup-gh`, and `bin/team-setup-sqlite` (which are interchangeable between teams — a collision is harmless), these two are not. `bin/rails-team-update` in particular hardcodes `DEFAULT_SOURCE_REPO` to this team's own repo; another team's copy landing on top of it in a shared `bin/` directory would silently point this team's syncs at the wrong upstream. `rails-qa-team` already made the identical move (`bin/qa-team-setup-project`, `bin/qa-team-update`). `bin/team-manifest` doesn't need it — it's excluded from vendoring entirely, so it never reaches a target repo to collide in the first place.
+- Updated every in-repo reference to the two renamed scripts: `agents/rails-installer.md`, `agents/rails-updater.md`, `bin/team-manifest`, `bin/team-setup-sqlite`, `commands/rails-deploy.md`, `docs/agents.md`, `docs/installer.md`, `docs/updates.md`, `skills/github-cli/SKILL.md`, `skills/team-sync/SKILL.md`.
+
 ## [1.18.0] - 2026-09-21
 
 ### Changed

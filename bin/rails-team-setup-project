@@ -1,12 +1,20 @@
 #!/usr/bin/env ruby
-# bin/team-setup-project
+# bin/rails-team-setup-project
 # Sets up everything about a target project that doesn't need a live human
 # decision: detects the repo from git, writes team.yml, creates the feature/
 # bug/tech-debt repo labels, creates and migrates db/agent_log.sqlite3, and
 # creates the docs/ skeleton.
 #
+# Named rails-team-setup-project, not team-setup-project: rails-qa-team has
+# its own script doing the equivalent job for its own roster (a narrower one
+# — no GitHub Project board setup or label creation, since that team doesn't
+# file issues that way today), and vendoring both into the same target
+# project at the bare path bin/team-setup-project would overwrite one with
+# the other — the same collision class as the agent/command renames (see
+# docs/team-infrastructure-upgrade-playbook.md at the agentic-teams root).
+#
 # Usage:
-#   bin/team-setup-project --dir /path/to/project [--repo owner/repo]
+#   bin/rails-team-setup-project --dir /path/to/project [--repo owner/repo]
 #
 # --dir defaults to the current directory. Pass it explicitly whenever the
 # installer agent is running from somewhere other than the target project —
@@ -174,7 +182,7 @@ def setup_labels(dir, repo)
       next
     end
     _, ok = sh("gh", "label", "create", name, "--repo", repo, "--color", color,
-               "--description", "#{name} — created by team-setup-project")
+               "--description", "#{name} — created by rails-team-setup-project")
     return { status: "failed", detail: "could not create label '#{name}' on #{repo} — check gh auth and repo access" } unless ok
     created << name
   end

@@ -1,6 +1,6 @@
 ---
 name: team-sync
-description: The shared procedure for vendoring or updating this team's agents/commands/skills/bin files from the source repo, using bin/team-update's plan/apply hash comparison. Used by both the installer (first-ever vendor, on a repo that may not have bin/team-update yet) and the updater (every sync after that). See docs/updates.md for the full manifest.yml/team.lock.yml schema and design rationale — this skill is the operational "what to run, what to ask" reference.
+description: The shared procedure for vendoring or updating this team's agents/commands/skills/bin files from the source repo, using bin/rails-team-update's plan/apply hash comparison. Used by both the installer (first-ever vendor, on a repo that may not have bin/rails-team-update yet) and the updater (every sync after that). See docs/updates.md for the full manifest.yml/team.lock.yml schema and design rationale — this skill is the operational "what to run, what to ask" reference.
 ---
 
 # Team Sync Procedure
@@ -10,19 +10,19 @@ description: The shared procedure for vendoring or updating this team's agents/c
 1. If `team.yml` exists and has `team.source_repo` set, use that.
 2. Otherwise, use the default: `https://github.com/revans/rails-agentic-engineering-team.git`
 
-This must match `DEFAULT_SOURCE_REPO` in `bin/team-update` exactly — if one is ever changed, change both, the same drift risk this whole mechanism exists to catch elsewhere.
+This must match `DEFAULT_SOURCE_REPO` in `bin/rails-team-update` exactly — if one is ever changed, change both, the same drift risk this whole mechanism exists to catch elsewhere.
 
 ```bash
 ruby -ryaml -e "puts (YAML.load_file('team.yml') rescue {}).dig('team','source_repo')" 2>/dev/null
 ```
 
-An empty result means no override — use the default. On a genuinely first-ever sync (installer, before `bin/team-setup-project` has run), `team.yml` won't exist yet at all; that's fine, it just means the default applies.
+An empty result means no override — use the default. On a genuinely first-ever sync (installer, before `bin/rails-team-setup-project` has run), `team.yml` won't exist yet at all; that's fine, it just means the default applies.
 
-## Getting a Runnable `bin/team-update`
+## Getting a Runnable `bin/rails-team-update`
 
-`bin/team-update` takes its target as an explicit `--dir` argument and never assumes it's being run from inside that directory, so it works identically no matter where the script file itself physically lives.
+`bin/rails-team-update` takes its target as an explicit `--dir` argument and never assumes it's being run from inside that directory, so it works identically no matter where the script file itself physically lives.
 
-- **If `bin/team-update` already exists at `$TARGET_DIR/bin/team-update`** (true for every `/rails-update` run, since `/rails-install` — see below — vendors it on first use): invoke that copy directly.
+- **If `bin/rails-team-update` already exists at `$TARGET_DIR/bin/rails-team-update`** (true for every `/rails-update` run, since `/rails-install` — see below — vendors it on first use): invoke that copy directly.
 - **If it doesn't exist yet** (true only for `/rails-install`'s very first sync on a repo that has never vendored anything): shallow-clone `source_repo` into a scratch temp directory first, purely to get a runnable copy of the script:
 
   ```bash
@@ -30,17 +30,17 @@ An empty result means no override — use the default. On a genuinely first-ever
   git clone --depth 1 "$SOURCE_REPO" "$BOOTSTRAP_DIR"
   ```
 
-  Then invoke `ruby "$BOOTSTRAP_DIR/bin/team-update" ...` in place of `bin/team-update ...` for every command below. Remove `$BOOTSTRAP_DIR` once the sync finishes — it served its one purpose (this is separate from, and in addition to, the snapshot directory `plan` itself creates for the actual manifest/file diffing).
+  Then invoke `ruby "$BOOTSTRAP_DIR/bin/rails-team-update" ...` in place of `bin/rails-team-update ...` for every command below. Remove `$BOOTSTRAP_DIR` once the sync finishes — it served its one purpose (this is separate from, and in addition to, the snapshot directory `plan` itself creates for the actual manifest/file diffing).
 
 ## The Sync Itself
 
 ### 1. Plan
 
 ```bash
-bin/team-update plan --dir "$TARGET_DIR"
+bin/rails-team-update plan --dir "$TARGET_DIR"
 ```
 
-(Or the bootstrapped `ruby "$BOOTSTRAP_DIR/bin/team-update" plan --dir "$TARGET_DIR"` form.) Read the last line as JSON.
+(Or the bootstrapped `ruby "$BOOTSTRAP_DIR/bin/rails-team-update" plan --dir "$TARGET_DIR"` form.) Read the last line as JSON.
 
 - **`status: "failed"`** — report `detail` verbatim and stop. The most common cause is the source repo being unreachable — network, or a stale `team.source_repo` override.
 - **`status: "ok"`** — present each non-empty category, in this order:
@@ -58,7 +58,7 @@ bin/team-update plan --dir "$TARGET_DIR"
 Collect the decisions into comma-separated path lists and call once, even when every list is empty:
 
 ```bash
-bin/team-update apply --dir "$TARGET_DIR" --snapshot-dir "{snapshot_dir}" \
+bin/rails-team-update apply --dir "$TARGET_DIR" --snapshot-dir "{snapshot_dir}" \
   --take-upstream "path,path,..." \
   --keep-local "path,path,..." \
   --remove "path,path,..."
@@ -69,7 +69,7 @@ Omit a flag entirely if its list is empty. `new_files` and `clean_updates` the c
 If the run is abandoned before any decision is made, clean up instead of leaving a stray snapshot:
 
 ```bash
-bin/team-update cleanup --snapshot-dir "{snapshot_dir}"
+bin/rails-team-update cleanup --snapshot-dir "{snapshot_dir}"
 ```
 
 Read the apply result's last line as JSON; `status: "failed"` — report `detail` verbatim. The snapshot directory is left in place on failure so a corrected re-run of `apply` doesn't require re-cloning.

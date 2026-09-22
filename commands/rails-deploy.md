@@ -10,7 +10,7 @@ This is a source-repo maintainer tool, not one of the team's agents — it has n
 
 ## What This Does
 
-`manifest.yml` at this repo's root is what `bin/team-update` (vendored into every installed target repo) reads to detect drift — see `docs/updates.md` for the full design. This command keeps it current.
+`manifest.yml` at this repo's root is what `bin/rails-team-update` (vendored into every installed target repo) reads to detect drift — see `docs/updates.md` for the full design. This command keeps it current.
 
 ### Step 1 — Regenerate the manifest
 

@@ -2,7 +2,7 @@
 # bin/team-setup-sqlite
 # Installs the sqlite3 CLI if it's missing. bin/agent-log shells out to this
 # binary directly (not a gem) for every write and read — without it, no
-# agent in this team can log a decision, and bin/team-setup-project's
+# agent in this team can log a decision, and bin/rails-team-setup-project's
 # database migration step fails outright.
 #
 # Same reasoning as bin/team-setup-git: no clean "download a static binary,
