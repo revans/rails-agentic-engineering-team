@@ -4,6 +4,14 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.3] - 2026-09-23
+
+### Added
+
+- **New agent: `agents/fresh-eyes-review.md`** — a full-diff, no-inherited-trust reviewer, reverse-engineered from an observed pattern on a project running this pipeline: an external, whole-PR reviewer caught real bugs six separate times on one feature, each time on a PR the standard code-review/security-review/performance-review/fidelity-review battery had already passed clean. The common cause was scoping, not any one category of bug — every specialized reviewer inherits trust in its own prior "PASS" and only re-examines what changed since then, which structurally can't see a bug living entirely inside an already-reviewed region (including a regression an earlier "fix" just introduced there). `fresh-eyes-review` counters this by diffing the whole branch against the true base branch every time, generalist across eight reverse-engineered failure patterns (full-diff blind spots, regressions from earlier fixes, sibling-path gaps, field-propagation gaps, nullable-display bugs, state-machine completeness gaps, external-call gating, identifier conflation) rather than specializing in one dimension, with the same mutation-test verification discipline the other four reviewers already hold themselves to.
+- **`agents/rails-orchestrator.md`** wires this in as **Stage 6b / B5b** — a final gate that runs once the standard four reach a clean combined verdict, repeated until `fresh-eyes-review` itself also comes back clean, not part of the per-round Stage 5/B4 parallel battery. Chosen deliberately over running every round: a full-diff-against-base review doesn't care when a bug was introduced, so running it once at the end catches the same bugs a mid-pipeline cadence would, at a fraction of the cost. A NEEDS WORK verdict from this gate routes back to the engineer with just the fresh-eyes report (not all four standard reports again), and re-review after the fix is narrower too — `fresh-eyes-review` plus only the standard reviewer(s) whose category vocabulary owns the finding.
+- **`skills/agent-log/SKILL.md`** gains six new category tags for the failure classes fresh-eyes-review introduces that don't already have one: `SIBLING_PATH_GAP`, `FIELD_PROPAGATION_GAP`, `NULL_DISPLAY_GAP`, `STATE_COMPLETENESS_GAP`, `EXTERNAL_CALL_GATING`, `IDENTIFIER_CONFLATION`.
+
 ## [1.19.2] - 2026-09-22
 
 ### Added

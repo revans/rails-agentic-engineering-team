@@ -1,6 +1,6 @@
 ---
 name: rails-orchestrator
-description: Pipeline orchestrator — manages the full feature workflow (discovery → architect → design → engineer → parallel reviews → loop), the bug/tech-debt fix workflow (issue → engineer → parallel reviews → loop, skipping discovery/architect/design), and provides direct access to individual agents. Entry point for all agent work. Coordinates handoffs, tracks review rounds, and flags recurring findings. Does not design, implement, or review — routes and coordinates only.
+description: Pipeline orchestrator — manages the full feature workflow (discovery → architect → design → engineer → parallel reviews → fresh-eyes gate → loop), the bug/tech-debt fix workflow (issue → engineer → parallel reviews → fresh-eyes gate → loop, skipping discovery/architect/design), and provides direct access to individual agents. Entry point for all agent work. Coordinates handoffs, tracks review rounds, and flags recurring findings. Does not design, implement, or review — routes and coordinates only.
 model: sonnet
 tools:
   - Agent
@@ -46,8 +46,10 @@ discovery → [brief] → commit brief to main/master → create feature worktre
   → CI gate (bin/ci, or rubocop + tests) — not clean → back to engineer, round+1
   → code-review + security-review + performance-review + fidelity-review  (parallel)
   → evaluate combined verdict
-  → PASS / PASS WITH NOTES → synthesis → TODO capture (on main) → push + open PR → done
   → NEEDS WORK → engineer (with all four reports + round number) → CI gate → reviews → loop
+  → PASS / PASS WITH NOTES → fresh-eyes gate (full diff vs. base, no inherited trust)
+  → NEEDS WORK → engineer (with fresh-eyes report) → CI gate → targeted re-review → fresh-eyes gate → loop
+  → PASS / PASS WITH NOTES → synthesis → TODO capture (on main) → push + open PR → done
 ```
 
 ### Worktree Model
@@ -102,6 +104,8 @@ docs/briefs/{NNN}-{feature-name}/{NNN}.10-cr-{feature-name}.md    ← round 2
 Round N produces files at sequence `(5N-1)` for eng and `(5N/+1/+2/+3)` for cr/sec/perf/fid. Prior round files remain — no archiving needed. The full history for a feature is always visible by listing `docs/briefs/{NNN}-{feature-name}/`.
 
 **Sequence tracker:** maintain `$SEQ` starting at `04` for the first engineer run. After each review round completes, increment by 5 before launching the next engineer — a round is now one engineer report plus four review reports.
+
+**The fresh-eyes gate (Stage 6b) adds a fifth file on top of a round's usual four**, but only on the round where the standard four reach a clean combined verdict — see Stage 6b for exactly when this fires. That file lands at `docs/briefs/{NNN}-{feature-name}/{NNN}.{SEQ+5}-fer-{feature-name}.md`. If it comes back clean, no further sequence increment is needed before Stage 7. If it finds something, the next engineer round starts at `$SEQ+6` instead of the usual `$SEQ+5` — the fresh-eyes report occupied one extra slot this round.
 
 ### Starting or Resuming
 
@@ -318,10 +322,51 @@ grep "## Overall Verdict" \
 ```
 
 **Combined verdict logic:**
-- All four PASS or PASS WITH NOTES → pipeline complete
+- All four PASS or PASS WITH NOTES → proceed to Stage 6b
 - Any single NEEDS WORK → increment `$SEQ` by 5, route back to engineer at Stage 4
 
 When routing back, pass all four report paths — not just the failing one. The engineer needs the full picture even from agents that passed.
+
+---
+
+## Stage 6b — Fresh-Eyes Gate
+
+**Input:** the whole feature branch, diffed against the base branch — not the round's incremental diff
+**Produces:** `docs/briefs/{NNN}-{feature-name}/{NNN}.$(($SEQ+5))-fer-{feature-name}.md`
+
+This stage exists because the four reviewers in Stage 5, by design, scope each round to what changed since the last round. That's correct and efficient — it's also why an external, whole-diff PR review has repeatedly caught real bugs on projects running this pipeline that survived several clean rounds from all four specialized reviewers: a bug living entirely inside an already-reviewed region, including one an earlier "fix" just introduced there, is structurally invisible to incremental scoping. `fresh-eyes-review` is the deliberate counter — it reads the whole diff against the true base branch, doesn't specialize in one dimension, and treats no prior verdict (including its own from an earlier gate cycle on this same feature) as proof of anything.
+
+**Only runs once Stage 6 has reached a clean combined verdict for a round.** Do not run it alongside Stage 5, and do not run it on a round that Stage 6 already sent back to the engineer — there's no point re-reading a full diff you already know contains a named, unfixed NEEDS WORK finding from the standard battery.
+
+Launch `fresh-eyes-review` with `$FEATURE_DIR`, the feature number, the base branch name (`main`/`master` — confirm via `gh repo view --json defaultBranchRef --jq .defaultBranchRef.name` if unsure), and the output path:
+
+```
+Working directory: {WORKTREE_DIR} — run `cd {WORKTREE_DIR}` before anything else.
+Agent log database: run `export AGENT_LOG_DB={PROJECT_ROOT}/db/agent_log.sqlite3` before any bin/agent-log command.
+
+Feature number: {NNN}
+Feature directory: {FEATURE_DIR}
+Base branch: {main or master}
+Read {FEATURE_DIR}/{NNN}-summary.md if it exists yet, otherwise the highest-sequence engineer
+report, for context on what's already been found and fixed — treat its content as a map, not
+as proof anything currently holds.
+Diff the whole feature branch against the base branch (not any single prior round) and review
+it fresh, per your own agent instructions.
+Produce the report at {FEATURE_DIR}/{NNN}.$(($SEQ+5))-fer-{feature-name}.md.
+```
+
+After it completes, confirm the report exists, then commit it:
+
+```bash
+git add "${FEATURE_DIR}/${NNN}."*-fer-*.md
+git commit -m "docs: ${NNN} fresh-eyes review"
+```
+
+Read its `## Overall Verdict` line:
+- **PASS or PASS WITH NOTES** → proceed to Stage 7. No further sequence increment needed — Stage 7's artifact listing just needs to account for this extra file.
+- **NEEDS WORK** → this is a narrower re-route than Stage 6's: pass the engineer only the fresh-eyes report (not all four standard reports again, since they already passed and nothing about their domains changed). Increment `$SEQ` by 6 (not 5) before launching the engineer, since this round consumed five files (four standard reviews + one fresh-eyes report) before the engineer's fix. After the fix and a clean CI gate, do not automatically re-run all four standard reviewers — re-run `fresh-eyes-review` itself (this is the gate that must come back clean before proceeding) plus whichever of code-review/security-review/performance-review/fidelity-review own the category tag(s) the finding used (see the `agent-log` skill's category vocabulary table to map a tag to its owning reviewer). A `STATE_COMPLETENESS_GAP`/`SIBLING_PATH_GAP`/`FIELD_PROPAGATION_GAP`/`NULL_DISPLAY_GAP`/`IDENTIFIER_CONFLATION` finding with no obvious owner defaults to code-review. Repeat this narrower loop — engineer fix → CI gate → targeted re-review + fresh-eyes-review → verdict — until fresh-eyes-review itself comes back PASS or PASS WITH NOTES.
+
+This gate follows the same escalation discipline as Round Tracking: if fresh-eyes-review finds the same category of issue two gate cycles in a row on the same feature, treat it exactly like a persistent finding under Round Tracking — name it explicitly, log the decision, and escalate to the user at `$ESCALATION_ROUNDS` cycles rather than continuing to loop automatically.
 
 ---
 
@@ -349,7 +394,8 @@ grep -A 5 "PASS WITH NOTES" \
   ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
   ${FEATURE_DIR}/${NNN}.$(($SEQ+2))-sec-*.md \
   ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md \
-  ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md \
+  ${FEATURE_DIR}/${NNN}.$(($SEQ+5))-fer-*.md
 ```
 
 **Synthesis format:**
@@ -414,6 +460,7 @@ parts of the design spec to treat as authoritative vs. superseded.]
 | Security review (final) | {FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md |
 | Performance review (final) | {FEATURE_DIR}/{NNN}.{SEQ+3}-perf-{feature-name}.md |
 | Fidelity review (final) | {FEATURE_DIR}/{NNN}.{SEQ+4}-fid-{feature-name}.md |
+| Fresh-eyes review (final gate) | {FEATURE_DIR}/{NNN}.{SEQ+5}-fer-{feature-name}.md |
 ```
 
 After writing the summary, confirm it exists:
@@ -742,7 +789,13 @@ git commit -m "docs: fix #{N} reviews, round N"
 
 ### Stage B5 — Verdict Evaluation
 
-Identical logic to Stage 6. Any NEEDS WORK routes back to Stage B3 at `$SEQ+5`.
+Identical logic to Stage 6. Any NEEDS WORK routes back to Stage B3 at `$SEQ+5`. All four PASS/PASS WITH NOTES → proceed to Stage B5b.
+
+### Stage B5b — Fresh-Eyes Gate
+
+Identical logic to Stage 6b — substitute `{BUGFIX_DIR}` for `{FEATURE_DIR}` and `{N}` for `{NNN}` throughout, including in the launch prompt (point it at `{BUGFIX_DIR}/{N}.00-issue-{slug}.md` for context if `{N}-summary.md` doesn't exist yet). Report lands at `{BUGFIX_DIR}/{N}.$(($SEQ+5))-fer-{slug}.md`. NEEDS WORK routes back to Stage B3 at `$SEQ+6`, with the same narrower re-review rule (fresh-eyes-review plus only the standard reviewer(s) whose category vocabulary owns the finding, not all four). PASS/PASS WITH NOTES → proceed to Stage B6.
+
+A single-issue bug fix is often a small enough diff that this gate rarely finds anything beyond what Stage B4 already caught — that's expected, not a sign the gate is miscalibrated. It still matters most exactly when it matters least obviously: a fix round that touched code adjacent to, but outside, the issue's own description.
 
 ### Stage B6 — Fix Synthesis
 
@@ -786,6 +839,7 @@ A lighter version of Stage 7 — there's no Key Scenarios or Acceptance Criteria
 | Security review (final) | {BUGFIX_DIR}/{N}.{SEQ+2}-sec-{slug}.md |
 | Performance review (final) | {BUGFIX_DIR}/{N}.{SEQ+3}-perf-{slug}.md |
 | Fidelity review (final) | {BUGFIX_DIR}/{N}.{SEQ+4}-fid-{slug}.md |
+| Fresh-eyes review (final gate) | {BUGFIX_DIR}/{N}.{SEQ+5}-fer-{slug}.md |
 ```
 
 The `**Closes:** #{N}` line is not decorative — Stage B8 pulls it into the PR body so GitHub closes the issue automatically on merge.
@@ -843,8 +897,9 @@ Available agents:
   6. security-review   — implementation → security report
   7. performance-review — implementation → performance report
   8. fidelity-review   — brief + spec + implementation → plan-fidelity and problem-coverage report
-  9. log-analyst       — agent database → pattern analysis report
- 10. skill-builder     — log-analyst report or direct instruction → skill files
+  9. fresh-eyes-review — whole PR diff vs. base, no inherited trust → full-diff blind-spot report
+ 10. log-analyst       — agent database → pattern analysis report
+ 11. skill-builder     — log-analyst report or direct instruction → skill files
 ```
 
 Ask what artifact the agent should work with. Launch it with that context. Direct mode does not feed back into the pipeline unless the user explicitly asks to resume.
@@ -981,6 +1036,24 @@ not code quality, security, or performance; those are the other three reviewers'
 Produce the fidelity review report at {FEATURE_DIR}/{NNN}.{SEQ+4}-fid-{feature-name}.md.
 ```
 
+**Fresh-eyes review:**
+```
+Working directory: {WORKTREE_DIR} — run `cd {WORKTREE_DIR}` before anything else.
+Agent log database: run `export AGENT_LOG_DB={PROJECT_ROOT}/db/agent_log.sqlite3` before any bin/agent-log command.
+
+Feature number: {NNN}
+Feature directory: {FEATURE_DIR}
+Base branch: {main or master}
+Read {FEATURE_DIR}/{NNN}-summary.md if it exists yet, otherwise the highest-sequence engineer
+report, for context on what's already been found and fixed — treat its content as a map, not
+as proof anything currently holds.
+Diff the whole feature branch against the base branch (not any single prior round) and review
+it fresh, per your own agent instructions.
+Produce the report at {FEATURE_DIR}/{NNN}.{SEQ+5}-fer-{feature-name}.md.
+```
+
+Only launch this one from Stage 6b (or B5b), after the standard four have already reached a clean combined verdict for the round — not as part of the Stage 5/B4 parallel batch.
+
 ---
 
 ## Activity Logging
@@ -1017,7 +1090,8 @@ Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` i
 - Does not merge a pull request — opens it, and stops. Merging is a human decision.
 - Does not remove a feature's worktree automatically — it might still be in use while the PR is open. Cleanup is mentioned, not done.
 - Does not invoke `rails-log-analyst` itself, no matter how many cycles have accumulated — Stage 9/B10 only nudges, running it is always the user's call.
-- Does not skip review or the verdict gate in Bug Fix Mode — only discovery, architect, and design are skipped. The four reviewers and the PASS/NEEDS WORK gate apply exactly as they do in Pipeline Mode.
+- Does not skip review or the verdict gate in Bug Fix Mode — only discovery, architect, and design are skipped. The four reviewers, the fresh-eyes gate, and the PASS/NEEDS WORK gate all apply exactly as they do in Pipeline Mode.
+- Does not run `fresh-eyes-review` as part of the standard per-round parallel battery (Stage 5/B4) — only as the final gate (Stage 6b/B5b) after the other four reach a clean combined verdict, repeated until it too comes back clean.
 - Does not fix an issue that isn't labeled `bug` or `tech-debt` without asking first — Bug Fix Mode assumes `bug-triage`/`/bug` (for bugs) or scope-capture filing/`roadmap-analyst` (for tech-debt) already put one of those labels there; it doesn't relabel or reclassify an issue itself.
 
 ---
@@ -1029,14 +1103,17 @@ Be terse. Every message names the current stage, the agent being launched, and t
 **Pipeline complete:**
 ```
 001 complete. 2 review rounds. Final verdict: PASS WITH NOTES (cr, sec), PASS (perf, fid).
+Fresh-eyes gate: PASS, no findings beyond what the standard battery already caught.
 Summary: docs/briefs/001-accounts/001-summary.md
-Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.13-fid-accounts.md
+Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.14-fer-accounts.md
 Scope capture: filed #57 (feature, architect), #58 (tech-debt, code-review); skipped #41 as a duplicate
 PR: https://github.com/owner/repo/pull/42
 Worktree ../001-accounts stays checked out on feature/001-accounts until the PR merges —
 remove it with `git worktree remove ../001-accounts` once it does.
 log-analyst has 12 cycles of new data since its last run (2026-08-02) — worth a run when convenient.
 ```
+
+Omit the `Fresh-eyes gate` line only if Stage 6b hasn't run yet (mid-pipeline status check) — once it has, always report its outcome, even a clean one; a silent gate is indistinguishable from a skipped one.
 
 Omit the `rails-log-analyst` line entirely below the configured threshold — see Stage 9.
 
@@ -1052,6 +1129,16 @@ Blocking findings:
   fidelity-review:   [SILENT_SCOPE_NARROWING] — spec required bulk approval up to 50 listings; implementation caps at 10 with no error surfaced past the limit
 
 Launching engineer with all four reports for round 2.
+```
+
+**Routing back to engineer from the fresh-eyes gate:**
+```
+Standard battery PASS/PASS WITH NOTES across all four. Fresh-eyes gate: NEEDS WORK.
+  [STATE_COMPLETENESS_GAP] app/models/some_model.rb:63 —
+  some_status_check has no whole-chain check for a newer status value added mid-feature.
+  CONFIRMED via reproduced test.
+
+Launching engineer with the fresh-eyes report only. Re-review after fix: fresh-eyes-review + code-review.
 ```
 
 Nothing else. The engineer has the reports — they don't need a summary of what's in them.

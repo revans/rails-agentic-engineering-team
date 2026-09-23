@@ -277,6 +277,16 @@ Use these exact strings for `--category`. Consistent vocabulary makes cross-feat
 | `UNSCOPED_QUERY` | Collection loaded without scope or pagination |
 | `MISSING_CONSTRAINT` | Validation not backed by a database constraint (overlaps DATA_INTEGRITY for performance context) |
 
+**Full-diff / regression (fresh-eyes-review agent):**
+| Category | What it flags |
+|---|---|
+| `SIBLING_PATH_GAP` | A check, fix, or field applied to one path but not a structurally parallel one |
+| `FIELD_PROPAGATION_GAP` | A field present on a sibling/older model silently dropped at some stage of a pipeline for a new one |
+| `NULL_DISPLAY_GAP` | A null value coerced into a misleading zero/empty/false instead of an explicit "not available" state, in HTML or JSON |
+| `STATE_COMPLETENESS_GAP` | A new status/state value not recognized by every consumer that branches on status |
+| `EXTERNAL_CALL_GATING` | A synchronous external-API call not guarded against a realistic failure mode (expired auth, rate limit) before firing |
+| `IDENTIFIER_CONFLATION` | Two conceptually distinct identifiers treated as interchangeable, often masked by identical test fixture literals |
+
 **QA verification, checked against the running application (rails-qa-team specialists):**
 | Category | What it flags | Specialist |
 |---|---|---|
