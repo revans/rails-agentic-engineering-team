@@ -84,7 +84,7 @@ Before drafting anything:
 bin/team-find-issues --type {type} --query "keywords describing the report"
 ```
 
-If `matches` isn't empty, look at what came back. A clear match: tell the user and ask whether to still file a new issue, comment on the existing one, or drop this. You judge the match — the tool just finds candidates, it doesn't decide relevance.
+If `matches` isn't empty, look at what came back. A clear match: tell the user and recommend commenting on the existing issue with whatever new information this report adds — that's the default, not a neutral option alongside filing a new one or dropping it. Still ask, since it's their call, but lead with the recommendation rather than presenting all three options flatly. You judge the match — the tool just finds candidates, it doesn't decide relevance.
 
 ### 6. Confirm before filing
 

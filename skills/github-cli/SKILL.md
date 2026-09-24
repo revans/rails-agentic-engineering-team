@@ -138,7 +138,13 @@ Always search before creating — a report that duplicates an open issue wastes 
 {"status":"ok","matches":[{"number":42,"title":"...","url":"...","state":"OPEN"}]}
 ```
 
-`matches: []` is a normal, successful result. If something clearly matching turns up, the calling agent surfaces it and asks whether to still file, comment on the existing one instead, or drop it (`intake`) — or, where there's no human to ask mid-pipeline, skips filing and notes the existing issue number (the orchestrator's scope-capture filing). Internally: `gh issue list --repo OWNER/REPO --search "QUERY in:title,body" --label LABEL --state all --limit 10 --json number,title,url,state`.
+`matches: []` is a normal, successful result — only then create a new issue. If something clearly matching turns up, **update the existing issue with whatever new information this pass surfaced, rather than just skipping** — a new instance, a new symptom, confirmation it's still real, a clearer fix approach:
+
+```bash
+gh issue comment MATCH_NUMBER --repo OWNER/REPO --body "Also observed during {this context}: {what's new — don't just repeat the original report}."
+```
+
+Where there's a human to ask mid-pipeline (`intake`), surface the match and ask whether to still file a new issue, comment on the existing one, or drop it — comment-on-existing is the recommended default, not a neutral third option. Where there's no human to ask (the orchestrator's scope-capture filing, or any autonomous batch-filing pass), comment automatically and note the existing issue number in the final report — don't silently skip with no comment just because a match exists; that discards real, newly-surfaced information the original filer didn't have. Only skip with no comment at all if this pass genuinely found nothing beyond what the existing issue already says. Internally, the search itself: `gh issue list --repo OWNER/REPO --search "QUERY in:title,body" --label LABEL --state all --limit 10 --json number,title,url,state`.
 
 ---
 

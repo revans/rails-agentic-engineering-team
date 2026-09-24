@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.10] - 2026-09-24
+
+### Changed
+
+- **The default on a duplicate-issue match is now to update the existing issue, not just skip filing.** The prior convention ("skip filing and note the existing issue number") silently discarded whatever new information a pass surfaced — a new instance, a new symptom, a clearer fix approach. `rails-orchestrator.md`'s Stage 7b/B7 (autonomous, no human to ask) now comments on the existing issue automatically; `intake.md`'s Step 5 (interactive) leads with commenting-on-existing as the recommended action rather than presenting it as a neutral third option. `skills/github-cli/SKILL.md`'s "Checking for Duplicates Before Filing" section documents the actual `gh issue comment` command and the new default for both paths. Only skip with no comment when a pass genuinely finds nothing beyond what the existing issue already says.
+
 ## [1.19.9] - 2026-09-24
 
 ### Added

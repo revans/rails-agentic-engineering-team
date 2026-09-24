@@ -496,7 +496,7 @@ For each entry found:
 
 1. Skip "None" and empty sections.
 2. Read the entry's tag — `[needs-discovery]` maps to `--type feature`, `[tech-debt]` to `--type tech-debt`, `[bug]` to `--type bug`. No tag at all (an older report predating this convention) → default to `--type feature`, the safer bucket; treating an unscoped idea as ready-to-build tech debt would be the wrong default.
-3. Duplicate-check before filing: `bin/team-find-issues --type {type} --dir "$PROJECT_ROOT" --query "keywords from the idea"`. This step can't pause for a live human decision the way `/bug`/`/request` do, so the default on a clear match is to skip filing and note the existing issue number in the final report, not to ask.
+3. Duplicate-check before filing: `bin/team-find-issues --type {type} --dir "$PROJECT_ROOT" --query "keywords from the idea"`. This step can't pause for a live human decision the way `/bug`/`/request` do. **On a clear match, don't just skip and note it — comment on the existing issue with whatever new information this pass surfaced** (see the `github-cli` skill's "Checking for Duplicates Before Filing" section): a new instance, a new symptom, confirmation it's still real, a clearer fix approach. Only skip with no comment at all if this pass found nothing beyond what the existing issue already says. Only file a genuinely new issue when `matches` comes back empty.
 4. File the survivors: `bin/team-create-issue --type {type} --dir "$PROJECT_ROOT" --title "TITLE" --body-file /path/to/body.md`. This is the same tool `intake` uses — it owns the routing from `type` to destination (project board for `feature`/`tech-debt`, plain repo issue for `bug`), not this stage. Read its JSON result: `status: "ok"` gives you `number`/`url` for the final report; `status: "failed"` means note the `detail` and move on, per the non-blocking rule below. Body format (clean markdown per the `github-cli` skill's body-formatting rules — headers, bold key/value labels, lists over prose, same as `intake`'s bodies):
 
 ```markdown
@@ -516,7 +516,7 @@ None.
 Filed via scope-capture — {date}
 ```
 
-This step never blocks the pipeline and never fails it — if a `gh` call fails for some reason, note it in the final report and move on; don't retry indefinitely or halt the pipeline over it. List every issue filed (with URL) and every duplicate skipped (with the existing issue's number) in the final report — see Communication.
+This step never blocks the pipeline and never fails it — if a `gh` call fails for some reason, note it in the final report and move on; don't retry indefinitely or halt the pipeline over it. List every issue filed (with URL) and every existing issue updated instead (with the existing issue's number) in the final report — see Communication.
 
 ---
 
@@ -1122,7 +1122,7 @@ Be terse. Every message names the current stage, the agent being launched, and t
 Fresh-eyes gate: PASS, no findings beyond what the standard battery already caught.
 Summary: docs/briefs/001-accounts/001-summary.md
 Full artifacts: docs/briefs/001-accounts/001.01-dis through 001.14-fer-accounts.md
-Scope capture: filed #57 (feature, architect), #58 (tech-debt, code-review); skipped #41 as a duplicate
+Scope capture: filed #57 (feature, architect), #58 (tech-debt, code-review); updated #41 with new context instead of duplicating
 PR: https://github.com/owner/repo/pull/42
 Worktree ../001-accounts stays checked out on feature/001-accounts until the PR merges —
 remove it with `git worktree remove ../001-accounts` once it does.
