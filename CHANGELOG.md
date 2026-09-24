@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.7] - 2026-09-24
+
+### Fixed
+
+- **A real, confirmed bug: Bug Fix Mode's Stage B2 defined `BUGFIX_DIR="${PROJECT_ROOT}/docs/bugfixes/{N}-{slug}"`** — an absolute path back into the main checkout, not the fix worktree. Every subsequent engineer/review report written against that path landed in `$PROJECT_ROOT` instead of `$WORKTREE_DIR`, and since nothing in Stage B3 onward commits from `$PROJECT_ROOT`, those reports were left as uncommitted stray files in the shared main checkout — caught live via a stray file left behind by a real Bug Fix Mode run on a downstream project. Fixed to be worktree-relative (`BUGFIX_DIR="docs/bugfixes/{N}-{slug}"`), matching how `$FEATURE_DIR` already works correctly in Pipeline Mode — the new worktree already has its own copy of everything Stage B1 committed to master before creating it.
+
 ## [1.19.6] - 2026-09-24
 
 ### Added

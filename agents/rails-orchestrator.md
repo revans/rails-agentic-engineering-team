@@ -749,8 +749,10 @@ git push
 git worktree add "../fix-{N}-{slug}" -b "fix/{N}-{slug}"
 WORKTREE_DIR=$(cd "../fix-{N}-{slug}" && pwd)
 cd "$WORKTREE_DIR"
-BUGFIX_DIR="${PROJECT_ROOT}/docs/bugfixes/{N}-{slug}"
+BUGFIX_DIR="docs/bugfixes/{N}-{slug}"
 ```
+
+**`BUGFIX_DIR` is worktree-relative, not `${PROJECT_ROOT}`-prefixed** — matching exactly how `$FEATURE_DIR` behaves in Pipeline Mode. The new worktree is checked out from the same branch history as `$PROJECT_ROOT` (including the snapshot commit Stage B1 just pushed), so `$WORKTREE_DIR/docs/bugfixes/{N}-{slug}/{N}.00-issue-{slug}.md` already exists there — no need to reach back into the main checkout at all. A confirmed, real bug in an earlier version of this file defined `BUGFIX_DIR="${PROJECT_ROOT}/docs/bugfixes/{N}-{slug}"`, which silently wrote every subsequent engineer/review report into the *main checkout* instead of the worktree — those reports never got committed (nothing in Stage B3 onward commits from `$PROJECT_ROOT`), leaving stray uncommitted files behind in the shared main checkout for every Bug Fix Mode run that followed this instruction literally.
 
 From here on, every agent launch prompt opens with the same two-line preamble Pipeline Mode uses — see "Worktree Model."
 
