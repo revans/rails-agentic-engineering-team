@@ -597,6 +597,14 @@ This is a live URL, not a merge timestamp — don't try to also record *when* it
 
 **Do not merge it.** Merging is a human decision — see "What the Orchestrator Does NOT Do." If `gh pr create` fails (missing `project` scope, branch protection, anything else), surface the actual error to the user rather than retrying blindly; don't guess at a workaround.
 
+**Exception — standing merge authorization.** If your launch prompt explicitly grants standing merge authorization for this session (e.g. "merge yourself once tests pass"), you may merge — but never on the strength of an earlier stage's local CI run alone. That gate ran against the worktree at an earlier point in time; the PR's actual remote CI is the thing a merge depends on, and it can differ (a check still running, a check that started failing after a rebase or a base-branch advance, transient infra flakiness). Verify the PR's live status immediately before merging:
+
+```bash
+gh pr checks "$PR_URL"
+```
+
+**Never merge unless every required check shows a passing state.** Any check that is failing, pending, or simply hasn't reported yet means: do not merge. Surface exactly which check and its state to the user and stop — don't retry blindly, don't merge with `--admin` or any other bypass of required checks, and don't fall back to the earlier local CI result as a substitute for real remote status. "Tests pass" in a merge-authorization grant means the PR's own CI is green right now, not that it was green at some earlier stage of the pipeline. After merging, verify that anything the merge was supposed to close actually did (e.g. `gh issue view {N} --json state` in Bug Fix Mode) — a GitHub closing-keyword sometimes silently fails to fire; close manually if so.
+
 The worktree stays. It's still needed if review comments come back and someone needs to address them — don't remove it here. Mention in the final report that it can be cleaned up (`git worktree remove ../{NNN}-{feature-name}`) once the PR merges; that's the user's call, not an automatic step.
 
 ---
@@ -1138,7 +1146,7 @@ Decision ID format: `rails-orch-{feature-number}-{NNN}` where `feature-number` i
 - Does not review code — it reads verdicts and routes
 - Does not resolve content ambiguity — surfaces it to the user
 - Does not silently re-route past a persistent finding — always names it
-- Does not merge a pull request — opens it, and stops. Merging is a human decision.
+- Does not merge a pull request — opens it, and stops. Merging is a human decision, unless a launch prompt explicitly grants standing merge authorization for the session — and even then, never with any failing, pending, or unreported CI check on the PR itself (see Stage 7c's "Exception — standing merge authorization").
 - Does not remove a feature's worktree automatically — it might still be in use while the PR is open. Cleanup is mentioned, not done.
 - Does not invoke `rails-log-analyst` itself, no matter how many cycles have accumulated — Stage 9/B10 only nudges, running it is always the user's call.
 - Does not skip review or the verdict gate in Bug Fix Mode — only discovery, architect, and design are skipped. The four reviewers, the fresh-eyes gate, and the PASS/NEEDS WORK gate all apply exactly as they do in Pipeline Mode.

@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.12] - 2026-09-24
+
+### Changed
+
+- **Standing merge authorization now has a hard, explicit CI-status check attached to it.** The orchestrator's default has always been "opens the PR and stops — merging is a human decision," but a session can grant standing authorization to merge automatically once tests pass. That grant never specified *which* tests: the earlier stage's local CI run, or the PR's own live remote checks. Made explicit in Stage 7c (and inherited by Stage B8/Bug Fix Mode): merging always requires `gh pr checks "$PR_URL"` immediately before the merge command, and any check that is failing, pending, or simply hasn't reported yet blocks the merge outright — no `--admin` bypass, no falling back to an earlier local result. "Tests pass" means green right now, not at some earlier pipeline stage.
+
 ## [1.19.11] - 2026-09-24
 
 ### Fixed
