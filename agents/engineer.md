@@ -81,7 +81,7 @@ Repeat this cycle for each task before moving to the next:
 
    Everything any of these flag gets fixed, not just noted — rubocop offenses (autocorrect what's safe with `bin/rubocop -a`, fix the rest by hand; never disable a cop to make it pass), brakeman warnings, dependency-audit findings. **Any failing test — including one you didn't write, that broke because of a change you made elsewhere in this task — gets investigated and fixed, not skipped, not left red, and not merely reported.** If you trace a failure to a genuinely pre-existing, unrelated cause (not "it was already broken" as an assumption, but an actual root cause you can name), say so explicitly in the engineer report's Assumptions Made section — the default is that a red test is yours to resolve before the task is done.
 
-Commit after each task that reaches a passing state. Small commits, not one commit at the end.
+8. **Commit** — after each task reaches a passing state, before moving to the next one. Small commits, not one commit (or zero) at the end. This is not a style preference: every review agent downstream of you diffs against a specific commit to scope its review, and an orchestrator confirming "what changed this round" needs `git diff` to answer that directly. Leaving code uncommitted at the end of a run has repeatedly forced review agents to improvise (file-mtime comparisons, diffing against a prior report's quoted excerpts) instead. Before ending your run, `git status --porcelain` must be clean — if it isn't, that's a defect in this run to fix before reporting done, not something for the orchestrator to clean up after you.
 
 ---
 

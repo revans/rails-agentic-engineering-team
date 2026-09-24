@@ -187,6 +187,10 @@ gh pr create --title "TITLE" --body-file PATH_TO_BODY_FILE --base "$DEFAULT_BRAN
 
 Reference the closing issue in the body (`Closes #123`) if this PR resolves an issue filed via `/bug` or `/request` — GitHub closes it automatically on merge.
 
+**Closing more than one issue in the same PR body or commit message needs one keyword per issue, each on its own line — a comma-separated list silently closes only the first one.** `Closes #153, #114, #161, #160` closes #153 and does nothing for the other three; GitHub's closing-keyword parser doesn't recognize a comma-separated reference list, and it fails with no error, no warning — the other issues are just still open. Write `Closes #153\nCloses #114\nCloses #161\nCloses #160` instead, one line per issue. Verify with `gh issue view {N} --json state` after any multi-issue close, don't assume the whole list took.
+
+**A commit message containing a closing keyword (`fix`/`fixes`/`fixed`/`close`/`closes`/`resolve`/`resolves`/`resolved` immediately followed by `#N`) closes the issue the moment that commit reaches GitHub — not just when it's later referenced in a merged PR body.** This has bitten Bug Fix Mode specifically: a mid-pipeline commit phrased `"fix #154: ..."` closed the issue hours before review even started, with no PR yet open to reopen against. Never use a closing keyword in an intermediate commit message for work still in progress — save it for the one place it's actually meant to fire (the final PR body, closing on merge). See `rails-orchestrator.md`'s Bug Fix Mode commit templates for the phrasing this team uses instead ("issue #{N} ..." rather than "fix #{N} ...").
+
 Once the PR exists, request a Copilot code review on it — every PR this team opens gets one:
 
 ```bash

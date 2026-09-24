@@ -247,7 +247,7 @@ ls ${FEATURE_DIR}/${NNN}.${SEQ}-eng-*.md
 
 The engineer report must exist before reviews begin — the review agents read it for context.
 
-The engineer already committed its own application code incrementally, per its own TDD Workflow ("commit after each task," not one commit at the end) — that's its domain, don't duplicate it. The report file itself is a separate `Write` the engineer doesn't commit; that's yours:
+The engineer's own TDD Workflow requires it to commit incrementally ("commit after each task," not one commit at the end) and leave `git status --porcelain` clean before reporting done — that's its domain, don't duplicate it by committing piecemeal yourself. But don't just assume it happened: `cd "$WORKTREE_DIR" && git status --porcelain` before proceeding. An engineer run reporting done with the entire implementation still uncommitted is a confirmed, real, repeating failure mode even with the rule documented in `engineer.md`. If application code is sitting uncommitted, commit it yourself now (review the diff first — this is still an unreviewed engineer's own work, not yours to silently rewrite) with a message naming what round it's from, and note in your own final report to the user that this backstop fired; don't let it pass silently, since a rule that keeps needing this backstop is a signal worth surfacing, not just working around forever. The report file itself is a separate `Write` the engineer doesn't commit; that's yours regardless:
 
 ```bash
 git add "${FEATURE_DIR}/${NNN}.${SEQ}-eng-"*.md
@@ -774,12 +774,14 @@ your report rather than guessing at scope (see the scope-capture skill).
 Write the engineer report to {BUGFIX_DIR}/{N}.01-eng-{slug}.md when the fix is complete.
 ```
 
-Confirm `{BUGFIX_DIR}/{N}.01-eng-{slug}.md` (or the current round's `{N}.{SEQ}-eng-{slug}.md`) exists, then commit it — same reasoning as Stage 4: the engineer already committed its own code incrementally, this is the separate report file it doesn't commit itself.
+Confirm `{BUGFIX_DIR}/{N}.01-eng-{slug}.md` (or the current round's `{N}.{SEQ}-eng-{slug}.md`) exists. Before committing it, check `git status --porcelain` for uncommitted application code — same backstop as Stage 4, and the same reasoning: don't trust that the engineer's own incremental-commit discipline held, verify it. Commit any uncommitted code yourself (reviewing the diff first) if it's there, noting the backstop fired, then commit the report file — the separate `Write` the engineer doesn't commit itself.
 
 ```bash
 git add "{BUGFIX_DIR}/{N}.${SEQ}-eng-"*.md
-git commit -m "docs: fix #{N} engineer report, round N"
+git commit -m "docs: issue #{N} engineer report, round N"
 ```
+
+Deliberately not "fix #{N}" — GitHub's issue-closing keywords (`fix`/`fixes`/`fixed`/`close`/`closes`/`resolve`/... immediately followed by `#N`) trigger on *any* commit message reaching GitHub, not just a PR body at merge time. A commit phrased "fix #154 ..." pushed mid-pipeline closes the issue hours before review even starts, silently, with no PR yet to reopen against. Every commit message in this mode uses "issue #{N}" instead — the actual close-on-merge still happens correctly via Stage B6's summary `**Closes:** #{N}` line, which only takes effect in a PR body at merge, the one place this behavior is wanted.
 
 ### Stage B3b — CI Gate
 
@@ -794,7 +796,7 @@ Commit all four together once they've all completed, same as Stage 5:
 ```bash
 git add "{BUGFIX_DIR}/{N}."*-cr-*.md "{BUGFIX_DIR}/{N}."*-sec-*.md \
         "{BUGFIX_DIR}/{N}."*-perf-*.md "{BUGFIX_DIR}/{N}."*-fid-*.md
-git commit -m "docs: fix #{N} reviews, round N"
+git commit -m "docs: issue #{N} reviews, round N"
 ```
 
 ### Stage B5 — Verdict Evaluation
@@ -858,7 +860,7 @@ Commit it right after writing, same as Stage 7:
 
 ```bash
 git add "{BUGFIX_DIR}/{N}-summary.md"
-git commit -m "docs: fix #{N} summary"
+git commit -m "docs: issue #{N} summary"
 ```
 
 ### Stage B7 — Scope Capture Filing

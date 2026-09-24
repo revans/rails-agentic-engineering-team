@@ -4,6 +4,17 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.5] - 2026-09-24
+
+### Fixed
+
+- **Bug Fix Mode's commit templates used "docs: fix #{N} ..." for intermediate round commits** — a real, repeated mistake: GitHub's issue-closing keywords (`fix`/`fixes`/`fixed`/`close`/`closes`/`resolve`/...) trigger on any commit reaching GitHub, not just a merged PR body, so this closed issues hours before review even started, with no PR yet open to reopen against. Every intermediate commit now reads "docs: issue #{N} ..." instead; the actual close-on-merge is unaffected, since it happens via Stage B6's summary `**Closes:** #{N}` line in the PR body at merge time, the one place this behavior belongs.
+- **`engineer.md`'s per-round commit rule existed but kept getting silently violated** — promoted from a single trailing sentence to its own numbered TDD step with the "why" spelled out (every downstream review agent needs `git diff` to scope its review), and gave the orchestrator (both Pipeline Mode's Stage 4 and Bug Fix Mode's Stage B3) a formal backstop: verify `git status --porcelain` is clean after every engineer run rather than trusting the report, commit on the engineer's behalf if not, and surface that the backstop fired rather than working around it silently forever.
+
+### Added
+
+- **`skills/github-cli/SKILL.md` documents two GitHub closing-keyword gotchas**: a comma-separated `Closes #A, #B, #C` list only closes the first issue (needs one `Closes #N` per line), and a closing keyword in an intermediate commit message closes on push, not on merge — both discovered live, both now documented so any agent authoring a commit or PR body knows the rules up front.
+
 ## [1.19.4] - 2026-09-24
 
 ### Added

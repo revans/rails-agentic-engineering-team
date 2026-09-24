@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.19.4
-generated_at: '2026-09-24T00:42:54Z'
+version: 1.19.5
+generated_at: '2026-09-24T02:36:49Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -13,14 +13,14 @@ files:
   agents/code-review.md: f26d3855718f75ddc92699d92bc3b468b8f7b6b1c98f30d1f6e3ee5c3aa847ca
   agents/design.md: c651cbbd9e3128d41461c64b4fc32489d5770a3247d9b09173dbcf19fbdee91a
   agents/discovery.md: d29c7de1f0f9552ede484eca78b49774bcdafbc0978c3b782eb372b67a5ad753
-  agents/engineer.md: fdd5b80c3af6aa0ab98ebe783d96b97e1622188d0975391f3b8b38f43de137fc
+  agents/engineer.md: 8a92c5a04c7468da787d7c26b490e78d2ccc99a7ebd85e3b4659630395859c6d
   agents/fidelity-review.md: d187fc533cbd39d7fbc1f0d3930a7ce1a97d109ee5d77407d369baa53388de8a
   agents/fresh-eyes-review.md: 380e049ac08c82bb0c87cd8542e4e115a931bddaa01ab1b081d5ed2b9558f517
   agents/intake.md: 2a3023bfc2d3f0da1de7b350b0a28084eb6d8ec5031001f1e2c895de6a57b16a
   agents/performance-review.md: ff7ddaa849278131edfd51e27e6b99b44fc6bce81a64ec1bbdbcbbed9d2ef64a
   agents/rails-installer.md: 19009a70362382da3eb0ac6e384d087e6363f3f1d3341379fd34278e403e9cfb
   agents/rails-log-analyst.md: 9f726506643f6f14079c09c1572caaafc9c4a2a7e183f4122334d5af700f0f01
-  agents/rails-orchestrator.md: 708c7893079acd8328629648920cc4eff10ad6e7d252d813ca483ca65cb575db
+  agents/rails-orchestrator.md: 9b9554f9f4761a203b0d8df6fcd4cfaec6230ebe4a837ef51d19b60e1174da60
   agents/rails-skill-builder.md: 04bf2371abe7a34ef6e55adcbc14c54182fa8932a2f0715bbdf610308371caea
   agents/rails-updater.md: 2ada9a88a46c7975fd015f896b3808d0e06e758e655d57ed901870b59e10b9a3
   agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8
@@ -49,7 +49,7 @@ files:
   skills/architect-spec-format/SKILL.md: df9e0ee01897bf3382d65cf260d7a7ee568fdb35139993d32a98b4707e69a6e0
   skills/design-system/SKILL.md: 3bea653bcc940b90949d129d7d15bc364c1dd8539d6e7f989c1fef8816112628
   skills/discovery-brief-format/SKILL.md: 230fab1f3202ee8297a0a6cd859e180410f4ac01fcebd3bc3dcae68946f9872a
-  skills/github-cli/SKILL.md: 449aac5b71945709c5a367fa0f5a0908a59e7eac8c5359e105d26c67efc362a2
+  skills/github-cli/SKILL.md: 86cb898d01fbc356cb9f364d0495552056340d3f459666ff3905880b29eadaf4
   skills/rails-principles/SKILL.md: d312ffb19aa71a4de1eca86cc0b031a42a546707f6d347188886ce4b3527e083
   skills/scope-capture/SKILL.md: d0dcfe9a21da0063602219f39809642535431e61e4af64e94d6ee05095598bac
   skills/team-sync/SKILL.md: b4e4bb79780425dc3b0797026096ff7ea7076f1efbef4bad4007e1857e978648
