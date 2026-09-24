@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.4] - 2026-09-24
+
+### Added
+
+- **Bug Fix Mode's Stage B1 now marks the GitHub Project card "In Progress" the moment work actually starts**, reading the same `team.yml` `github.project.owner`/`github.project.number` config `team-create-issue` already reads. Confirmed via live testing against a real project board that `gh project item-edit` against an issue that isn't a project item (a plain `bug`, which never reaches the board per `team-create-issue`'s own routing) is a safe, silent no-op — so the step runs unconditionally, with no per-issue board-membership check needed first, and is skipped entirely (also silently) when a project isn't configured in `team.yml` at all.
+
 ## [1.19.3] - 2026-09-23
 
 ### Added

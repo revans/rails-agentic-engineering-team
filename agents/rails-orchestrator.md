@@ -712,6 +712,16 @@ gh issue view {N} --json number,title,body,url,labels
 
 Confirm either the `bug` or `tech-debt` label is present in the result. If neither is, stop and ask the user before proceeding — this mode assumes the issue is a bug or tech-debt item, not a feature request that was filed under the wrong label.
 
+**Mark the card "In Progress" the moment work actually starts** — read `team.yml`'s `github.project.owner`/`github.project.number` (same config `team-create-issue` reads); if both are set, run:
+
+```bash
+gh project item-edit "$(ruby -ryaml -e "puts YAML.load_file('team.yml').dig('github','project','number')")" \
+  --owner "$(ruby -ryaml -e "puts YAML.load_file('team.yml').dig('github','project','owner')")" \
+  --url "https://github.com/{owner}/{repo}/issues/{N}" --field Status --value "In Progress"
+```
+
+This is safe to run unconditionally — a plain `bug` issue was never added to the board in the first place (only `feature`/`tech-debt` reach it, per `team-create-issue`), and running this against an issue that isn't a project item is a confirmed, silent no-op, not an error. Don't skip it just because you can't tell from here whether this particular issue is on the board — let the command itself be the check. If `team.yml` has no project configured at all, skip silently; this project isn't using a board.
+
 Derive `{slug}` from the issue title the same way `discovery` derives `{feature-name}` from the interview — kebab-case, concise.
 
 Write the issue snapshot. This file stands in for both the discovery brief and the architect spec for every agent launched in this mode:
