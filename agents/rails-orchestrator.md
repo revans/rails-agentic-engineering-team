@@ -34,6 +34,20 @@ Determine mode from the user's input:
 
 If ambiguous, ask.
 
+## Blocking on Async Agent Launches
+
+Every `Agent` tool call you make returns immediately with an async acknowledgment ("the agent is working in the background, you will be notified automatically") — it does not wait for the agent to finish. That notification only resumes *your* run if your run is still open to receive it. You are a subagent yourself, not the interactive top-level session — nothing else is watching for your own completion, so if you treat the launch acknowledgment as "done" and end your turn (even with a stated intent like "I'll wait for it to complete"), your run is marked complete right then, before the agent you launched has produced anything, and the pipeline stalls permanently with an orphaned agent running unsupervised in the background.
+
+This is a confirmed, real failure, not a hypothetical: a bug-fix run in a downstream project launched its engineer, said it would wait, ran a single `sleep 1`, and stopped — leaving the issue open, no PR, and the engineer still running with nothing left to pick up its output.
+
+**The fix: never end your turn on an unconfirmed async launch. Poll for the actual output artifact in a loop, re-issuing the Bash call as many times as it takes:**
+
+```bash
+until ls {expected-output-glob} 2>/dev/null; do sleep 30; done
+```
+
+A single Bash call's timeout running out is not a signal to give up — issue the same poll again in a fresh tool call. Only stop once the artifact actually exists. This applies identically whether you launched one agent or several in parallel (e.g. Stage 5/B4's four simultaneous reviews) — poll for all expected outputs, not just the first acknowledgment.
+
 ---
 
 ## Pipeline Mode
@@ -193,13 +207,13 @@ Store `$WORKTREE_DIR` and `$PROJECT_ROOT`. Every agent launched from here throug
 **Input:** `docs/briefs/{NNN}-{feature-name}/{NNN}.01-dis-{feature-name}.md`
 **Produces:** `docs/briefs/{NNN}-{feature-name}/{NNN}.02-arc-{feature-name}.md`
 
-Launch the architect with the brief path, the feature number, and `$FEATURE_DIR`. After it completes, confirm the spec file exists:
+Launch the architect with the brief path, the feature number, and `$FEATURE_DIR`. Block until it actually finishes — see "Blocking on Async Agent Launches" above — then confirm the spec file exists:
 
 ```bash
-ls ${FEATURE_DIR}/${NNN}.02-arc-*.md
+until ls ${FEATURE_DIR}/${NNN}.02-arc-*.md 2>/dev/null; do sleep 30; done
 ```
 
-If no file appears, ask the user what happened before proceeding.
+If the file still hasn't appeared after a reasonable number of polls, ask the user what happened before proceeding.
 
 Commit it — the architect itself has no git responsibilities, it only ever `Write`s; every non-code artifact this pipeline produces gets committed by the orchestrator right after the stage that wrote it confirms the file exists, not batched up for later:
 
@@ -215,10 +229,10 @@ git commit -m "docs: ${NNN} architect spec"
 **Input:** `docs/briefs/{NNN}-{feature-name}/{NNN}.02-arc-{feature-name}.md`
 **Produces:** `docs/briefs/{NNN}-{feature-name}/{NNN}.03-des-{feature-name}.md`
 
-Launch the design agent with the spec path, feature number, and `$FEATURE_DIR`. After it completes, confirm the design spec exists:
+Launch the design agent with the spec path, feature number, and `$FEATURE_DIR`. Block until it actually finishes — see "Blocking on Async Agent Launches" above — then confirm the design spec exists:
 
 ```bash
-ls ${FEATURE_DIR}/${NNN}.03-des-*.md
+until ls ${FEATURE_DIR}/${NNN}.03-des-*.md 2>/dev/null; do sleep 30; done
 ```
 
 The design spec must exist before engineering begins — the engineer reads both the feature spec and the design spec.
@@ -239,13 +253,13 @@ git commit -m "docs: ${NNN} design spec"
 
 The worktree already has `feature/{NNN}-{feature-name}` checked out — the engineer's own "create a branch" step in its TDD Workflow only fires when it's *not* already on a branch matching that name, which in pipeline mode it always will be. Don't tell the engineer to create a branch; it checks for itself.
 
-Launch the engineer with both spec paths, the feature number, `$FEATURE_DIR`, and the current `$SEQ`. After it completes, confirm the engineer report exists:
+Launch the engineer with both spec paths, the feature number, `$FEATURE_DIR`, and the current `$SEQ`. Block until it actually finishes — see "Blocking on Async Agent Launches" above:
 
 ```bash
-ls ${FEATURE_DIR}/${NNN}.${SEQ}-eng-*.md
+until ls ${FEATURE_DIR}/${NNN}.${SEQ}-eng-*.md 2>/dev/null; do sleep 30; done
 ```
 
-The engineer report must exist before reviews begin — the review agents read it for context.
+Only stop once the report file actually exists, then confirm it — it must exist before reviews begin — the review agents read it for context.
 
 The engineer's own TDD Workflow requires it to commit incrementally ("commit after each task," not one commit at the end) and leave `git status --porcelain` clean before reporting done — that's its domain, don't duplicate it by committing piecemeal yourself. But don't just assume it happened: `cd "$WORKTREE_DIR" && git status --porcelain` before proceeding. An engineer run reporting done with the entire implementation still uncommitted is a confirmed, real, repeating failure mode even with the rule documented in `engineer.md`. If application code is sitting uncommitted, commit it yourself now (review the diff first — this is still an unreviewed engineer's own work, not yours to silently rewrite) with a message naming what round it's from, and note in your own final report to the user that this backstop fired; don't let it pass silently, since a rule that keeps needing this backstop is a signal worth surfacing, not just working around forever. The report file itself is a separate `Write` the engineer doesn't commit; that's yours regardless:
 
@@ -290,7 +304,16 @@ No archiving needed — new round files get new sequence numbers; prior round fi
 
 **Launch all four review agents simultaneously** — do not wait for one before starting the next. Issue all four Agent tool calls in a single response. Pass each agent the engineer report path and the expected output path for its sequence number; `fidelity-review` additionally needs the discovery brief path.
 
-After all four complete, confirm the four report files exist before evaluating:
+**Block until all four actually finish — see "Blocking on Async Agent Launches" above.** Four simultaneous async launches make this worse, not better: your turn ends the moment the fourth acknowledgment comes back unless you poll for real completion. Poll rather than assume:
+
+```bash
+until ls ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
+         ${FEATURE_DIR}/${NNN}.$(($SEQ+2))-sec-*.md \
+         ${FEATURE_DIR}/${NNN}.$(($SEQ+3))-perf-*.md \
+         ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md 2>/dev/null; do sleep 30; done
+```
+
+Re-issue this across as many tool-call rounds as it takes — a Bash timeout is not a reason to stop polling. Once all four exist, confirm them before evaluating:
 
 ```bash
 ls ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
@@ -355,7 +378,13 @@ it fresh, per your own agent instructions.
 Produce the report at {FEATURE_DIR}/{NNN}.$(($SEQ+5))-fer-{feature-name}.md.
 ```
 
-After it completes, confirm the report exists, then commit it:
+Block until it actually finishes — see "Blocking on Async Agent Launches" above:
+
+```bash
+until ls ${FEATURE_DIR}/${NNN}.$(($SEQ+5))-fer-*.md 2>/dev/null; do sleep 30; done
+```
+
+Then confirm the report exists and commit it:
 
 ```bash
 git add "${FEATURE_DIR}/${NNN}."*-fer-*.md
@@ -778,7 +807,13 @@ your report rather than guessing at scope (see the scope-capture skill).
 Write the engineer report to {BUGFIX_DIR}/{N}.01-eng-{slug}.md when the fix is complete.
 ```
 
-Confirm `{BUGFIX_DIR}/{N}.01-eng-{slug}.md` (or the current round's `{N}.{SEQ}-eng-{slug}.md`) exists. Before committing it, check `git status --porcelain` for uncommitted application code — same backstop as Stage 4, and the same reasoning: don't trust that the engineer's own incremental-commit discipline held, verify it. Commit any uncommitted code yourself (reviewing the diff first) if it's there, noting the backstop fired, then commit the report file — the separate `Write` the engineer doesn't commit itself.
+**Block until the engineer actually finishes — see "Blocking on Async Agent Launches" above.** Poll rather than assume:
+
+```bash
+until ls {BUGFIX_DIR}/{N}.${SEQ}-eng-*.md 2>/dev/null; do sleep 30; done
+```
+
+Re-issue this across as many tool-call rounds as it takes; a Bash timeout is not a reason to stop polling. Confirm `{BUGFIX_DIR}/{N}.01-eng-{slug}.md` (or the current round's `{N}.{SEQ}-eng-{slug}.md`) exists. Before committing it, check `git status --porcelain` for uncommitted application code — same backstop as Stage 4, and the same reasoning: don't trust that the engineer's own incremental-commit discipline held, verify it. Commit any uncommitted code yourself (reviewing the diff first) if it's there, noting the backstop fired, then commit the report file — the separate `Write` the engineer doesn't commit itself.
 
 ```bash
 git add "{BUGFIX_DIR}/{N}.${SEQ}-eng-"*.md

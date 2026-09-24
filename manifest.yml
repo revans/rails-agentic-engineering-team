@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.19.10
-generated_at: '2026-09-24T13:08:43Z'
+version: 1.19.11
+generated_at: '2026-09-24T13:49:31Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -20,7 +20,7 @@ files:
   agents/performance-review.md: ff7ddaa849278131edfd51e27e6b99b44fc6bce81a64ec1bbdbcbbed9d2ef64a
   agents/rails-installer.md: 19009a70362382da3eb0ac6e384d087e6363f3f1d3341379fd34278e403e9cfb
   agents/rails-log-analyst.md: 9f726506643f6f14079c09c1572caaafc9c4a2a7e183f4122334d5af700f0f01
-  agents/rails-orchestrator.md: 233b78cff6129fe6f6ce39d79fae6eb39287fe73101d7b2593cd4ce332fed65c
+  agents/rails-orchestrator.md: e775454a0e19e3be09ad86938b6ae4b5af4b08b6a629a7bbc0d1451d471a2184
   agents/rails-skill-builder.md: 04bf2371abe7a34ef6e55adcbc14c54182fa8932a2f0715bbdf610308371caea
   agents/rails-updater.md: 2ada9a88a46c7975fd015f896b3808d0e06e758e655d57ed901870b59e10b9a3
   agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8

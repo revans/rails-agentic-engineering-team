@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.11] - 2026-09-24
+
+### Fixed
+
+- **A real, confirmed bug: the orchestrator can silently stall an entire pipeline by ending its turn right after an async agent launch.** Every `Agent` tool call returns immediately with an async acknowledgment; the orchestrator is a subagent itself, not the interactive top-level session, so nothing resumes it if it treats that acknowledgment as completion and stops. Caught live on a downstream project: a Bug Fix Mode run launched its engineer, said "I'll wait for it to complete," ran one `sleep 1`, and ended its turn — the harness marked the orchestrator's own run "completed" while the issue stayed open, no PR ever opened, and the engineer kept running unsupervised in the background with no one left to pick up its output. Added a canonical "Blocking on Async Agent Launches" section right after "Three Modes," plus a `until ls {expected-output} 2>/dev/null; do sleep 30; done`-style poll at every stage that launches an agent (discovery, architect, design, engineer, the four parallel reviews, the fresh-eyes gate, and their Bug Fix Mode equivalents) — a Bash call's timeout running out is documented explicitly as not a reason to stop polling.
+
 ## [1.19.10] - 2026-09-24
 
 ### Changed
