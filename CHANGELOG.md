@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.13] - 2026-09-24
+
+### Changed
+
+- **`skills/agent-log/SKILL.md`'s git-safety guidance now bans `git stash` outright, in any form.** The 1.19.8 fix documented the root cause of the `db/agent_log.sqlite3` data-loss pattern but still recommended "scope the stash to specific paths" as the safe alternative — and that recommendation turned out to be broken. A downstream project confirmed six distinct incidents in a single day: `git stash push -- <path>` silently no-ops ("No local changes to save," not an error) whenever the target path has no working-tree diff, which is the normal case in bug-fix-mode review since the fix under test is already committed — and the reflexive `git stash pop` that follows then has no way to detect nothing was pushed, so it pops whatever is on top of the stash stack, which is shared repo-wide across every concurrent worktree on the same `.git`, not scoped to the current session. Replaced the guidance with an outright ban on `git stash` for both `db/agent_log.sqlite3` safety and mutation-testing isolation, naming the silent-no-op failure mode explicitly, and giving three concrete non-stash alternatives: an Edit-tool revert, a `git diff`/`git apply` scratch patch, or `git show <parent>:<path>` for read-only comparison.
+
 ## [1.19.12] - 2026-09-24
 
 ### Changed
