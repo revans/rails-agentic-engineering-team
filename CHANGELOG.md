@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.6] - 2026-09-24
+
+### Added
+
+- **`skills/github-cli/SKILL.md` now requires verifying issue closure after *every* merge, not just multi-issue closes.** A single, correctly-formatted `Closes #N` in a PR body was observed to silently not fire on merge in one real case, with no clear single root cause (ruled out "squash merges use the commit list instead of the PR body" — plenty of squash merges closed correctly off the identical pattern). Rather than guess at the mechanism, the guidance is to always verify with `gh issue view {N} --json state` and close by hand if needed.
+
 ## [1.19.5] - 2026-09-24
 
 ### Fixed
