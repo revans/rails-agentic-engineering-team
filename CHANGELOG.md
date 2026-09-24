@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.8] - 2026-09-24
+
+### Added
+
+- **`skills/agent-log/SKILL.md` documents the real root cause behind a recurring, previously vague "concurrent git operations" data-loss pattern.** A bare `git stash` on a worktree with pending `bin/agent-log` writes stashes `db/agent_log.sqlite3` along with everything else — restoring it (`stash pop`, or a conflict resolved via `git checkout --ours`) only guarantees *some* valid git state, not the one with the most recent row-level writes still in it. This looks clean at every git-level check (no conflict markers, empty `git stash list`) and is only diagnosable by direct SQLite querying. Confirmed as the root cause of a real instance on a downstream project. Guidance: never run a bare `git stash`/`checkout .`/`reset --hard` while agent-log writes might be pending — scope any such operation to specific paths and leave the database file out of it.
+
 ## [1.19.7] - 2026-09-24
 
 ### Fixed
