@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.9] - 2026-09-24
+
+### Added
+
+- **Stage B1 now checks a card isn't already "In Progress" before starting Bug Fix Mode on it.** The "In Progress" status set when work actually starts exists specifically to make this check possible — picking issues from a batch list without checking risks two concurrent pipelines starting on the same issue, a mistake confirmed to happen for real on a downstream project. `skills/github-cli/SKILL.md` documents the actual `gh project item-list` + client-side filter query (there's no single-item project lookup), and Stage B1 now runs it right before the existing marking step.
+
 ## [1.19.8] - 2026-09-24
 
 ### Added

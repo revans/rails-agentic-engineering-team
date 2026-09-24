@@ -712,6 +712,8 @@ gh issue view {N} --json number,title,body,url,labels
 
 Confirm either the `bug` or `tech-debt` label is present in the result. If neither is, stop and ask the user before proceeding — this mode assumes the issue is a bug or tech-debt item, not a feature request that was filed under the wrong label.
 
+**Before doing anything else, check the card isn't already "In Progress"** — see the `github-cli` skill's "Checking a Card's Board Status Before Starting Work" section for the exact query. If it's already `In Progress`, stop and surface this rather than starting a second pipeline on the same issue — name it to the user and ask whether the existing work is stale/abandoned (safe to proceed) or genuinely still active elsewhere (pick a different issue instead). This check exists because this exact mistake — two concurrent Bug Fix Mode pipelines picked up from a batch list, one already marked In Progress by the other — happened for real; the marking step below is what makes the check possible, so skipping the check makes the marking pointless.
+
 **Mark the card "In Progress" the moment work actually starts** — read `team.yml`'s `github.project.owner`/`github.project.number` (same config `team-create-issue` reads); if both are set, run:
 
 ```bash

@@ -209,3 +209,23 @@ gh pr edit PR_URL_OR_NUMBER --add-reviewer @copilot
 gh issue view NUMBER --repo OWNER/REPO
 gh issue list --repo OWNER/REPO --label LABEL --state open
 ```
+
+## Checking a Card's Board Status Before Starting Work
+
+**Before starting Bug Fix Mode (or any pipeline) on an issue, check whether its board card is already "In Progress" — never start a second pipeline on an issue someone (or something) else is already working.** This matters most when picking issues from a list to work through in a batch, or when multiple concurrent sessions/orchestrators share the same repo — the "In Progress" status Stage B1 sets when work actually starts (see `rails-orchestrator.md`'s Bug Fix Mode) exists specifically so this check is possible; skipping the check makes that marking pointless.
+
+There's no single-item `gh project item-view` — list and filter client-side:
+
+```bash
+gh project item-list PROJECT_NUMBER --owner OWNER --format json --limit 250 \
+  | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for item in data['items']:
+    c = item.get('content', {})
+    if c.get('number') == ISSUE_NUMBER:
+        print(item.get('status'))
+"
+```
+
+If the result is `In Progress`, stop and surface it rather than starting duplicate work — name the issue and ask whether to proceed anyway (the existing work may be stale/abandoned) or pick a different issue. `Todo`, `Ready`, or not on the board at all (a plain `bug`, which never reaches the board — see "Creating an Issue" above) are all safe to start. This check costs one extra `gh` call; a duplicate pipeline running on the same issue costs a full review cycle and a real risk of two PRs racing to close the same issue.
