@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.15] - 2026-09-24
+
+### Fixed
+
+- **Found the likely cause of the long-running "a correct `Closes #N` silently didn't fire on merge" mystery: the Bug Fix Summary template emitted `**Closes:** #{N}`, bolded and colon-suffixed, and Stage B8 feeds that file straight to `gh pr create --body-file`.** GitHub's closing-keyword parser does not reliably recognize that form, and it fails exactly the way a comma-separated list does — no error, no warning, the issue just stays open. It went unnoticed for so long because `**Closes:** #N` reads perfectly well to a human and fits naturally beside the bold key/value lines the rest of that template uses. Caught when a downstream bundle reformatted to bare `Closes #N` lines before opening its PR and all six of its issues then closed correctly, against a same-day baseline where three of four in another bundle had to be closed by hand. The template now emits a bare `Closes #{N}` on its own line, and both `rails-orchestrator.md` and `skills/github-cli/SKILL.md` say explicitly to check the rendered keyword rather than just that the number is present. The post-merge `gh issue view {N} --json state` verification requirement from 1.19.6 stays mandatory — this explains most of the observed failures, not provably all of them.
+
 ## [1.19.14] - 2026-09-24
 
 ### Added

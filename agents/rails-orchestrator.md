@@ -832,7 +832,7 @@ git add "{BUGFIX_DIR}/{N}.${SEQ}-eng-"*.md
 git commit -m "docs: issue #{N} engineer report, round N"
 ```
 
-Deliberately not "fix #{N}" — GitHub's issue-closing keywords (`fix`/`fixes`/`fixed`/`close`/`closes`/`resolve`/... immediately followed by `#N`) trigger on *any* commit message reaching GitHub, not just a PR body at merge time. A commit phrased "fix #154 ..." pushed mid-pipeline closes the issue hours before review even starts, silently, with no PR yet to reopen against. Every commit message in this mode uses "issue #{N}" instead — the actual close-on-merge still happens correctly via Stage B6's summary `**Closes:** #{N}` line, which only takes effect in a PR body at merge, the one place this behavior is wanted.
+Deliberately not "fix #{N}" — GitHub's issue-closing keywords (`fix`/`fixes`/`fixed`/`close`/`closes`/`resolve`/... immediately followed by `#N`) trigger on *any* commit message reaching GitHub, not just a PR body at merge time. A commit phrased "fix #154 ..." pushed mid-pipeline closes the issue hours before review even starts, silently, with no PR yet to reopen against. Every commit message in this mode uses "issue #{N}" instead — the actual close-on-merge still happens correctly via Stage B6's summary `Closes #{N}` line, which only takes effect in a PR body at merge, the one place this behavior is wanted.
 
 ### Stage B3b — CI Gate
 
@@ -872,7 +872,8 @@ A lighter version of Stage 7 — there's no Key Scenarios or Acceptance Criteria
 **Completed:** YYYY-MM-DD
 **Bug fix directory:** {BUGFIX_DIR}
 **Review rounds:** {N} — final verdict: [PASS | PASS WITH NOTES]
-**Closes:** #{N}
+
+Closes #{N}
 
 ---
 
@@ -905,7 +906,9 @@ A lighter version of Stage 7 — there's no Key Scenarios or Acceptance Criteria
 | Fresh-eyes review (final gate) | {BUGFIX_DIR}/{N}.{SEQ+5}-fer-{slug}.md |
 ```
 
-The `**Closes:** #{N}` line is not decorative — Stage B8 pulls it into the PR body so GitHub closes the issue automatically on merge.
+The `Closes #{N}` line is not decorative — Stage B8 pulls it into the PR body so GitHub closes the issue automatically on merge.
+
+**Write it bare — `Closes #{N}` on its own line, with no bold, no colon, no surrounding markdown.** This template used to emit `**Closes:** #{N}`, and that appears to be why closes silently failed to fire on several merges in a downstream project: GitHub's closing-keyword parser wants the bare keyword, and `**Closes:**` does not reliably satisfy it. A bundle that hit this reformatted to bare `Closes #N` lines before opening its PR and all six of its issues then closed correctly on merge. Closing more than one issue needs one bare line per issue — a comma-separated list closes only the first. Verify every issue after the merge regardless; see the `github-cli` skill.
 
 Commit it right after writing, same as Stage 7:
 
@@ -930,7 +933,7 @@ DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.nam
 PR_URL=$(gh pr create --title "Fix #{N}: {Title}" --body-file "${BUGFIX_DIR}/{N}-summary.md" --base "$DEFAULT_BRANCH")
 ```
 
-Because `{BUGFIX_DIR}/{N}-summary.md` already contains a `**Closes:** #{N}` line (Stage B6), `gh pr create` picks it up from the body file directly — GitHub recognizes `Closes #{N}` anywhere in a PR body and closes the referenced issue on merge, per the `github-cli` skill. No separate edit needed.
+Because `{BUGFIX_DIR}/{N}-summary.md` already contains a bare `Closes #{N}` line (Stage B6), `gh pr create` picks it up from the body file directly — GitHub recognizes `Closes #{N}` anywhere in a PR body and closes the referenced issue on merge, per the `github-cli` skill. No separate edit needed. Confirm the line is bare before creating the PR; a bolded or colon-suffixed variant is the likely cause of the silent close failures seen downstream.
 
 Record the PR URL in the summary doc the same way Stage 7c does — insert it, commit, push.
 

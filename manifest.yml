@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.19.14
-generated_at: '2026-09-25T03:11:27Z'
+version: 1.19.15
+generated_at: '2026-09-25T03:42:29Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -20,7 +20,7 @@ files:
   agents/performance-review.md: ff7ddaa849278131edfd51e27e6b99b44fc6bce81a64ec1bbdbcbbed9d2ef64a
   agents/rails-installer.md: 19009a70362382da3eb0ac6e384d087e6363f3f1d3341379fd34278e403e9cfb
   agents/rails-log-analyst.md: 9f726506643f6f14079c09c1572caaafc9c4a2a7e183f4122334d5af700f0f01
-  agents/rails-orchestrator.md: a1d98bdf9f7d689a79f655d79f992218fdf740fcc892a009ca4d60ef03802ebf
+  agents/rails-orchestrator.md: 813765e7d0be8118841c389902f1aec9016dbc11427d2ebf21a92ad2140ace40
   agents/rails-skill-builder.md: 04bf2371abe7a34ef6e55adcbc14c54182fa8932a2f0715bbdf610308371caea
   agents/rails-updater.md: 2ada9a88a46c7975fd015f896b3808d0e06e758e655d57ed901870b59e10b9a3
   agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8
@@ -49,7 +49,7 @@ files:
   skills/architect-spec-format/SKILL.md: df9e0ee01897bf3382d65cf260d7a7ee568fdb35139993d32a98b4707e69a6e0
   skills/design-system/SKILL.md: 3bea653bcc940b90949d129d7d15bc364c1dd8539d6e7f989c1fef8816112628
   skills/discovery-brief-format/SKILL.md: 230fab1f3202ee8297a0a6cd859e180410f4ac01fcebd3bc3dcae68946f9872a
-  skills/github-cli/SKILL.md: 4e0326192517b6a3e38f3135ce02dedfd1da31eded3f29a0ee5f93aaabc0af2c
+  skills/github-cli/SKILL.md: 00e29d6069f0a26c7619633b67d2c3d9bf529cec14704601fce9eabd8a3ca6a7
   skills/rails-principles/SKILL.md: d312ffb19aa71a4de1eca86cc0b031a42a546707f6d347188886ce4b3527e083
   skills/scope-capture/SKILL.md: d0dcfe9a21da0063602219f39809642535431e61e4af64e94d6ee05095598bac
   skills/team-sync/SKILL.md: b4e4bb79780425dc3b0797026096ff7ea7076f1efbef4bad4007e1857e978648
