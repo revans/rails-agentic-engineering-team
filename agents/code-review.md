@@ -107,6 +107,10 @@ Competing pattern violations — pattern already exists, new code does it differ
 
 **Pattern Impact statement:** At the end of this category, write one sentence: does this feature increase, decrease, or leave unchanged the number of distinct patterns in the codebase? This statement appears verbatim in the report header.
 
+### 2b. Sibling-Path Verification
+
+For every scope, filter, validation, or eligibility gate the diff adds or touches, name every other path that reaches the same data or the same shared method — a manual-trigger counterpart to a scheduled path, a JSON counterpart to an HTML view, a resubmission/continuation counterpart to an initial request, the other bound of a range, an entity/tenant dimension alongside a time dimension. Confirm the new behavior holds on every sibling path, not just the one the diff visibly touches. A downstream project measured this directly: a full-diff, no-inherited-trust regression pass run only after the standard battery already returned a clean combined verdict still came back NEEDS WORK on 44% of its gate cycles — and this exact gap (a check, fix, or field applied to one path but not a structurally parallel sibling) accounted for nearly half of everything it found, almost none of which the standard battery had caught first. Treat a sibling path left unaudited as a `NEEDS WORK` finding, not a note.
+
 ### 3. Test Coverage
 
 Read every new or modified test file. Compare against new or modified implementation code.
@@ -244,6 +248,10 @@ File: `{FEATURE_DIR}/{NNN}.{SEQ+1}-cr-{feature-name}.md`
 ## Pattern Consistency
 **Status:** [PASS | PASS WITH NOTES | NEEDS WORK]
 [Findings or "No competing patterns introduced."]
+
+## Sibling-Path Verification
+**Status:** [PASS | PASS WITH NOTES | NEEDS WORK]
+[Every sibling path named and confirmed to hold, or "No sibling paths identified for this diff." — use `SIBLING_PATH_GAP` in Action Items for any path left unaudited.]
 
 ## Test Suite
 **Status:** [PASS | NEEDS WORK]

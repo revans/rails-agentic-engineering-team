@@ -4,27 +4,27 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.19.13
-generated_at: '2026-09-24T17:52:38Z'
+version: 1.19.14
+generated_at: '2026-09-25T03:11:27Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
   agents/bug-triage.md: 163f483e8c65c272bd3cba599a6260026c7db1aefb957e8935f4c7a6b263978a
-  agents/code-review.md: f26d3855718f75ddc92699d92bc3b468b8f7b6b1c98f30d1f6e3ee5c3aa847ca
+  agents/code-review.md: 51eaaf134b071dfa0883ed4ad355dec40448df7219404612e2f02ee5d33d361c
   agents/design.md: c651cbbd9e3128d41461c64b4fc32489d5770a3247d9b09173dbcf19fbdee91a
   agents/discovery.md: d29c7de1f0f9552ede484eca78b49774bcdafbc0978c3b782eb372b67a5ad753
-  agents/engineer.md: 8a92c5a04c7468da787d7c26b490e78d2ccc99a7ebd85e3b4659630395859c6d
+  agents/engineer.md: b7ca03e521ff172f549d510160f34a00650870ec7eae7a3144f37f798f7cc1d6
   agents/fidelity-review.md: d187fc533cbd39d7fbc1f0d3930a7ce1a97d109ee5d77407d369baa53388de8a
   agents/fresh-eyes-review.md: 380e049ac08c82bb0c87cd8542e4e115a931bddaa01ab1b081d5ed2b9558f517
   agents/intake.md: 66836642a9acb34ff843ec3feef17c06ca154cb88a166a64d15ede22778e87f9
   agents/performance-review.md: ff7ddaa849278131edfd51e27e6b99b44fc6bce81a64ec1bbdbcbbed9d2ef64a
   agents/rails-installer.md: 19009a70362382da3eb0ac6e384d087e6363f3f1d3341379fd34278e403e9cfb
   agents/rails-log-analyst.md: 9f726506643f6f14079c09c1572caaafc9c4a2a7e183f4122334d5af700f0f01
-  agents/rails-orchestrator.md: d8e64333d820deb5e95fac599b0930f461293d0daa5900018eeccbff9e15be5d
+  agents/rails-orchestrator.md: a1d98bdf9f7d689a79f655d79f992218fdf740fcc892a009ca4d60ef03802ebf
   agents/rails-skill-builder.md: 04bf2371abe7a34ef6e55adcbc14c54182fa8932a2f0715bbdf610308371caea
   agents/rails-updater.md: 2ada9a88a46c7975fd015f896b3808d0e06e758e655d57ed901870b59e10b9a3
   agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8
-  agents/security-review.md: 324d7254d3e3248f18c84b7fd5a0b88c0259738c738daf998de29b5c064e11f9
+  agents/security-review.md: 3223bad5fba1ac9958d154950936b78b349c953704debd651f79be2af27dc31b
   bin/agent-log: a44679a4637529dd54c2d35280c08d3078695b37aac287a283c96bfec15de98e
   bin/rails-team-setup-project: efc5a117b64b0d506fd309f91982e3cc9166a70139625c2e551bc20add032c08
   bin/rails-team-update: 84c205e964249db6cfd42aa4580125512a04ac56ab14de884e8b5184e44aecf0

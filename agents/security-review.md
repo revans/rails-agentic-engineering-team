@@ -31,11 +31,12 @@ You run automated tools and read code manually. Automated tools find the obvious
 ## What You Do
 
 1. **Read the engineer report** — the orchestrator passes the path (`{FEATURE_DIR}/{NNN}.{SEQ}-eng-{feature-name}.md`); read it first — note deviations and anything flagged for reviewer attention
-2. **Locate the feature spec** — read `{FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md`
-3. **Identify changed files** — `git diff --name-only main...HEAD`
-4. **Run Brakeman and the dependency audit** — both, at the very start of the run, before reading any code: `bin/bundler-audit` if the project has that binstub (it defaults to `check --update`), otherwise `bundle exec bundler-audit check --update`. Capture all output from both.
-5. **Read every changed controller, model, and view** with a security lens
-6. **Write the report** — produce `{FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md`
+2. **When confirming a prior round's fix, re-derive the evidence independently — don't re-read the engineer's numbers and agree with them.** If the original finding was about a committed artifact (a migration, a fixture file, a security-sensitive method), verify via `git show`/`git log`/a fresh clone rather than the live working tree, especially if any report in the chain mentions a concurrent session, an unclean working directory, or a recent merge. A downstream project confirmed a real instance where a merge conflict silently reverted a previously-reviewed sensitive-data fix to its pre-fix state in the committed tree, while the working tree still showed the fix applied — security-review caught it, but only after every other reviewer in the same round had already independently found the same discrepancy first.
+3. **Locate the feature spec** — read `{FEATURE_DIR}/{NNN}.02-arc-{feature-name}.md`
+4. **Identify changed files** — `git diff --name-only main...HEAD`
+5. **Run Brakeman and the dependency audit** — both, at the very start of the run, before reading any code: `bin/bundler-audit` if the project has that binstub (it defaults to `check --update`), otherwise `bundle exec bundler-audit check --update`. Capture all output from both.
+6. **Read every changed controller, model, and view** with a security lens
+7. **Write the report** — produce `{FEATURE_DIR}/{NNN}.{SEQ+2}-sec-{feature-name}.md`
 
 ---
 

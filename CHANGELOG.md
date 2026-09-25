@@ -4,6 +4,15 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.14] - 2026-09-24
+
+### Added
+
+- **`code-review.md` now walks Sibling-Path Verification as its own numbered Review Category (2b), not just background reading.** The relevant detection guidance already lived in the `rails-principles` skill, loaded by this agent, but had no operationalized checklist step of its own — a downstream project measured a full-diff, no-inherited-trust regression pass catching a real, confirmed bug on 44% of its gate cycles *after* the standard four-reviewer battery had already returned a clean verdict, with this exact gap (a check, fix, or field applied to one path but not a structurally parallel sibling) accounting for nearly half of everything that pass found — almost none of which the standard battery caught first. Added the category to `code-review.md`'s Review Categories and a matching status section to its report template, so a sibling path left unaudited is now a named, walked step rather than passive skill content the reviewer may or may not apply.
+- **`security-review.md` now carries the same "re-derive the evidence independently" instruction already present in `code-review.md`/`performance-review.md`.** Added as step 2 of "What You Do," matching the sibling agents' wording, adapted to security evidence (re-run Brakeman/bundler-audit yourself, re-verify a vulnerable path via `git show`/a fresh clone rather than trusting the live working tree, especially after a concurrent session or a recent merge). A downstream project confirmed a real instance motivating this: a merge conflict silently reverted a previously-reviewed sensitive-data fix to its pre-fix state in the committed tree while the working tree still showed the fix applied, and security-review only caught it after every other reviewer in the round had already found the same discrepancy independently.
+- **`rails-orchestrator.md` now logs `run start` as the literal first line of Stage 1 and Stage B1**, ahead of even `PROJECT_ROOT=$(pwd)`, instead of relying on the separate "Activity Logging" section near the bottom of the file to be read and remembered mid-session. A downstream project measured this directly: at least a fifth of its completed orchestrator runs showed `run start` logged within seconds of `run end` — meaning it was actually called retroactively at session close, after the work was already done — making it the single most commonly skipped logging step across that project's whole pipeline.
+- **`engineer.md`'s TDD Workflow gains a "Pre-migration check" step** requiring, for every new `belongs_to`/`references`, a paired `foreign_key: true`/`add_foreign_key` in the same migration and a reciprocal `has_many`/`has_one` where the association should be traversed both ways. A downstream project found this the single highest-severity-rate finding category in its code-review history, recurring across five distinct features — catching it before the migration runs is free; catching it in review costs a round.
+
 ## [1.19.13] - 2026-09-24
 
 ### Changed

@@ -152,6 +152,8 @@ If `{NNN}.04-eng-*` exists, also check for the latest review files — find the 
 
 ## Stage 1 — Discovery
 
+**Before anything else — including `PROJECT_ROOT=$(pwd)`:** run `bin/agent-log run start --agent-name rails-orchestrator --feature-id {NNN-or-bugfix-N} --input-mode {pipeline|ad_hoc} --input-summary "..."` and capture `$RUN_ID`. A downstream project measured this directly: at least a fifth of its completed orchestrator runs showed `run start` logged within seconds of `run end`, meaning it was actually called retroactively at session close, after the work was already done, rather than as the session's first action — this is the single most commonly skipped logging step across that project's whole pipeline. Treat it as the literal first tool call after identity adoption, before any git command, not as part of the "Activity Logging" section read later.
+
 **Input:** user intent (gathered by discovery agent in conversation)
 **Produces:** `docs/briefs/{NNN}-{feature-name}/{NNN}.01-dis-{feature-name}.md`
 
@@ -736,6 +738,8 @@ Triggered by `/fix {issue-number}` — a confirmed bug from `bug-triage`'s "Fix 
 **The GitHub issue is the spec.** There is no discovery interview, no architect stage, no design stage — the same shortcut the bug-triage acceptance criteria describe as "the bug report is the spec." Everything downstream of that — engineer, the four parallel reviewers, the verdict gate, the PR — runs exactly as it does in Pipeline Mode. Skipping the first three stages is not skipping rigor; the gate still applies in full.
 
 ### Stage B1 — Read the Issue, Snapshot It
+
+**Before anything else — including `PROJECT_ROOT=$(pwd)`:** run `bin/agent-log run start --agent-name rails-orchestrator --feature-id {NNN-or-bugfix-N} --input-mode {pipeline|ad_hoc} --input-summary "..."` and capture `$RUN_ID`. A downstream project measured this directly: at least a fifth of its completed orchestrator runs showed `run start` logged within seconds of `run end`, meaning it was actually called retroactively at session close, after the work was already done, rather than as the session's first action — this is the single most commonly skipped logging step across that project's whole pipeline. Treat it as the literal first tool call after identity adoption, before any git command, not as part of the "Activity Logging" section read later.
 
 **Input:** GitHub issue number `{N}`
 **Produces:** `docs/bugfixes/{N}-{slug}/{N}.00-issue-{slug}.md`
