@@ -952,6 +952,8 @@ PR_URL=$(gh pr create --title "Issue #{N}: {Title}" --body-file "${BUGFIX_DIR}/{
 
 That title vector also masked how badly the body lines were failing: the primary issue closed reliably via the title while non-primary issues depended on body lines that were silently not parsing, so a bundle would close 1-of-4 and look like a mysterious partial failure. With the title neutralised, closing depends solely on Stage B6's bare `Closes #{N}` body lines — one per issue, explicit and controllable. `gh pr create` picks them up from the body file directly, per the `github-cli` skill; no separate edit needed. Confirm they are bare before creating the PR; a bolded or colon-suffixed variant does not reliably parse.
 
+**Watch the summary's prose too, not just its `Closes` lines — the whole summary becomes the PR body.** A closing verb immediately before `#N` fires anywhere in that text, and negation does not disarm it: a downstream bundle that deliberately left one issue unresolved wrote "The PR does not close #275" in its disposition note, and #275 closed on merge anyway. When a bundled issue is *not* being closed — investigated and deferred, already fixed, not worth doing — write its disposition with the verb away from the number (`#275 remains open`, `investigated issue #275; no change warranted`), never `does not close #275` or `not a fix for #275`. See the `github-cli` skill for the full list of trigger verbs.
+
 Record the PR URL in the summary doc the same way Stage 7c does — insert it, commit, push.
 
 **Do not merge it.** Same rule as Pipeline Mode.

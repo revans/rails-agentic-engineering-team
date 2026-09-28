@@ -4,6 +4,14 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.18] - 2026-09-28
+
+### Fixed
+
+- **Negation does not disarm a closing keyword: "The PR does not close #275" closes #275.** GitHub's parser matches the substring `close #275` and has no concept of the "does not" in front of it. A downstream bundle deliberately left one issue of four unresolved, wrote exactly that sentence as its disposition note, and — because the Bug Fix Summary becomes the PR body verbatim — closed the issue on merge anyway; it had to be reopened by hand. What makes this one dangerous is that the phrasing is the first thing a careful writer reaches for: the more clearly you explain that you are *not* closing something, the more likely you are to close it.
+- The rule in `skills/github-cli/SKILL.md` is now stronger than "format your `Closes` lines correctly": never place any closing verb (`close`/`closes`/`closed`/`fix`/`fixes`/`fixed`/`resolve`/`resolves`/`resolved`) immediately before `#N` anywhere in a PR title or body for an issue you don't intend to close — not in prose, a parenthetical, a negation or a quotation — with worked ✅/❌ phrasings for writing about a deliberately-unclosed issue. `rails-orchestrator.md` carries the same warning at Stage B6, where the summary prose is actually written.
+- This is the fourth confirmed variant of the same parser footgun, after the comma-separated list, the bolded `**Closes:**` form, and the PR title vector. The first three were intended closes that silently failed; this one is the opposite — an unintended close that silently fired. The post-merge verification step accordingly checks both directions.
+
 ## [1.19.17] - 2026-09-28
 
 ### Fixed
