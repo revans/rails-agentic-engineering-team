@@ -930,10 +930,12 @@ cd "$WORKTREE_DIR"
 git status --porcelain   # commit anything uncommitted, same as Stage 7c
 git push -u origin "fix/{N}-{slug}"
 DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef --jq .defaultBranchRef.name)
-PR_URL=$(gh pr create --title "Fix #{N}: {Title}" --body-file "${BUGFIX_DIR}/{N}-summary.md" --base "$DEFAULT_BRANCH")
+PR_URL=$(gh pr create --title "Issue #{N}: {Title}" --body-file "${BUGFIX_DIR}/{N}-summary.md" --base "$DEFAULT_BRANCH")
 ```
 
-Because `{BUGFIX_DIR}/{N}-summary.md` already contains a bare `Closes #{N}` line (Stage B6), `gh pr create` picks it up from the body file directly — GitHub recognizes `Closes #{N}` anywhere in a PR body and closes the referenced issue on merge, per the `github-cli` skill. No separate edit needed. Confirm the line is bare before creating the PR; a bolded or colon-suffixed variant is the likely cause of the silent close failures seen downstream.
+**The title says "Issue #{N}", never "Fix #{N}" — GitHub parses the PR title for closing keywords too, not just the body.** This is the same rule Stage B3 already applies to commit messages, for the same reason: a closing keyword you didn't deliberately place is a close you don't control. The old `"Fix #{N}: {Title}"` template made the title an invisible second closing vector, which caused a confirmed wrong close downstream — a bundle that deliberately excluded one issue from its body (it had investigated that issue and reverted the fix as a no-op) still auto-closed it on merge, because the number appeared in a title beginning "Fix #...". It had to be reopened by hand.
+
+That title vector also masked how badly the body lines were failing: the primary issue closed reliably via the title while non-primary issues depended on body lines that were silently not parsing, so a bundle would close 1-of-4 and look like a mysterious partial failure. With the title neutralised, closing depends solely on Stage B6's bare `Closes #{N}` body lines — one per issue, explicit and controllable. `gh pr create` picks them up from the body file directly, per the `github-cli` skill; no separate edit needed. Confirm they are bare before creating the PR; a bolded or colon-suffixed variant does not reliably parse.
 
 Record the PR URL in the summary doc the same way Stage 7c does — insert it, commit, push.
 

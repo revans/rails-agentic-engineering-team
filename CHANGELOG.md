@@ -4,6 +4,13 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.16] - 2026-09-28
+
+### Fixed
+
+- **The Bug Fix Mode PR title was a second, uncontrolled issue-closing vector: `gh pr create --title "Fix #{N}: {Title}"`.** GitHub parses the PR *title* for closing keywords, not just the body — so a bundle that deliberately omitted one issue from its body still closed it on merge, because the number appeared in a title beginning "Fix #...". That issue had been investigated and its fix reverted as a confirmed no-op, so closing it was exactly wrong, and it had to be reopened by hand. The title now reads `Issue #{N}: {Title}`, applying the same rule Stage B3 already applies to commit messages.
+- This also completes the explanation for the long-running partial-close mystery (see 1.19.15). The primary issue was closing reliably *via the title* while non-primary issues depended on body lines that weren't parsing, which is why a four-issue bundle would close exactly one and look inexplicable. With the title neutralised, closing depends solely on the bare `Closes #{N}` body lines — explicit, one per issue, and controllable. `skills/github-cli/SKILL.md` now also says to verify in both directions after a merge: an issue that should have closed and didn't, and an issue that closed when it was deliberately excluded.
+
 ## [1.19.15] - 2026-09-24
 
 ### Fixed
