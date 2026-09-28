@@ -324,13 +324,20 @@ ls ${FEATURE_DIR}/${NNN}.$(($SEQ+1))-cr-*.md \
    ${FEATURE_DIR}/${NNN}.$(($SEQ+4))-fid-*.md
 ```
 
-Commit all four together — they complete as one batch, so one commit for the round is more honest than four races to the same commit:
+Commit all four together — they complete as one batch, so one commit for the round is more honest than four races to the same commit.
+
+One `git add` per glob, not one call with all four — a single multi-path `git add` aborts entirely (no files staged at all, for any of the four) the instant any one pathspec fails to match. Then verify what actually staged before committing:
 
 ```bash
-git add "${FEATURE_DIR}/${NNN}."*-cr-*.md "${FEATURE_DIR}/${NNN}."*-sec-*.md \
-        "${FEATURE_DIR}/${NNN}."*-perf-*.md "${FEATURE_DIR}/${NNN}."*-fid-*.md
+git add "${FEATURE_DIR}/${NNN}."*-cr-*.md
+git add "${FEATURE_DIR}/${NNN}."*-sec-*.md
+git add "${FEATURE_DIR}/${NNN}."*-perf-*.md
+git add "${FEATURE_DIR}/${NNN}."*-fid-*.md
+git diff --cached --name-only   # must list all four reports — if one is missing, stop
 git commit -m "docs: ${NNN} reviews, round N"
 ```
+
+The `git diff --cached --name-only` line is the point, not decoration: it is the cheapest possible check that the add did what you think. Read its output and confirm all four reports are there before committing. A downstream project lost a reviewed fix for a full round to exactly this — an add whose pathspec matched nothing, followed by a commit that looked normal and contained nothing.
 
 ---
 
@@ -562,10 +569,13 @@ cd "$WORKTREE_DIR"
 git status --porcelain
 ```
 
-If that's empty, move on. If it shows anything, something upstream skipped its commit step — commit it now so the PR isn't missing content, but treat the fact that this caught something as worth a line in the final report, not a silent catch:
+If that's empty, move on. If it shows anything, something upstream skipped its commit step — commit it now so the PR isn't missing content, but treat the fact that this caught something as worth a line in the final report, not a silent catch.
+
+Stage the specific paths that `git status --porcelain` just listed, by name — not `git add -A`. A blanket add sweeps in whatever else happens to be sitting in the tree: a stray credential file, a large binary, or, where several worktrees share one checkout, another session's in-flight work. You already have the list; use it:
 
 ```bash
-git add -A
+git add "path/one" "path/two"   # the paths git status just printed, named explicitly
+git diff --cached --name-only   # confirm that staged what you meant, before committing
 git commit -m "docs: ${NNN} pipeline artifacts not caught by an earlier stage"
 ```
 
@@ -845,10 +855,15 @@ Same as Stage 5 — launch all four review agents simultaneously, in one respons
 Commit all four together once they've all completed, same as Stage 5:
 
 ```bash
-git add "{BUGFIX_DIR}/{N}."*-cr-*.md "{BUGFIX_DIR}/{N}."*-sec-*.md \
-        "{BUGFIX_DIR}/{N}."*-perf-*.md "{BUGFIX_DIR}/{N}."*-fid-*.md
+git add "{BUGFIX_DIR}/{N}."*-cr-*.md
+git add "{BUGFIX_DIR}/{N}."*-sec-*.md
+git add "{BUGFIX_DIR}/{N}."*-perf-*.md
+git add "{BUGFIX_DIR}/{N}."*-fid-*.md
+git diff --cached --name-only   # must list all four reports — if one is missing, stop
 git commit -m "docs: issue #{N} reviews, round N"
 ```
+
+One `git add` per glob and a staged-content check before committing — same reasoning as Stage 5.
 
 ### Stage B5 — Verdict Evaluation
 

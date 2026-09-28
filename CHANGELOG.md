@@ -4,6 +4,17 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.17] - 2026-09-28
+
+### Fixed
+
+- **Stage 7c's safety-net commit used a bare `git add -A`.** A blanket add sweeps in whatever else is sitting in the tree — a stray credential file, a large binary, or, where several worktrees share one checkout, another session's in-flight work. The step already runs `git status --porcelain` immediately above it, so it now stages the paths that listing printed, by name.
+- **Backported a fix this repo never received: Stage 5 and Stage B4 still combined all four review-report globs into a single `git add`.** A multi-pathspec add aborts entirely — staging nothing, for any of the four — the moment one pathspec fails to match. Both are now one `git add` per glob.
+
+### Added
+
+- **A staged-content assertion before every multi-file commit: `git diff --cached --name-only`.** Splitting the adds stops one bad pathspec from silently discarding the others, but nothing was confirming the adds staged anything at all. A downstream project lost a reviewed security fix for a full round to exactly this — an add whose pathspec matched nothing, followed by a commit that looked entirely normal and contained none of the intended change, caught only because three of four reviewers independently re-derived the evidence instead of trusting the report. One line, no new infrastructure, read before committing.
+
 ## [1.19.16] - 2026-09-28
 
 ### Fixed
