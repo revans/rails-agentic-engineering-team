@@ -16,18 +16,6 @@ require "securerandom"
 require "open3"
 require "fileutils"
 
-# Shared, version-tracked infrastructure: every team's own independent copy
-# of this script (see docs/team-infrastructure-upgrade-playbook.md at the
-# agentic-teams root, Module E) is expected to be identical at a given
-# SHARED_TOOL_VERSION. A mismatch between two teams' copies in the same
-# target project is exactly what /rails-update's per-team-aware conflict
-# detection surfaces (see docs/updates.md, "Keeping Shared Tools in Sync")
-# — when it fires on this file, compare this constant: taking whichever
-# copy has the higher version is the right default resolution unless a
-# specific reason says otherwise. Bump this, in every team's copy together,
-# whenever this file's behavior changes.
-SHARED_TOOL_VERSION = "1.0.0".freeze
-
 # Resolved against the current working directory, not __dir__ — __dir__ follows
 # symlinks to this script's real location, which would make every team's symlinked
 # bin/agent-log collapse onto the same shared agentic-teams/db/agent_log.sqlite3
@@ -38,6 +26,36 @@ SHARED_TOOL_VERSION = "1.0.0".freeze
 DB = ENV.fetch("AGENT_LOG_DB", File.join(Dir.pwd, "db/agent_log.sqlite3"))
 FileUtils.mkdir_p(File.dirname(DB))
 
+# Shared, version-tracked infrastructure: every team's own independent copy
+# of this script is expected to be identical at a given SHARED_TOOL_VERSION.
+# A mismatch between two copies in the same target project is exactly what
+# /rails-update's conflict detection surfaces — when it fires on this file,
+# compare this constant: taking whichever copy has the higher version is the
+# right default resolution unless a specific reason says otherwise. Bump this,
+# in every copy together, whenever this file's behavior changes.
+#
+# 1.1.0 — adds runs.work_type and runs.related_feature_id (--type,
+#   --related-feature), and carries two fixes that had been living only in a
+#   downstream copy: the busy_timeout that stops concurrent writes vanishing,
+#   and the named decision-id collision message.
+SHARED_TOOL_VERSION = "1.1.0".freeze
+
+# journal_mode is persisted in the database file's own header, so setting it
+# once in SCHEMA (via migrate_once) is enough — every later connection reads
+# WAL mode straight off the file. busy_timeout is NOT persisted; it is scoped
+# to a single sqlite3 connection, and every command here spawns a brand-new
+# sqlite3 process, so it must be re-applied on every single invocation via
+# -cmd, not just once in SCHEMA. Without it, sqlite3's default 0ms busy
+# timeout means a second writer arriving while another connection holds the
+# write lock fails immediately with "database is locked" instead of waiting
+# for it to clear — confirmed root cause of issue #214's writes vanishing
+# under ~18 concurrent pipelines sharing this one file with no error anyone
+# noticed. `-cmd ".timeout N"` (a dot-command, run before the main SQL) sets
+# this cleanly; `PRAGMA busy_timeout=N` as the SQL itself would work too but
+# echoes its new value as an extra output row, corrupting sq/sq_rows parsing.
+BUSY_TIMEOUT_MS = (ENV["AGENT_LOG_BUSY_TIMEOUT_MS"] || 30_000).to_i
+SQLITE = [ "sqlite3", "-cmd", ".timeout #{BUSY_TIMEOUT_MS}" ].freeze
+
 SCHEMA = <<~SQL
   PRAGMA journal_mode=WAL;
   PRAGMA foreign_keys=ON;
@@ -46,6 +64,8 @@ SCHEMA = <<~SQL
     id             TEXT PRIMARY KEY,
     agent_name     TEXT NOT NULL,
     feature_id     TEXT,
+    work_type      TEXT,
+    related_feature_id TEXT,
     input_mode     TEXT,
     input_summary  TEXT,
     status         TEXT NOT NULL DEFAULT 'running',
@@ -101,23 +121,59 @@ SCHEMA = <<~SQL
   CREATE INDEX IF NOT EXISTS idx_decisions_run      ON decisions(run_id);
   CREATE INDEX IF NOT EXISTS idx_events_run         ON events(run_id);
   CREATE INDEX IF NOT EXISTS idx_runs_feature       ON runs(feature_id);
+  CREATE INDEX IF NOT EXISTS idx_runs_work_type     ON runs(work_type);
+  CREATE INDEX IF NOT EXISTS idx_runs_related       ON runs(related_feature_id);
   CREATE INDEX IF NOT EXISTS idx_findings_run       ON findings(run_id);
   CREATE INDEX IF NOT EXISTS idx_findings_category  ON findings(category);
   CREATE INDEX IF NOT EXISTS idx_reflections_run    ON reflections(run_id);
   CREATE INDEX IF NOT EXISTS idx_reflections_type   ON reflections(type);
 SQL
 
-def sq(sql, *args)
+# Shared between the decision --id pre-check (the fast path for the common,
+# non-racing case) and report_sqlite_failure!'s UNIQUE-constraint case (the
+# backstop for two calls racing the identical fresh id — see that method's
+# comment). Both need to hand the agent the exact same actionable message.
+def decision_id_collision_message(id)
+  prefix = id.sub(/\d+\z/, "")
+  "Decision id #{id} already exists in #{DB} — decision ids are unique " \
+  "across the whole shared database, not scoped per run. Find the next free " \
+  "number with: bin/agent-log query decisions --run-id <a-prior-run-id-in-this-sequence>, " \
+  "or directly: sqlite3 #{DB} \"SELECT id FROM decisions WHERE id LIKE '#{prefix}%' ORDER BY id\""
+end
+
+# A locked-database failure means the write genuinely never happened after
+# waiting the full busy-timeout budget — distinct from every other sqlite3
+# error (syntax, constraint, missing table), and worth calling out by name
+# so whoever reads stderr knows to retry rather than treat it as a bug in
+# the SQL itself.
+#
+# decision_id is passed only by the decision INSERT call. Two `decision --id`
+# calls racing an identical fresh id can both pass the --id pre-check's
+# SELECT before either INSERTs (check-then-act) — the PRIMARY KEY constraint
+# still rejects the losing INSERT, so this is a second, always-correct
+# backstop that gives the loser the same friendly message the pre-check
+# gives the sequential case, instead of a raw sqlite3 error.
+def report_sqlite_failure!(err, decision_id: nil)
+  if err.include?("database is locked")
+    $stderr.puts "sqlite3 error: database is locked — write did not happen after waiting " \
+                 "#{BUSY_TIMEOUT_MS}ms for the shared #{DB} file to free up under concurrent " \
+                 "load. Retry this command."
+  elsif decision_id && err.include?("UNIQUE constraint failed: decisions.id")
+    $stderr.puts "sqlite3 error: #{decision_id_collision_message(decision_id)}"
+  else
+    $stderr.puts "sqlite3 error: #{err.strip}"
+  end
+  exit 1
+end
+
+def sq(sql, *args, decision_id: nil)
   # Escape each argument for safe SQLite interpolation.
   bound = args.map { |a| a.nil? ? "NULL" : "'#{a.to_s.gsub("'", "''")}'" }
   i = 0
   interpolated = sql.gsub("?") { bound[i].tap { i += 1 } }
   migrate_once
-  out, err, status = Open3.capture3("sqlite3", DB, interpolated)
-  unless status.success?
-    $stderr.puts "sqlite3 error: #{err.strip}"
-    exit 1
-  end
+  out, err, status = Open3.capture3(*SQLITE, DB, interpolated)
+  report_sqlite_failure!(err, decision_id: decision_id) unless status.success?
   out.strip
 end
 
@@ -127,18 +183,43 @@ def sq_rows(sql, *args)
   interpolated = sql.gsub("?") { bound[i].tap { i += 1 } }
   migrate_once
   # -separator for TSV output; -header for column names
-  out, err, status = Open3.capture3("sqlite3", "-separator", "\t", DB, interpolated)
-  unless status.success?
-    $stderr.puts "sqlite3 error: #{err.strip}"
-    exit 1
-  end
+  out, err, status = Open3.capture3(*SQLITE, "-separator", "\t", DB, interpolated)
+  report_sqlite_failure!(err) unless status.success?
   out.strip.split("\n").map { |line| line.split("\t") }
 end
 
 def migrate_once
   return if @migrated
   @migrated = true
-  system("sqlite3", DB, SCHEMA, out: File::NULL, err: File::NULL)
+  system(*SQLITE, DB, SCHEMA, out: File::NULL, err: File::NULL)
+  add_missing_run_columns!
+end
+
+# SCHEMA uses CREATE TABLE IF NOT EXISTS, so it never alters a table that already
+# exists — a database created before a column was added would silently keep the old
+# shape and every write of that column would fail. Add them explicitly instead.
+# ALTER TABLE ADD COLUMN is non-destructive and the guard makes it idempotent.
+def add_missing_run_columns!
+  out, _err, status = Open3.capture3(*SQLITE, DB, "PRAGMA table_info(runs)")
+  return unless status.success?
+  existing = out.lines.map { |l| l.split("|")[1] }.compact
+  { "work_type" => "TEXT", "related_feature_id" => "TEXT" }.each do |col, type|
+    next if existing.include?(col)
+    system(*SQLITE, DB, "ALTER TABLE runs ADD COLUMN #{col} #{type}", out: File::NULL, err: File::NULL)
+  end
+end
+
+WORK_TYPES = %w[feature bugfix].freeze
+
+# An agent that forgets --type should still produce a classified row rather than a
+# NULL that quietly drops out of every grouped query. The canonical feature_id
+# already encodes the answer, so derive it rather than trusting the caller to pass it.
+def derive_work_type(explicit, feature_id)
+  return explicit if explicit
+  case feature_id
+  when /\Abugfix-/ then "bugfix"
+  when /\AF-/      then "feature"
+  end
 end
 
 def parse_args(argv)
@@ -170,7 +251,7 @@ subcommand = ARGV.shift
 # For leaf commands (decision, event, outcome, help) the next token is a flag.
 action = if %w[run query].include?(subcommand) && ARGV.first && !ARGV.first.start_with?("--")
            ARGV.shift
-         end
+end
 args = parse_args(ARGV)
 
 case subcommand
@@ -181,9 +262,17 @@ when "run"
   case action
   when "start"
     id = SecureRandom.uuid
+    work_type = derive_work_type(args[:type], args[:feature_id])
+    if args[:type] && !WORK_TYPES.include?(args[:type])
+      fail!("--type must be one of #{WORK_TYPES.join(' | ')} (got #{args[:type].inspect})")
+    end
+    if args[:related_feature] && !args[:related_feature].match?(/\AF-\d{3}\z/)
+      fail!("--related-feature must be an F-NNN feature id (got #{args[:related_feature].inspect}) — " \
+            "it names the feature a bug belongs to, not the bug's own id")
+    end
     sq(
-      "INSERT INTO runs (id, agent_name, feature_id, input_mode, input_summary, started_at) VALUES (?,?,?,?,?,?)",
-      id, args[:agent_name] || "unknown", args[:feature_id],
+      "INSERT INTO runs (id, agent_name, feature_id, work_type, related_feature_id, input_mode, input_summary, started_at) VALUES (?,?,?,?,?,?,?,?)",
+      id, args[:agent_name] || "unknown", args[:feature_id], work_type, args[:related_feature],
       args[:input_mode] || "ad_hoc", args[:input_summary], now_iso
     )
     puts id
@@ -199,8 +288,23 @@ when "run"
 
   when "update"
     fail!("--run-id required") unless args[:run_id]
-    fail!("at least one of --feature-id or --status required") unless args[:feature_id] || args[:status]
-    sq("UPDATE runs SET feature_id=? WHERE id=?", args[:feature_id], args[:run_id]) if args[:feature_id]
+    unless args[:feature_id] || args[:status] || args[:type] || args[:related_feature]
+      fail!("at least one of --feature-id, --status, --type or --related-feature required")
+    end
+    if args[:type] && !WORK_TYPES.include?(args[:type])
+      fail!("--type must be one of #{WORK_TYPES.join(' | ')} (got #{args[:type].inspect})")
+    end
+    if args[:feature_id]
+      sq("UPDATE runs SET feature_id=? WHERE id=?", args[:feature_id], args[:run_id])
+      # Keep the classification consistent with the id it was just corrected to,
+      # unless the caller is explicitly setting it in the same command.
+      unless args[:type]
+        derived = derive_work_type(nil, args[:feature_id])
+        sq("UPDATE runs SET work_type=? WHERE id=?", derived, args[:run_id]) if derived
+      end
+    end
+    sq("UPDATE runs SET work_type=? WHERE id=?", args[:type], args[:run_id]) if args[:type]
+    sq("UPDATE runs SET related_feature_id=? WHERE id=?", args[:related_feature], args[:run_id]) if args[:related_feature]
     if args[:status]
       terminal = %w[completed failed abandoned].include?(args[:status])
       if terminal
@@ -222,11 +326,25 @@ when "decision"
   fail!("--title required")    unless args[:title]
   fail!("--rationale required") unless args[:rationale]
 
+  # Decision ids are unique across the WHOLE shared database, not scoped per
+  # run — a round-2/resumed agent inherits an earlier round's {prefix}-NNN
+  # sequence and has no way to know the next free number without querying
+  # first. Checking up front (rather than letting the INSERT's UNIQUE
+  # constraint fail and parsing sqlite3's error text) names the colliding id
+  # and the fix directly, the same way run_exists?-style guards do elsewhere.
+  # This is a fast path only — two calls racing the identical fresh id can
+  # both pass this SELECT before either INSERTs; report_sqlite_failure!'s
+  # decision_id: backstop (below) is what actually closes that race.
+  if args[:id] && !sq_rows("SELECT id FROM decisions WHERE id=?", args[:id]).empty?
+    fail!(decision_id_collision_message(args[:id]))
+  end
+
   id = args[:id] || SecureRandom.uuid
   sq(
     "INSERT INTO decisions (id, run_id, title, rationale, alternatives_considered, decision_type, expected_outcome) VALUES (?,?,?,?,?,?,?)",
     id, args[:run_id], args[:title], args[:rationale],
-    args[:alternatives], args[:type] || "implementation", args[:expected_outcome]
+    args[:alternatives], args[:type] || "implementation", args[:expected_outcome],
+    decision_id: id
   )
   puts "Decision #{id} logged."
 
@@ -323,7 +441,7 @@ when "query"
       args[:run_id]
     )
     rows.empty? ? puts("(no findings for this run)") : rows.each { |r|
-      loc = [r[2], r[3]].compact.reject(&:empty?).join(":")
+      loc = [ r[2], r[3] ].compact.reject(&:empty?).join(":")
       puts "[#{r[1]}][#{r[0]}]#{loc.empty? ? "" : " #{loc}"} — #{r[4]} (#{r[5]})"
     }
 
@@ -429,7 +547,7 @@ when "query"
 
 when "check"
   ok = true
-  [["ruby", "ruby --version"], ["sqlite3", "sqlite3 --version"]].each do |name, cmd|
+  [ [ "ruby", "ruby --version" ], [ "sqlite3", "sqlite3 --version" ] ].each do |name, cmd|
     if system(cmd, out: File::NULL, err: File::NULL)
       puts "#{name}: OK"
     else
@@ -439,7 +557,6 @@ when "check"
   end
   if ok
     puts "Environment ready. Database: #{DB}"
-    puts "Shared tool version: #{SHARED_TOOL_VERSION}"
   else
     $stderr.puts "Missing dependencies. Install ruby and sqlite3 before using bin/agent-log."
     exit 1
@@ -450,16 +567,30 @@ when "help", nil
     bin/agent-log — agent activity logging
 
     Run lifecycle:
-      run start  --agent-name NAME [--feature-id F-001] [--input-mode ad_hoc|structured_feature]
+      run start  --agent-name NAME [--feature-id F-001|bugfix-249] [--type feature|bugfix]
+                 [--related-feature F-030] [--input-mode ad_hoc|structured_feature]
                  [--input-summary "..."]
                    → prints RUN_ID
+
+                 --feature-id is this work's own canonical id: F-NNN for a feature,
+                 bugfix-N for a bug fix. Never a bare number — a 2026-09-29 audit found
+                 501 runs mislabelled that way, with bug fixes landing in the F- namespace
+                 and silently contaminating every feature-level query.
+
+                 --type is derived from --feature-id when omitted, so it is a safety net
+                 rather than a chore. Pass it explicitly when the id is unknown.
+
+                 --related-feature names the FEATURE a bug belongs to (F-030), not the
+                 bug's own id — it is what makes "which feature generates the most bugs"
+                 answerable. Meaningless on a feature run; set it on bugfix runs.
 
       run end    --run-id ID [--status completed|failed|abandoned]
                  [--quality-score 1-10] [--output-summary "..."]
 
       run update --run-id ID [--feature-id F-001] [--status running|completed|failed|abandoned]
-                 Corrects a run's feature-id or status without going through run end —
-                 for backfilling a feature-id resolved after run start, or closing out
+                 [--type feature|bugfix] [--related-feature F-030]
+                 Corrects a run's feature-id, type, related feature or status without going
+                 through run end — for backfilling any of them once resolved, or closing out
                  a stale run found via `query stale`.
 
     Logging:
@@ -499,7 +630,6 @@ when "help", nil
 
     Database: #{DB}
     Override: AGENT_LOG_DB=/path/to/other.sqlite3 bin/agent-log ...
-    Shared tool version: #{SHARED_TOOL_VERSION}
   HELP
 
 else

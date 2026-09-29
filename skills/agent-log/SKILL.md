@@ -130,7 +130,11 @@ Returns a UUID. Capture it as `$RUN_ID` — every subsequent command in the sess
 | Flag | Required | Notes |
 |---|---|---|
 | `--agent-name` | yes | `architect`, `engineer`, `discovery`, or other agent identifier |
-| `--feature-id` | no | The bare feature number (`001`, `042`) — the same `{NNN}` used in that feature's artifact directory name (`docs/briefs/{NNN}-...`, `docs/go-briefs/{NNN}-...`, etc.), not an `F-`-prefixed form. Use `unknown` if not yet determined. |
+| `--feature-id` | no | This work's own canonical id: **`F-{NNN}`** for a feature (matching its artifact directory `docs/briefs/{NNN}-...`, `docs/go-briefs/{NNN}-...`) or **`bugfix-{N}`** for a bug fix. **Never a bare number.** Use `unknown` only if genuinely not yet determined. |
+| `--type` | no | `feature` or `bugfix`. Derived from `--feature-id` when omitted, so it is a safety net rather than a chore — pass it explicitly when the id is `unknown`. |
+| `--related-feature` | no | For a bugfix run, the **feature the bug belongs to** (`F-030`) — not the bug's own id. This is what makes "which feature generates the most bugs" answerable. Meaningless on a feature run. |
+
+**This guidance previously said to use the bare number and explicitly not the `F-` form, and that was wrong.** Bare numbers put Bug Fix Mode issue numbers and Pipeline Mode feature numbers into one namespace, where issue `#100` and feature `F-100` are indistinguishable. A downstream audit on 2026-09-29 found **501 runs across 120 ids** affected — bug fixes logged as `F-249`, `249` and `issue-249` for the same work, with bug fixes landing in the `F-` namespace and silently contaminating every feature-level query, so round counts were wrong in both directions. Prefix the namespace and the collision cannot occur.
 | `--input-mode` | no | `structured_feature`, `feature_design`, `feature_discovery`, `ad_hoc` |
 | `--input-summary` | no | One-line description of the session's purpose |
 

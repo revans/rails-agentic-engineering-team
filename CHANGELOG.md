@@ -4,6 +4,18 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.19.19] - 2026-09-29
+
+### Fixed
+
+- **`skills/agent-log/SKILL.md` was instructing the bare feature number (`042`) and explicitly *not* the `F-` form — and that was the root cause of a namespace collision.** Bare numbers put Bug Fix Mode issue numbers and Pipeline Mode feature numbers into one namespace, where issue `#100` and feature `F-100` are indistinguishable. A downstream audit found **501 runs across 120 ids** affected: the same bug fix logged as `F-249`, `249` and `issue-249`, with bug fixes landing in the `F-` namespace and silently contaminating every feature-level query, so "rounds per feature" was wrong in both directions. `--feature-id` is now `F-{NNN}` or `bugfix-{N}`, never bare.
+- **`bin/agent-log` had drifted behind a downstream copy by two real bug fixes.** It was still calling `sqlite3` with no busy timeout, so sqlite3's default of **0ms** meant a second writer arriving during a write lock failed immediately with "database is locked" and the write vanished with nobody noticing — the confirmed cause of log loss under concurrent pipelines. It also lacked the named decision-id collision message. Both are now present, along with a `SHARED_TOOL_VERSION` bump to `1.1.0` so the next divergence is detectable rather than discovered by accident.
+
+### Added
+
+- **Runs are now classified and bugs can be attributed to a feature.** `runs` gains `work_type` (`feature`/`bugfix`) and `related_feature_id`, with `--type` and `--related-feature` flags. `work_type` is derived from `--feature-id` when omitted, so a forgetful caller still produces a classified row rather than a NULL that drops out of every grouped query; `--related-feature` names the feature a bug belongs to (`F-030`), which is what makes "which feature generates the most bugs" answerable at all. Both validate, and `--related-feature` rejects a bug id with an error explaining the distinction. Because `SCHEMA` uses `CREATE TABLE IF NOT EXISTS` and so never alters an existing table, the columns are also added by an idempotent guarded `ALTER` for databases created before this change.
+- `rails-orchestrator.md`'s launch preamble grows a third line carrying the canonical id and classification, since the human-readable "Feature number: {NNN}" in the stage templates is what agents were logging verbatim.
+
 ## [1.19.18] - 2026-09-28
 
 ### Fixed

@@ -75,12 +75,17 @@ Two directories matter for the rest of this pipeline:
 - **`$PROJECT_ROOT`** — the main checkout, on `main`/`master`. Capture it once, before anything else: `PROJECT_ROOT=$(pwd)`. `team.yml` is read from here at Stage 7b, since scope-capture ideas now file to GitHub rather than a project-root file this pipeline writes itself. The same reasoning is why `docs/roadmap.md` and `docs/icp/` — written by `/roadmap` and `/define-icp`, not by this pipeline — also live at `$PROJECT_ROOT` rather than inside any feature's worktree.
 - **`$WORKTREE_DIR`** — created at the end of Stage 1, one per feature, at `../{NNN}-{feature-name}` on branch `feature/{NNN}-{feature-name}`. Every agent from Stage 2 (architect) through Stage 7 (synthesis) reads and writes here.
 
-**Every agent launch prompt from Stage 2 onward opens with these two lines:**
+**Every agent launch prompt from Stage 2 onward opens with these three lines:**
 
 ```
 Working directory: {WORKTREE_DIR} — run `cd {WORKTREE_DIR}` before anything else.
 Agent log database: run `export AGENT_LOG_DB={PROJECT_ROOT}/db/agent_log.sqlite3` before any bin/agent-log command.
+Agent-log feature id: pass exactly `F-{NNN}` (Pipeline Mode) or `bugfix-{N}` (Bug Fix Mode) to every `bin/agent-log --feature-id`, never a bare number, plus `--type feature`/`--type bugfix`. In Bug Fix Mode also pass `--related-feature F-{NNN}` naming the feature the bug belongs to, when known.
 ```
+
+**That third line exists because its absence corrupted half a downstream log.** The launch prompts elsewhere in this file give an agent a human-readable "Feature number: {NNN}" or "Issue number: {N}", and agents logged exactly that — producing `042` alongside `F-042`, and `249`, `F-249` and `issue-249` for one bug fix. A 2026-09-29 audit found **501 runs across 120 ids** mislabelled this way. Worse than the formatting inconsistency: Bug Fix Mode issue numbers were landing in the `F-` namespace, so every feature-level query silently mixed bug fixes into its results. The collision this file already warns about under "Activity Logging" — feature `F-100` versus issue `#100` — had in effect already happened.
+
+Passing the canonical id and classification explicitly is the fix; the human-readable number can stay in the prompt for readability, but it is not what gets logged.
 
 The `AGENT_LOG_DB` line isn't boilerplate — skipping it is a real, silent failure mode. `bin/agent-log` resolves its database path against the current working directory by default (see the script's own comments on why). An agent that `cd`s into the worktree without this override starts writing decisions into a brand-new, empty database that lives inside the worktree and that `rails-log-analyst` will never read — every decision, finding, and reflection from that run would silently vanish from the shared history the moment the worktree is removed.
 
