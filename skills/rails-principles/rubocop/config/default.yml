@@ -43,6 +43,9 @@ RailsPrinciples/FindThroughAssociation:
   # `find_by(<key>: params[...])` is flagged for these keys. Lookups by email, token or slug are not (nothing owns them).
   Keys:
     - id
+  # Models that nothing owns (an account or tenant, a top-level resource), so there is no association to go
+  # through. Written as in code: `Account`, `Billing::Account`. Per app, in its own .rubocop.yml.
+  AllowedModels: []
   Include:
     - '**/app/controllers/**/*.rb'
 

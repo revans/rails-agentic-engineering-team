@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.20.1
-generated_at: '2026-10-06T12:58:09Z'
+version: 1.20.2
+generated_at: '2026-10-06T13:01:07Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -51,10 +51,10 @@ files:
   skills/discovery-brief-format/SKILL.md: 230fab1f3202ee8297a0a6cd859e180410f4ac01fcebd3bc3dcae68946f9872a
   skills/github-cli/SKILL.md: 52904fe80929d526bb2ae3b8d15983e6607450dd80a5f2f52de0d9c7aab27b33
   skills/rails-principles/SKILL.md: 9bc1542667a6357e6d77857559b607316de19c99e53e43ea3efaab55497825e0
-  skills/rails-principles/rubocop/config/default.yml: ec14f98c8d0f79bd7562efea56bc9e7828c625dbc592b1164c6693453c442c0e
+  skills/rails-principles/rubocop/config/default.yml: 116bc4bc7fbeb969d664c97ccb505a5d028c41afb7b24e2be7e5a2259bd18337
   skills/rails-principles/rubocop/lib/rubocop-rails-principles.rb: db04643474304462f2d09e2cfe9625a0b1d75e05b1f78a55b593cfa931877a91
   skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/controller_actions.rb: 74c85a2ec6c1263f816bbc35bff87c312c1bf11b3259769bd49de269cd26f435
-  skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/find_through_association.rb: 2f8dfb5857a2e8e5a28370a2b0c43d8d6ebaf4c83df14255a9ac44b8462abbd6
+  skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/find_through_association.rb: 754dc1d7de3e3ac71ecc9feb95e6f38b2acc8d7016c124c90b433d8079a1379f
   skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/forbidden_gems.rb: c1b170d712e817afc1f0ae09941899a6de867827d6455c963a7e2694d6952d71
   skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/no_service_objects.rb: 64ad5aafb6a57d67b17f8324cb19ff7e7b233449dd5b733a8ca51bf0ea076e12
   skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles_cops.rb: f53602d8e7c5359f430c08e1c8b586f38950c20d713887e8faee72b94fe2af9f

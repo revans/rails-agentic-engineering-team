@@ -8,6 +8,9 @@ module RuboCop
       # Only lookups by id (or another key in `Keys`) whose arguments mention `params` are flagged. A lookup by
       # an email, a capability token or a slug has no owner to go through, so it is left alone.
       #
+      # A model that nothing owns (an account or tenant, a bare top-level resource) has no association to go
+      # through. List it under `AllowedModels` in .rubocop.yml, once, instead of disabling the cop at every lookup.
+      #
       # @example
       #   # bad
       #   Listing.find(params[:id])
@@ -16,14 +19,17 @@ module RuboCop
       #   # good
       #   current_account.listings.find(params[:id])
       #   User.find_by(email_address: params[:email_address])
+      #   Account.find(params[:id]) # with `AllowedModels: [Account]`
       class FindThroughAssociation < Base
-        MSG = "Look `%<model>s` up through its owner (e.g. `current_account.%<association>s.%<method>s(...)`), not straight off the model."
+        MSG = "Look `%<model>s` up through its owner (e.g. `current_account.%<association>s.%<method>s(...)`), not straight off the model. " \
+              "If nothing owns `%<model>s`, list it under AllowedModels in .rubocop.yml."
 
         RESTRICT_ON_SEND = %i[find find_by find_by! find_sole_by].freeze
 
         def on_send(node)
           receiver = node.receiver
           return unless receiver&.const_type?
+          return if allowed_model?(receiver)
           return unless looked_up_by_key_from_params?(node)
 
           add_offense(node, message: format(MSG, model: receiver.source, association: association_name(receiver), method: node.method_name))
@@ -45,6 +51,11 @@ module RuboCop
 
           def keys
             Array(cop_config["Keys"])
+          end
+
+          # `Account`, `Billing::Account` and `::Account` are written the same way in the config as in the code.
+          def allowed_model?(constant)
+            Array(cop_config["AllowedModels"]).map(&:to_s).include?(constant.source.delete_prefix("::"))
           end
 
           def uses_params?(node)

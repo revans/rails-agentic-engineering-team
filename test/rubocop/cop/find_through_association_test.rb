@@ -60,6 +60,37 @@ class FindThroughAssociationTest < Minitest::Test
     assert_equal 1, flagged(COP, wrap(line), config: { "Keys" => %w[id public_id] }).size
   end
 
+  def test_a_model_that_nothing_owns_can_be_allowed
+    config = { "AllowedModels" => [ "Account" ] }
+
+    [ "Account.find(params[:id])", "Account.find_by(id: params.expect(:id))", "::Account.find(params[:id])" ].each do |line|
+      assert_empty flagged(COP, wrap(line), config: config), line
+    end
+  end
+
+  def test_allowing_one_model_does_not_allow_the_others
+    config = { "AllowedModels" => [ "Account" ] }
+
+    assert_equal 1, flagged(COP, wrap("Listing.find(params[:id])"), config: config).size
+    assert_equal 1, flagged(COP, wrap("Account.find(params[:id])"), config: { "AllowedModels" => [ "Billing::Account" ] }).size, "a namespaced name is not the same model"
+  end
+
+  def test_a_namespaced_model_is_allowed_by_its_full_name
+    config = { "AllowedModels" => [ "Billing::Account" ] }
+
+    assert_empty flagged(COP, wrap("Billing::Account.find(params[:id])"), config: config)
+    assert_empty flagged(COP, wrap("::Billing::Account.find(params[:id])"), config: config)
+  end
+
+  def test_nothing_is_allowed_by_default
+    assert_equal [], COP_DEFAULTS.fetch("RailsPrinciples/FindThroughAssociation").fetch("AllowedModels")
+    assert_equal 1, flagged(COP, wrap("Account.find(params[:id])")).size
+  end
+
+  def test_the_message_points_at_the_option_for_models_nothing_owns
+    assert_match(/list it under AllowedModels/, messages(COP, wrap("Account.find(params[:id])")).first)
+  end
+
   def test_a_lookup_that_does_not_involve_params_is_fine
     [ "Document.find(1)", "Document.find(document_id)", "Setting.find_by(key: :theme)" ].each do |line|
       assert_empty flagged(COP, wrap(line)), line

@@ -37,7 +37,7 @@ app starts clean. The installer reports the count.
 | Cop | Catches | Config |
 |---|---|---|
 | `RailsPrinciples/ControllerActions` | A public controller method that is not one of the seven REST actions. A custom action belongs in a nested singular resource controller (`Listings::SyncsController#create`). | `AllowedActions` |
-| `RailsPrinciples/FindThroughAssociation` | `Listing.find(params[:id])`. Go through the owner: `current_account.listings.find(params[:id])`. Only lookups by id; email, token and slug lookups have no owner and are left alone. | `Keys` |
+| `RailsPrinciples/FindThroughAssociation` | `Listing.find(params[:id])`. Go through the owner: `current_account.listings.find(params[:id])`. Only lookups by id; email, token and slug lookups have no owner and are left alone. A model nothing owns (an account, a tenant, a bare top-level resource) goes under `AllowedModels` in the app's `.rubocop.yml`, once. | `Keys`, `AllowedModels` |
 | `RailsPrinciples/NoServiceObjects` | A class or module named `...Service` / `...Presenter` / `...Decorator` / `...Form` and so on; a file under `app/services`, `app/decorators`, ...; a plain class whose entry point is `call` / `perform` / `execute` / `run`. | `ForbiddenSuffixes`, `ForbiddenDirectories`, `EntryPointMethods` |
 | `RailsPrinciples/ForbiddenGems` | `redis`, `devise`, `rspec`, `factory_bot`, `sidekiq`, `carrierwave`, `draper`, serializer and search gems, each with what to use instead. | `Forbidden` (name: reason), `Allowed` |
 
@@ -63,12 +63,17 @@ The engineer agent is told never to disable a cop to make it pass. That rule is 
 exceptions, so an exception needs the reason beside it, where a reviewer sees it. If a cop needs the same
 exception in many places, the cop is wrong: change its config or fix the cop.
 
-An exception for a whole project (a gem it truly needs) goes in `.rubocop.yml`, not scattered in code:
+An exception for a whole project goes in `.rubocop.yml`, not scattered in code. A gem it truly needs, or a model nothing owns:
 
 ```yaml
 RailsPrinciples/ForbiddenGems:
   Allowed:
     - redis
+
+RailsPrinciples/FindThroughAssociation:
+  AllowedModels:
+    - Account
+    - Billing::Tenant
 ```
 
 ## Tests

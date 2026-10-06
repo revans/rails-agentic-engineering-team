@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.20.2] - 2026-10-06
+
+### Added
+
+- **`RailsPrinciples/FindThroughAssociation` gained an `AllowedModels` option, for models nothing owns.** Found by installing the cops on a scratch Rails 8.1 app: a stock scaffold's `Listing.find(params.expect(:id))` tripped the cop, correctly, because a top-level model has no owner to go through, but the only way out was a `rubocop:disable` at every lookup, and an engineer agent told never to disable a cop to pass would have nowhere to go. An app now lists such models once in its own `.rubocop.yml` (`AllowedModels: [Account, Billing::Tenant]`, written as in code; a namespaced name must match in full, so allowing `Billing::Account` does not allow a plain `Account`; default none, so nothing changes until an app opts a model in). The offense message now ends with "If nothing owns `Listing`, list it under AllowedModels in .rubocop.yml", so the fix is in front of the agent when it hits the rule. Five new tests; `docs/rubocop-cops.md` documents the option. Sync with `/rails-update`; put overrides in the app's `.rubocop.yml`, not in the vendored `default.yml`, where a hand-edit would surface as a conflict.
+
 ## [1.20.1] - 2026-10-06
 
 ### Fixed
