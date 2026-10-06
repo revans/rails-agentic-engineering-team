@@ -1,0 +1,4 @@
+require_relative "rails_principles/controller_actions"
+require_relative "rails_principles/find_through_association"
+require_relative "rails_principles/no_service_objects"
+require_relative "rails_principles/forbidden_gems"

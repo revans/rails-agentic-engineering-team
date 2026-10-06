@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.20.0] - 2026-10-03
+
+### Added
+
+- **`security-review` gained a ninth review category, "Framework-Mounted Engine Routes," and it is never diff-gated.** Found by `rails-security-team`'s `pentest-security` agent against a real running app (not a theoretical review): Active Storage mounts `POST /rails/active_storage/direct_uploads` the moment the gem is in the `Gemfile`, with zero authentication, regardless of whether any model ever calls `has_one_attached`. A live PoC created a blob, wrote arbitrary bytes, and read them back with no session and no token. Every other category here only looks at the diff; this one can't, since the exposure exists from the moment the gem is present, not from whatever a given diff touched — so it now runs `bin/rails routes` and checks every non-`app/controllers` route unconditionally, on every review. New `ENGINE_ROUTE` category tag in `skills/agent-log/SKILL.md`'s vocabulary. `skills/rails-principles/SKILL.md` gained a matching "Gem-Mounted Engine Routes Are Not Authenticated By Default" note right next to its existing "use Active Storage" recommendation, so the lesson reaches the architect and engineer too, not only the reviewer catching it after the fact.
+
 ## [1.19.19] - 2026-09-29
 
 ### Fixed

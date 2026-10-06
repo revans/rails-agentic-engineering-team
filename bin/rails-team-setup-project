@@ -3,7 +3,8 @@
 # Sets up everything about a target project that doesn't need a live human
 # decision: detects the repo from git, writes team.yml, creates the feature/
 # bug/tech-debt repo labels, creates and migrates db/agent_log.sqlite3, and
-# creates the docs/ skeleton.
+# creates the docs/ skeleton, and wires the rails-principles RuboCop cops into the
+# app's .rubocop.yml (one `inherit_from` line; see setup_rubocop).
 #
 # Named rails-team-setup-project, not team-setup-project: rails-qa-team has
 # its own script doing the equivalent job for its own roster (a narrower one
@@ -34,6 +35,7 @@
 require "json"
 require "fileutils"
 require "open3"
+require "yaml"
 
 def parse_args(argv)
   args = { "dir" => Dir.pwd }
@@ -205,6 +207,83 @@ def setup_docs_skeleton(dir)
   { status: "ok", detail: detail }
 end
 
+# The cops travel with the rails-principles skill (skills/**/* is vendored like the rest of this team's files), and
+# this one config is all an app inherits. It loads the cops, turns on rubocop-rails's Rails/StrongParametersExpect,
+# and sets each cop's defaults; the app's own .rubocop.yml overrides anything in it.
+RUBOCOP_CONFIG = "skills/rails-principles/rubocop/config/default.yml".freeze
+MINIMUM_RUBOCOP = Gem::Version.new("1.72") # the `plugins:` key, which the config uses to load rubocop-rails
+
+# Adds the cops to the app by adding one `inherit_from` entry to its .rubocop.yml. Idempotent, and never rewrites
+# the file wholesale: it inserts a line, re-reads the result to check it, and puts the original back if the check
+# fails. Anything it cannot edit safely (a flow-style list) is reported with the exact line to add by hand.
+def setup_rubocop(dir)
+  rubocop_yml = File.join(dir, ".rubocop.yml")
+  lockfile = File.join(dir, "Gemfile.lock")
+  entry = "./#{RUBOCOP_CONFIG}"
+
+  unless File.exist?(File.join(dir, RUBOCOP_CONFIG))
+    return { status: "needs_input", detail: "#{RUBOCOP_CONFIG} is not in #{dir}: the cops are vendored with this team's skills, so run the sync step (/rails-update) first" }
+  end
+  return { status: "needs_input", detail: "no .rubocop.yml in #{dir}. A Rails 8 app ships one (rubocop-rails-omakase); create it, then re-run" } unless File.exist?(rubocop_yml)
+
+  locked = File.exist?(lockfile) ? File.read(lockfile) : ""
+  rubocop_version = locked[/^    rubocop \(([\d.]+)\)/, 1]
+  unless locked.match?(/^    rubocop-rails \(/) && rubocop_version && Gem::Version.new(rubocop_version) >= MINIMUM_RUBOCOP
+    return { status: "needs_input", detail: "the cops need rubocop >= #{MINIMUM_RUBOCOP} and rubocop-rails (Rails 8 apps get both from rubocop-rails-omakase); add it to the Gemfile, bundle, then re-run" }
+  end
+
+  original = File.read(rubocop_yml)
+  parsed = begin
+    YAML.safe_load(original, aliases: true) || {}
+  rescue Psych::Exception => e
+    return { status: "failed", detail: ".rubocop.yml does not parse (#{e.message.lines.first.strip}); fix it, then re-run" }
+  end
+  return { status: "failed", detail: ".rubocop.yml is not a mapping at the top level; fix it, then re-run" } unless parsed.is_a?(Hash)
+
+  inherited = Array(parsed["inherit_from"])
+  return { status: "ok", detail: "already wired: .rubocop.yml inherits #{RUBOCOP_CONFIG}" } if inherited.any? { |path| path.to_s.delete_prefix("./") == RUBOCOP_CONFIG }
+
+  edited = add_inherit_from(original, parsed["inherit_from"], entry)
+  return { status: "needs_input", detail: "could not edit .rubocop.yml safely (inherit_from is written inline): add \"#{entry}\" to its inherit_from list by hand" } unless edited
+
+  File.write(rubocop_yml, edited)
+  verified = begin
+    Array((YAML.safe_load(edited, aliases: true) || {})["inherit_from"]).map { |path| path.to_s.delete_prefix("./") }.include?(RUBOCOP_CONFIG)
+  rescue Psych::Exception
+    false
+  end
+  return { status: "ok", detail: "wired: added #{entry} to .rubocop.yml inherit_from (the app's own settings still win)" } if verified
+
+  File.write(rubocop_yml, original)
+  { status: "failed", detail: "the edit to .rubocop.yml did not check out, so it was put back unchanged; add \"#{entry}\" to its inherit_from list by hand" }
+end
+
+# Returns the new text, or nil when the existing inherit_from is in a form that is not safe to edit by line.
+# The new entry goes first, so anything else inherited (and the app itself) overrides it.
+def add_inherit_from(text, current, entry)
+  lines = text.lines
+  lines[-1] += "\n" if lines.any? && !lines[-1].end_with?("\n")
+
+  case current
+  when nil
+    at = lines.index { |line| !line.strip.empty? && !line.start_with?("#") } || lines.length
+    lines.insert(at, "inherit_from:\n  - #{entry}\n\n").join
+  when Array
+    key = lines.index { |line| line.match?(/\Ainherit_from:\s*(#.*)?\s*\z/) }
+    return nil unless key
+
+    indent = lines[key + 1].to_s[/\A(\s*)-\s/, 1] || "  "
+    lines.insert(key + 1, "#{indent}- #{entry}\n").join
+  when String
+    key = lines.index { |line| line.match?(/\Ainherit_from:\s*\S/) }
+    return nil unless key
+
+    existing = lines[key][/\Ainherit_from:\s*(\S+)/, 1]
+    lines[key] = "inherit_from:\n  - #{entry}\n  - #{existing}\n"
+    lines.join
+  end
+end
+
 args = parse_args(ARGV)
 dir = File.expand_path(args["dir"])
 
@@ -226,6 +305,7 @@ steps = {
   labels: setup_labels(dir, repo),
   sqlite: setup_sqlite(dir),
   docs_skeleton: setup_docs_skeleton(dir),
+  rubocop: setup_rubocop(dir),
 }
 
 severity = { "ok" => 0, "needs_input" => 1, "failed" => 2 }

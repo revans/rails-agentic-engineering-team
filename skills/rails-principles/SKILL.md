@@ -9,6 +9,18 @@ description: Rails engineering principles — Rails-first design, DRY, SRP, conc
 
 This skill defines one thing: the shared Rails engineering rulebook — Rails-first design, naming conventions, the concern extraction rule, no-service-objects, dependency discipline — so the architect (designing to these), the engineer (building to these), and the three review agents (checking against these) all enforce the same standard instead of each carrying its own drifting notion of "good Rails code." It does not define the shape any artifact must take — the spec file's sections live in `architect-spec-format`, the brief's sections live in `discovery-brief-format` — and it does not define this project's visual/CSS rules, that's `design-system`'s job.
 
+## Enforced by RuboCop
+
+Some of these rules are checked by a machine, so a reviewer does not have to remember them. They run in `bin/rubocop`, which the engineer agent already runs and fixes before reporting done, and the CI gate re-runs:
+
+- `Rails/StrongParametersExpect` — `params.expect(user: [...])`, not `params.require(:user).permit(...)` (rubocop-rails's own cop, switched on)
+- `RailsPrinciples/ControllerActions` — only the seven REST actions are public
+- `RailsPrinciples/FindThroughAssociation` — `account.listings.find(params[:id])`, not `Listing.find(params[:id])`
+- `RailsPrinciples/NoServiceObjects` — service objects, decorators, presenters, form objects, and any plain class with a `call` / `perform` entry point
+- `RailsPrinciples/ForbiddenGems` — the "never use" list under Approved Dependencies
+
+An offense is a rule broken, not a suggestion. If one is wrong for a single line, disable that line with a comment saying why; never disable a cop to make a run pass. The cops are in `rubocop/` beside this file; how they work and how to add one is in `docs/rubocop-cops.md`.
+
 ## Convention Is the Interface
 
 Rails resolves behavior through naming: routes predict controllers, controllers predict models, models predict tables. Nothing is registered — the name IS the address. Build custom code the same way.
@@ -192,6 +204,30 @@ Development/test: debug, bundler-audit, brakeman, rubocop-rails-omakase, web-con
 - No Sidekiq/Resque/GoodJob — use Solid Queue
 - No Carrierwave/Shrine — use Active Storage
 - No service objects
+
+## Gem-Mounted Engine Routes Are Not Authenticated By Default
+
+Some gems — Active Storage chief among them, since it's this team's own recommended default above —
+mount their own routes into the app the moment the gem is in the `Gemfile`, independent of whether any
+model actually uses the feature. `rails routes` will show them even on an app that never calls
+`has_one_attached` anywhere. Those routes run through the gem's own base controller, not this app's
+`ApplicationController`, so they never pick up `require_authentication` or any other app-level gate —
+"the rest of the app requires login" is not evidence that a gem-mounted route does.
+
+Confirmed exploitable in the wild, not theoretical: a 2026-10-03 pentest of an app with Active Storage
+installed but never used found `POST /rails/active_storage/direct_uploads` wide open — zero
+authentication, create a blob, write arbitrary bytes to it, read them back, all with no session and no
+token. The fix was one `to_prepare` block gating the one actual write entry point
+(`DirectUploadsController#create`); the signed read/redirect routes needed no change, since a signed
+blob ID is already a capability URL, the same pattern this team's own apps use deliberately elsewhere —
+they just become unforgeable once creation itself requires a session.
+
+**When a feature spec adds a gem that mounts its own routes** (Active Storage is the one to expect;
+Action Mailbox and Action Cable's own endpoints are the other standard-library examples), check
+`rails routes` for what it exposed and gate the write path explicitly — don't assume a framework
+default is already safe just because it shipped with Rails. `security-review`'s "Framework-Mounted
+Engine Routes" category checks for this on every review, independent of what the diff touched, since
+the exposure exists from the moment the gem is present, not from any later change.
 
 ## SQLite Search
 

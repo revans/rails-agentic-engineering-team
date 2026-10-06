@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.19.19
-generated_at: '2026-09-29T17:32:25Z'
+version: 1.20.0
+generated_at: '2026-10-06T12:35:51Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -18,15 +18,15 @@ files:
   agents/fresh-eyes-review.md: 380e049ac08c82bb0c87cd8542e4e115a931bddaa01ab1b081d5ed2b9558f517
   agents/intake.md: 66836642a9acb34ff843ec3feef17c06ca154cb88a166a64d15ede22778e87f9
   agents/performance-review.md: ff7ddaa849278131edfd51e27e6b99b44fc6bce81a64ec1bbdbcbbed9d2ef64a
-  agents/rails-installer.md: 19009a70362382da3eb0ac6e384d087e6363f3f1d3341379fd34278e403e9cfb
+  agents/rails-installer.md: 57041e5cf3f8aa0a8bb77e77f8e035e6cde7cd83a11515c80f4bc83942743cd7
   agents/rails-log-analyst.md: 9f726506643f6f14079c09c1572caaafc9c4a2a7e183f4122334d5af700f0f01
   agents/rails-orchestrator.md: 348e3f8bfe0b8502f4cc430b829f984b870fa598a573371e6bb98ac5e868f02d
   agents/rails-skill-builder.md: 04bf2371abe7a34ef6e55adcbc14c54182fa8932a2f0715bbdf610308371caea
   agents/rails-updater.md: 2ada9a88a46c7975fd015f896b3808d0e06e758e655d57ed901870b59e10b9a3
   agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8
-  agents/security-review.md: 3223bad5fba1ac9958d154950936b78b349c953704debd651f79be2af27dc31b
+  agents/security-review.md: 14c47389bc735813b0f4b1048bf62ee29e7e99399d3f3c1aafadcff501ef297b
   bin/agent-log: bdbf0e3f628ab58abd4ae4066494984d9c7e9d727681be078c0b7eaefa73ce4f
-  bin/rails-team-setup-project: efc5a117b64b0d506fd309f91982e3cc9166a70139625c2e551bc20add032c08
+  bin/rails-team-setup-project: 1143a5a43b5fcabc60e372caca5e6f1a109087422523732bad79d42f5e1323b2
   bin/rails-team-update: 84c205e964249db6cfd42aa4580125512a04ac56ab14de884e8b5184e44aecf0
   bin/team-create-issue: 0eab2be28d07d766a6e9c6cbbe1e39f5b16328292e2de827953bd8816ccd6c3e
   bin/team-find-issues: 21ba5ebaf0868cff9dd660350d53ef3cfa515a00857a777ef0de9ac620bfe3e6
@@ -45,11 +45,18 @@ files:
   commands/roadmap.md: 21741a6997be63c2c739da37df4824d78d5750c6e7bab06850b447c64797d4aa
   commands/triage.md: 8eb90bf35914fe9156a98167640b67acb3e1dacab112ed3b6901d193e439956a
   commands/update-readme.md: 651b1d45e36d638aa25ffeb101e3f67f92c9432a4ac07a53b6fe806e303a2ab7
-  skills/agent-log/SKILL.md: 8152873e1ca4634d42314b57bedd7ed71bae6ee5ec8443f673d4b530fb1449e5
+  skills/agent-log/SKILL.md: 648cf32fb5b669bc60f3d66b361bb6a7086985a4a9e524597a18f6f1ad213754
   skills/architect-spec-format/SKILL.md: df9e0ee01897bf3382d65cf260d7a7ee568fdb35139993d32a98b4707e69a6e0
   skills/design-system/SKILL.md: 3bea653bcc940b90949d129d7d15bc364c1dd8539d6e7f989c1fef8816112628
   skills/discovery-brief-format/SKILL.md: 230fab1f3202ee8297a0a6cd859e180410f4ac01fcebd3bc3dcae68946f9872a
   skills/github-cli/SKILL.md: 52904fe80929d526bb2ae3b8d15983e6607450dd80a5f2f52de0d9c7aab27b33
-  skills/rails-principles/SKILL.md: d312ffb19aa71a4de1eca86cc0b031a42a546707f6d347188886ce4b3527e083
+  skills/rails-principles/SKILL.md: 7884b4d18171892d77ca77399126de8f39a0cf587d2444605f2c48c2007ddc63
+  skills/rails-principles/rubocop/config/default.yml: ec14f98c8d0f79bd7562efea56bc9e7828c625dbc592b1164c6693453c442c0e
+  skills/rails-principles/rubocop/lib/rubocop-rails-principles.rb: db04643474304462f2d09e2cfe9625a0b1d75e05b1f78a55b593cfa931877a91
+  skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/controller_actions.rb: 74c85a2ec6c1263f816bbc35bff87c312c1bf11b3259769bd49de269cd26f435
+  skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/find_through_association.rb: 2f8dfb5857a2e8e5a28370a2b0c43d8d6ebaf4c83df14255a9ac44b8462abbd6
+  skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/forbidden_gems.rb: c1b170d712e817afc1f0ae09941899a6de867827d6455c963a7e2694d6952d71
+  skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/no_service_objects.rb: 64ad5aafb6a57d67b17f8324cb19ff7e7b233449dd5b733a8ca51bf0ea076e12
+  skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles_cops.rb: f53602d8e7c5359f430c08e1c8b586f38950c20d713887e8faee72b94fe2af9f
   skills/scope-capture/SKILL.md: d0dcfe9a21da0063602219f39809642535431e61e4af64e94d6ee05095598bac
   skills/team-sync/SKILL.md: b4e4bb79780425dc3b0797026096ff7ea7076f1efbef4bad4007e1857e978648

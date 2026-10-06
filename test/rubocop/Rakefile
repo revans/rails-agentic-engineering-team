@@ -1,0 +1,9 @@
+require "minitest/test_task"
+
+Minitest::TestTask.create(:test) do |task|
+  task.libs << "test/rubocop"
+  task.test_globs = [ "test/rubocop/**/*_test.rb" ]
+  task.warning = false
+end
+
+task default: :test

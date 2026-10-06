@@ -101,6 +101,7 @@ Read the last line as JSON. The top-level `status` is the worst of every sub-ste
 - **`steps.labels`** — creates the `feature`, `bug`, and `tech-debt` repo labels if any are missing; reports `"skipped — repo not yet known"` when `steps.repo` is `needs_input`. If `failed`, it's almost always a `gh` auth/scope problem — surface the exact error rather than retrying blindly.
 - **`steps.sqlite`** — if `failed` because `bin/agent-log` is missing, Step 0.5 should have vendored it already; the only way this still happens is if the user declined vendoring `bin/agent-log` specifically when Step 0.5 asked about `new_files`. Tell them plainly that `bin/agent-log` is required and offer to re-run Step 0.5's sync to bring just that file in.
 - **`steps.docs_skeleton`** — `ok` regardless of whether directories were newly created or already present.
+- **`steps.rubocop`** — wires the `rails-principles` RuboCop cops into the app with one `inherit_from` line in its `.rubocop.yml` (the cops themselves arrive with the skills in Step 0.5; see `docs/rubocop-cops.md`). It never rewrites the file, only inserts a line and checks the result. `needs_input` always says why in `detail`, and each cause has a plain next step: the cops are not on disk yet (re-run Step 0.5's sync), the app has no `.rubocop.yml`, the app lacks `rubocop-rails` or has `rubocop` older than 1.72 (Rails 8 apps get both from `rubocop-rails-omakase`), or `inherit_from` is written inline and cannot be edited safely (give the user the exact line from `detail`). `failed` means the file did not parse or the edit did not check out, and the file is left as it was. **Tell the user plainly, after it reports `ok` on an app that already has code:** from now on `bin/rubocop` may report offenses the cops find in existing code (run `bin/rubocop --format offenses` and give the count), and the engineer agent will treat them as work to fix, never to disable. A brand-new app starts clean.
 
 If `steps.sqlite.status == "ok"`, `db/agent_log.sqlite3` is live from this point forward — see "Activity Logging" below for what that changes about the rest of this run.
 
@@ -184,6 +185,7 @@ Installer
 ✅ Labels — present: none; created: feature, bug, tech-debt
 ✅ db/agent_log.sqlite3 — created, tables: decisions, events, findings, reflections, runs
 ✅ docs/ skeleton — created: docs/briefs, docs/icp, docs/agent-analysis, docs/bugfixes
+✅ RuboCop cops — wired (.rubocop.yml inherits the rails-principles cops; N existing offenses to fix)
 ✅ Project board: #4, owner (confirmed via gh project view)
 ✅ Project board linked to repo (gh project link)
 ✅ Status option "Ready" — present

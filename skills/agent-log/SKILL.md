@@ -273,6 +273,7 @@ Use these exact strings for `--category`. Consistent vocabulary makes cross-feat
 | `CSRF` | CSRF protection bypassed without documented reason |
 | `BRAKEMAN` | Brakeman scanner warning (include confidence level in description) |
 | `DEPENDENCY_AUDIT` | bundler-audit advisory on a gem dependency (include gem name and advisory ID in description) |
+| `ENGINE_ROUTE` | A gem-mounted engine route (Active Storage, Action Mailbox, Action Cable, or similar) reachable without the app's own authentication — these routes do not inherit `ApplicationController` and are unauthenticated by default regardless of whether the rest of the app requires login |
 
 **Performance (performance-review agent):**
 | Category | What it flags |

@@ -1,0 +1,7 @@
+source "https://rubygems.org"
+
+# Development only: runs the cops' tests. Not vendored into apps (only agents/, commands/, skills/ and bin/ are).
+gem "minitest"
+gem "rake"
+gem "rubocop", ">= 1.72"
+gem "rubocop-rails", ">= 2.30"
