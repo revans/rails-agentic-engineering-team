@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.20.0
-generated_at: '2026-10-06T12:35:51Z'
+version: 1.20.1
+generated_at: '2026-10-06T12:58:09Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -50,7 +50,7 @@ files:
   skills/design-system/SKILL.md: 3bea653bcc940b90949d129d7d15bc364c1dd8539d6e7f989c1fef8816112628
   skills/discovery-brief-format/SKILL.md: 230fab1f3202ee8297a0a6cd859e180410f4ac01fcebd3bc3dcae68946f9872a
   skills/github-cli/SKILL.md: 52904fe80929d526bb2ae3b8d15983e6607450dd80a5f2f52de0d9c7aab27b33
-  skills/rails-principles/SKILL.md: 7884b4d18171892d77ca77399126de8f39a0cf587d2444605f2c48c2007ddc63
+  skills/rails-principles/SKILL.md: 9bc1542667a6357e6d77857559b607316de19c99e53e43ea3efaab55497825e0
   skills/rails-principles/rubocop/config/default.yml: ec14f98c8d0f79bd7562efea56bc9e7828c625dbc592b1164c6693453c442c0e
   skills/rails-principles/rubocop/lib/rubocop-rails-principles.rb: db04643474304462f2d09e2cfe9625a0b1d75e05b1f78a55b593cfa931877a91
   skills/rails-principles/rubocop/lib/rubocop/cop/rails_principles/controller_actions.rb: 74c85a2ec6c1263f816bbc35bff87c312c1bf11b3259769bd49de269cd26f435

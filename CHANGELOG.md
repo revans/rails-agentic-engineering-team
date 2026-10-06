@@ -4,6 +4,12 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.20.1] - 2026-10-06
+
+### Fixed
+
+- **`skills/rails-principles/SKILL.md`'s convention-based-resolution paragraph recommended `.classify` without noting what the method is actually for.** A downstream project traced two CRITICAL incidents and a shipped spec defect to the same root cause: an agent hand-deriving a `.classify` result instead of knowing the rule — `classify` maps a plural table-shaped name to its singular class name (`blog_posts` → `BlogPost`), so the output is always singular, not a per-case guess. The paragraph now states that rule directly, and keeps "never assert a derived name without executing the derivation" as a backstop for the genuinely ambiguous cases (irregular plurals, uncountable nouns) where even the rule can surprise — naming the failure mode as silent whenever resolution runs through `safe_constantize`: `nil`, a skipped class, and a green test suite, with nothing to catch it later.
+
 ## [1.20.0] - 2026-10-03
 
 ### Added
