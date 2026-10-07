@@ -14,6 +14,8 @@
 
 require "securerandom"
 require "open3"
+require "json"
+require "set"
 require "fileutils"
 
 # Resolved against the current working directory, not __dir__ — __dir__ follows
@@ -34,11 +36,15 @@ FileUtils.mkdir_p(File.dirname(DB))
 # right default resolution unless a specific reason says otherwise. Bump this,
 # in every copy together, whenever this file's behavior changes.
 #
+# 1.2.0 — adds token/cost capture: runs.{tokens_in,tokens_out,cache_read_tokens,
+#   cache_creation_tokens,model,usage_source}, the model_rates/billing_plans/billing_periods
+#   tables, `usage sweep`, `billing setup|plan|rate|period(s)|rates`, and the dollar columns on
+#   `query cost` plus `query billing`. No plan or rate is hardcoded — `billing setup` asks.
 # 1.1.0 — adds runs.work_type and runs.related_feature_id (--type,
 #   --related-feature), and carries two fixes that had been living only in a
 #   downstream copy: the busy_timeout that stops concurrent writes vanishing,
 #   and the named decision-id collision message.
-SHARED_TOOL_VERSION = "1.1.0".freeze
+SHARED_TOOL_VERSION = "1.2.0".freeze
 
 # journal_mode is persisted in the database file's own header, so setting it
 # once in SCHEMA (via migrate_once) is enough — every later connection reads
@@ -108,6 +114,52 @@ SCHEMA = <<~SQL
     line         TEXT,
     description  TEXT,
     created_at   TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  -- A rate card, not a cost column. Rates change and a plan can be renegotiated, so the
+  -- dollar figure is DERIVED at query time from the model and the period a run falls in,
+  -- never frozen onto the run. effective_from lets an old run keep costing what it cost.
+  CREATE TABLE IF NOT EXISTS model_rates (
+    model               TEXT NOT NULL,
+    effective_from      TEXT NOT NULL,
+    input_per_mtok      REAL NOT NULL,
+    output_per_mtok     REAL NOT NULL,
+    cache_write_per_mtok REAL NOT NULL,
+    cache_read_per_mtok REAL NOT NULL,
+    source              TEXT,
+    PRIMARY KEY (model, effective_from)
+  );
+
+  -- The RECURRING terms of whatever Claude plan this project is billed under. Separate from
+  -- billing_periods because the plan is one stated fact and the periods are derived from it:
+  -- a project on a different seat, or a different account entirely, records its own row here
+  -- and gets correct per-feature costs with no change to this script. Nothing about any plan
+  -- is hardcoded anywhere in this file — `billing setup` asks.
+  CREATE TABLE IF NOT EXISTS billing_plans (
+    id             TEXT PRIMARY KEY,
+    plan_name      TEXT NOT NULL,
+    seat_cost_usd  REAL NOT NULL,
+    included_usd   REAL NOT NULL,
+    cycle_day      INTEGER NOT NULL DEFAULT 1,
+    effective_from TEXT NOT NULL,
+    effective_to   TEXT,
+    notes          TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+  );
+
+  -- What the seat actually costs and what it actually includes. included_usd is the token
+  -- allowance; overage_usd is what was really billed on top, entered from an invoice rather
+  -- than computed, because a computed overage is an estimate wearing an invoice's clothes.
+  CREATE TABLE IF NOT EXISTS billing_periods (
+    id             TEXT PRIMARY KEY,
+    period_start   TEXT NOT NULL,
+    period_end     TEXT NOT NULL,
+    plan_name      TEXT,
+    seat_cost_usd  REAL,
+    included_usd   REAL,
+    overage_usd    REAL,
+    notes          TEXT,
+    created_at     TEXT NOT NULL DEFAULT (datetime('now','localtime'))
   );
 
   CREATE TABLE IF NOT EXISTS reflections (
@@ -203,9 +255,79 @@ def add_missing_run_columns!
   out, _err, status = Open3.capture3(*SQLITE, DB, "PRAGMA table_info(runs)")
   return unless status.success?
   existing = out.lines.map { |l| l.split("|")[1] }.compact
-  { "work_type" => "TEXT", "related_feature_id" => "TEXT" }.each do |col, type|
+  # tokens_* and model are written by `usage`, not by `run end` — a subagent cannot see
+  # its own token totals, so a flag on run end would record NULL for every honest agent.
+  # cache_read_tokens is separate from tokens_in because it bills at a tenth of the input
+  # rate and, measured, is ~96% of all tokens: folding them together overstates cost by
+  # roughly two orders of magnitude.
+  {
+    "work_type" => "TEXT", "related_feature_id" => "TEXT",
+    "tokens_in" => "INTEGER", "tokens_out" => "INTEGER",
+    "cache_read_tokens" => "INTEGER", "cache_creation_tokens" => "INTEGER",
+    "model" => "TEXT", "usage_source" => "TEXT"
+  }.each do |col, type|
     next if existing.include?(col)
     system(*SQLITE, DB, "ALTER TABLE runs ADD COLUMN #{col} #{type}", out: File::NULL, err: File::NULL)
+  end
+end
+
+# A transcript owns the run whose `run start` it executed. `run start` ends in `puts id`, so
+# that id arrives as a tool result that is NOTHING BUT the UUID — which is what distinguishes
+# it from the many other run ids a transcript may contain.
+#
+# Two weaker rules were measured and rejected. "Any known UUID near the word agent-log" gave
+# 295 transcripts matching more than one run, because a parent's transcript quotes its
+# children's ids. "First known UUID in file order" still gave 129 collisions, because the
+# agent-log skill tells a resumed agent to run `query runs`, which prints dozens of other
+# runs' ids before its own appears. Both would have attributed one agent's tokens to another
+# and produced a confident, wrong cost per feature.
+#
+# The cost of the strict rule is coverage, not correctness: an agent that captures the id
+# (RUN_ID=$(... run start ...)) never emits it, so its transcript cannot be matched at all.
+# Those runs are left NULL rather than guessed, and `query cost` counts them in its NoData
+# column so a partial total never reads as a complete one.
+# The ownership rule, and the reason it is this strict. A run id is only believed when the WHOLE
+# tool result is that id — optionally behind a shell assignment (`RUN_ID=<uuid>`, the shape the
+# agent-log skill's own `run start` snippet produces) or a `Run ID:` label. Matching an id merely
+# MENTIONED somewhere in a result is what produced the first sweep's mis-attribution: the skill
+# tells a resumed agent to run `query runs`, which dumps every recent id into one result, so
+# "contains a known id" made 295 transcripts claim runs that were not theirs.
+# Measured before widening from bare-only to these three forms: 3.5x more runs matched, and still
+# ZERO runs claimed by two different transcripts. That second number is the one that matters — a
+# transcript legitimately holds many runs (an orchestrator spawns them), but a run belongs to
+# exactly one transcript, so any nonzero count there means the rule is wrong.
+BARE_UUID = /\A\s*(?:[A-Z_][A-Z0-9_]*=|Run\ ID:\s*)?([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\s*\z/i
+
+def owning_run_id(node, known)
+  case node
+  when Hash
+    c = node["content"]
+    if c.is_a?(String) && (m = BARE_UUID.match(c)) && known.include?(m[1])
+      return m[1]
+    end
+    node.each_value { |v| r = owning_run_id(v, known); return r if r }
+  when Array
+    node.each { |v| r = owning_run_id(v, known); return r if r }
+  end
+  nil
+end
+
+# Walks a parsed transcript line and sums every usage object it contains. Recursive because
+# usage appears at several nesting depths and the shape is the harness's, not ours — a flat
+# fetch would silently miss the nested ones and undercount.
+def collect_usage(node, totals, &on_model)
+  case node
+  when Hash
+    u = node["usage"]
+    if u.is_a?(Hash)
+      %w[input_tokens output_tokens cache_read_input_tokens cache_creation_input_tokens].each do |k|
+        totals[k] += u[k] if u[k].is_a?(Integer)
+      end
+      on_model.call(node["model"]) if node["model"].is_a?(String) && on_model
+    end
+    node.each_value { |v| collect_usage(v, totals, &on_model) }
+  when Array
+    node.each { |v| collect_usage(v, totals, &on_model) }
   end
 end
 
@@ -279,10 +401,92 @@ def fail!(msg)
   exit 1
 end
 
+# A run's dollar value at LIST rates. This is an attribution weight, not a bill: see
+# the billing_periods comment in SCHEMA and `query billing`. Rates are looked up per run by
+# model and by the run's own start date, so a rate change doesn't retroactively reprice
+# finished work.
+RATE_LOOKUP_SQL = <<~SQL.freeze
+  SELECT r.id, r.feature_id, r.started_at,
+         COALESCE(r.tokens_in,0), COALESCE(r.tokens_out,0),
+         COALESCE(r.cache_creation_tokens,0), COALESCE(r.cache_read_tokens,0),
+         r.model
+  FROM runs r
+  WHERE r.usage_source IS NOT NULL
+SQL
+
+def rate_card
+  sq_rows("SELECT model, effective_from, input_per_mtok, output_per_mtok, cache_write_per_mtok, cache_read_per_mtok FROM model_rates ORDER BY model, effective_from")
+    .group_by { |r| r[0] }
+end
+
+# The rate in force for this model on this date — the latest effective_from at or before it.
+# A run whose model has no rate card entry contributes 0 and is counted separately, never
+# silently priced at some other model's rate.
+def rate_for(card, model, started_at)
+  rows = card[model.to_s]
+  return nil if rows.nil? || rows.empty?
+  on = started_at.to_s[0, 10]
+  match = rows.select { |r| r[1].to_s <= on }.last || rows.first
+  { in: match[2].to_f, out: match[3].to_f, cw: match[4].to_f, cr: match[5].to_f }
+end
+
+def run_list_value(rate, t_in, t_out, cw, cr)
+  return 0.0 if rate.nil?
+  (t_in * rate[:in] + t_out * rate[:out] + cw * rate[:cw] + cr * rate[:cr]) / 1_000_000.0
+end
+
+def usd(n) = "$#{'%.2f' % n}"
+
+require "date"
+
+# Derive one billing_periods row per cycle from the plan, covering every month that actually
+# holds a run. Regenerating is safe: rows are keyed by their own start/end, so a re-run after
+# changing the seat price updates the same rows rather than doubling them. Any --overage
+# already entered by hand is preserved — it came from an invoice and this cannot re-derive it.
+def generate_periods_from_plan(plan_id)
+  plan = sq_rows("SELECT plan_name, seat_cost_usd, included_usd, cycle_day, effective_from, COALESCE(effective_to,''), COALESCE(notes,'') FROM billing_plans WHERE id=?", plan_id).first
+  return 0 if plan.nil?
+  name, seat, included, cycle_day, eff_from, eff_to, notes = plan
+  cycle_day = [ [ cycle_day.to_i, 1 ].max, 28 ].min
+
+  bounds = sq_rows("SELECT MIN(date(started_at)), MAX(date(started_at)) FROM runs WHERE started_at IS NOT NULL").first
+  return 0 if bounds.nil? || bounds[0].to_s.empty?
+  first = [ Date.parse(bounds[0]), Date.parse(eff_from) ].max
+  last  = Date.parse(bounds[1])
+  last  = [ last, Date.parse(eff_to) ].min unless eff_to.to_s.empty?
+  return 0 if first > last
+
+  cursor = Date.new(first.year, first.month, cycle_day)
+  cursor = cursor << 1 if cursor > first
+  made = 0
+  while cursor <= last
+    nxt = (cursor >> 1)
+    pe  = nxt - 1
+    id  = "#{cursor}_#{pe}"
+    existing_overage = sq_rows("SELECT overage_usd FROM billing_periods WHERE id=?", id).first&.first
+    sq(
+      "INSERT OR REPLACE INTO billing_periods (id, period_start, period_end, plan_name, seat_cost_usd, included_usd, overage_usd, notes) VALUES (?,?,?,?,?,?,?,?)",
+      id, cursor.to_s, pe.to_s, name, seat, included, existing_overage, notes
+    )
+    made += 1
+    cursor = nxt
+  end
+  made
+end
+
+def prompt(label, default = nil)
+  $stderr.print default ? "#{label} [#{default}]: " : "#{label}: "
+  $stderr.flush
+  line = $stdin.gets
+  return default if line.nil?
+  line = line.strip
+  line.empty? ? default : line
+end
+
 subcommand = ARGV.shift
 # Only shift action for subcommands that have subactions (run, query).
 # For leaf commands (decision, event, outcome, help) the next token is a flag.
-action = if %w[run query].include?(subcommand) && ARGV.first && !ARGV.first.start_with?("--")
+action = if %w[run query usage billing].include?(subcommand) && ARGV.first && !ARGV.first.start_with?("--")
            ARGV.shift
 end
 args = parse_args(ARGV)
@@ -432,8 +636,261 @@ when "reflection"
 
 # ── query ────────────────────────────────────────────────────────────────────
 
+when "usage"
+  # Token usage is harness metadata: it exists in the subagent's transcript, not inside the
+  # run. So it is reconciled from transcripts after the fact rather than self-reported at
+  # `run end` — an agent asked for a number it cannot see reports nothing, and the column
+  # would read NULL forever while looking implemented.
+  #
+  # The join is exact rather than heuristic: a transcript contains the `run start` output of
+  # the run it belongs to, so the run UUID is literally in the file. Verified 12/12 when this
+  # was built. Timestamp-matching an agent name would be a guess; this is not.
+  case action
+  when "sweep"
+    dir = args[:dir] || File.join(Dir.home, ".claude", "jobs")
+    abort "usage sweep: #{dir} does not exist" unless Dir.exist?(dir)
+
+    known = sq_rows("SELECT id FROM runs").flatten.to_set
+    updated = 0
+    skipped = 0
+    # Both shapes, because the two live in different trees and only one of them is obvious:
+    # ~/.claude/projects holds session transcripts as .jsonl, ~/.claude/jobs holds background-job
+    # output as .output. Globbing only one silently sweeps nothing and still exits 0.
+    paths = Dir.glob(File.join(dir, "**", "*.jsonl")) + Dir.glob(File.join(dir, "**", "*.output"))
+    abort "usage sweep: no .jsonl or .output files under #{dir}" if paths.empty?
+    paths.each do |path|
+      totals = Hash.new(0)
+      model = nil
+      run_id = nil
+      File.foreach(path) do |line|
+        line = line.strip
+        next if line.empty?
+        begin
+          parsed = JSON.parse(line)
+        rescue JSON::ParserError
+          next
+        end
+        run_id ||= owning_run_id(parsed, known)
+        collect_usage(parsed, totals) { |m| model ||= m }
+      end
+
+      if run_id.nil?
+        skipped += 1
+        next
+      end
+      next if totals.values.sum.zero?
+
+      sq(<<~SQL)
+        UPDATE runs SET
+          tokens_in             = #{totals["input_tokens"].to_i},
+          tokens_out            = #{totals["output_tokens"].to_i},
+          cache_read_tokens     = #{totals["cache_read_input_tokens"].to_i},
+          cache_creation_tokens = #{totals["cache_creation_input_tokens"].to_i},
+          model                 = #{model ? "'" + model.gsub("'", "''") + "'" : "NULL"},
+          usage_source          = 'transcript'
+        WHERE id = '#{run_id}'
+      SQL
+      updated += 1
+    end
+    puts "usage sweep: #{updated} run(s) updated, #{skipped} transcript(s) with no matching run"
+  else
+    abort "usage: unknown action '#{action}' (expected: sweep)"
+  end
+
+when "billing"
+  case action
+  when "setup"
+    unless $stdin.tty?
+      fail!("billing setup is interactive. For a script, use: billing plan --name ... --seat-cost ... --included ... [--cycle-day N]")
+    end
+    $stderr.puts "Record the Claude plan this project is billed under."
+    $stderr.puts "These figures are per-account, not per-project — take them from your billing page or an invoice.\n\n"
+    name     = prompt("Seat / plan name (e.g. 'Claude Code premium seat')")
+    fail!("a plan name is required") if name.to_s.empty?
+    seat     = prompt("Seat cost per month, USD")
+    included = prompt("Included token spend per month, USD (the allowance the seat buys)")
+    cycle    = prompt("Day of month the billing cycle starts", "1")
+    fail!("seat cost must be a number")       unless seat.to_s.match?(/\A\d+(\.\d+)?\z/)
+    fail!("included amount must be a number") unless included.to_s.match?(/\A\d+(\.\d+)?\z/)
+    confirmed = prompt("Are these figures confirmed against an invoice? (y/N)", "N")
+    notes = confirmed.to_s.downcase.start_with?("y") ?
+      "Confirmed against an invoice on #{Date.today}." :
+      "STATED, NOT CONFIRMED (recorded #{Date.today}) — verify against an invoice before trusting any dollar figure derived from it."
+
+    sq("UPDATE billing_plans SET effective_to = date('now','-1 day') WHERE effective_to IS NULL")
+    id = SecureRandom.uuid
+    sq("INSERT INTO billing_plans (id, plan_name, seat_cost_usd, included_usd, cycle_day, effective_from, notes) VALUES (?,?,?,?,?,?,?)",
+       id, name, seat, included, cycle, (sq_rows("SELECT COALESCE(MIN(date(started_at)), date('now')) FROM runs").first&.first || Date.today.to_s), notes)
+    made = generate_periods_from_plan(id)
+    puts "Plan recorded. #{made} billing period(s) generated."
+    puts "Next: bin/agent-log query billing"
+
+  when "plan"
+    %i[name seat_cost included].each { |f| fail!("--#{f.to_s.tr('_','-')} required") unless args[f] }
+    sq("UPDATE billing_plans SET effective_to = date('now','-1 day') WHERE effective_to IS NULL")
+    id = args[:id] || SecureRandom.uuid
+    sq("INSERT OR REPLACE INTO billing_plans (id, plan_name, seat_cost_usd, included_usd, cycle_day, effective_from, notes) VALUES (?,?,?,?,?,?,?)",
+       id, args[:name], args[:seat_cost], args[:included], (args[:cycle_day] || 1),
+       args[:from] || (sq_rows("SELECT COALESCE(MIN(date(started_at)), date('now')) FROM runs").first&.first),
+       args[:notes])
+    made = generate_periods_from_plan(id)
+    puts "Plan #{args[:name]} recorded. #{made} billing period(s) generated."
+
+  when "rate"
+    %i[model from].each { |f| fail!("--#{f} required") unless args[f] }
+    %i[in out cache_write cache_read].each { |f| fail!("--#{f.to_s.tr('_','-')} required (USD per million tokens)") unless args[f] }
+    sq(
+      "INSERT OR REPLACE INTO model_rates (model, effective_from, input_per_mtok, output_per_mtok, cache_write_per_mtok, cache_read_per_mtok, source) VALUES (?,?,?,?,?,?,?)",
+      args[:model], args[:from], args[:in], args[:out], args[:cache_write], args[:cache_read], args[:source]
+    )
+    puts "Rate recorded: #{args[:model]} from #{args[:from]} — in #{args[:in]}, out #{args[:out]}, cache-write #{args[:cache_write]}, cache-read #{args[:cache_read]} per Mtok."
+
+  when "period"
+    %i[start end].each { |f| fail!("--#{f} required (YYYY-MM-DD)") unless args[f] }
+    id = args[:id] || "#{args[:start]}_#{args[:end]}"
+    sq(
+      "INSERT OR REPLACE INTO billing_periods (id, period_start, period_end, plan_name, seat_cost_usd, included_usd, overage_usd, notes) VALUES (?,?,?,?,?,?,?,?)",
+      id, args[:start], args[:end], args[:plan], args[:seat_cost], args[:included], args[:overage], args[:notes]
+    )
+    puts "Billing period #{id} recorded."
+
+  when "rates"
+    rows = sq_rows("SELECT model, effective_from, input_per_mtok, output_per_mtok, cache_write_per_mtok, cache_read_per_mtok, COALESCE(source,'') FROM model_rates ORDER BY model, effective_from")
+    if rows.empty?
+      puts "(no rates recorded — bin/agent-log billing rate --model ... )"
+    else
+      puts "%-22s %-12s %8s %8s %11s %10s  %s" % %w[Model From In Out CacheWrite CacheRead Source]
+      rows.each { |r| puts "%-22s %-12s %8s %8s %11s %10s  %s" % r.map(&:to_s) }
+    end
+
+  when "periods"
+    rows = sq_rows("SELECT id, period_start, period_end, COALESCE(plan_name,''), COALESCE(seat_cost_usd,''), COALESCE(included_usd,''), COALESCE(overage_usd,''), COALESCE(notes,'') FROM billing_periods ORDER BY period_start")
+    if rows.empty?
+      puts "(no plan recorded — run: bin/agent-log billing setup)"
+    else
+      rows.each do |r|
+        puts "#{r[0]}  #{r[1]}..#{r[2]}  #{r[3]}  seat=#{r[4]}  included=#{r[5]}  overage=#{r[6]}"
+        puts "    #{r[7]}" unless r[7].to_s.empty?
+      end
+    end
+  else
+    abort "usage: billing [setup|plan|rate|period|rates|periods]"
+  end
+
 when "query"
   case action
+  when "cost"
+    # Two dollar columns, because under a subscription they are genuinely different numbers and
+    # collapsing them would misstate the business. ListUSD is what these tokens would cost at
+    # API list rates — an attribution WEIGHT, not a bill. BilledUSD is this feature's share of
+    # what was actually paid (seat + overage) for the period its runs fall in, apportioned by
+    # that weight. Within the included allowance the marginal cost of a token is zero, so
+    # tokens x list rate is the wrong arithmetic for "what did this feature cost me" and the
+    # right arithmetic for "how much of the seat did this feature consume".
+    card    = rate_card
+    periods = sq_rows("SELECT period_start, period_end, COALESCE(seat_cost_usd,0), COALESCE(overage_usd,0) FROM billing_periods ORDER BY period_start")
+    runs    = sq_rows(RATE_LOOKUP_SQL)
+
+    if runs.empty?
+      puts "(no usage recorded yet — run: bin/agent-log usage sweep)"
+    else
+      unpriced = Hash.new(0)
+      by_feature = Hash.new { |h, k| h[k] = { runs: 0, ti: 0, to: 0, cw: 0, cr: 0, list: 0.0, billed: 0.0 } }
+      period_list = Hash.new(0.0)
+      per_run = []
+
+      runs.each do |id, feature, started, ti, to, cw, cr, model|
+        rate = rate_for(card, model, started)
+        unpriced[model.to_s] += 1 if rate.nil?
+        value = run_list_value(rate, ti.to_i, to.to_i, cw.to_i, cr.to_i)
+        on = started.to_s[0, 10]
+        pkey = periods.find { |ps, pe, _, _| ps <= on && on <= pe }&.first
+        period_list[pkey] += value if pkey
+        per_run << [ feature, value, pkey ]
+
+        f = by_feature[feature.to_s.empty? ? "(none)" : feature]
+        f[:runs] += 1; f[:ti] += ti.to_i; f[:to] += to.to_i
+        f[:cw] += cw.to_i; f[:cr] += cr.to_i; f[:list] += value
+      end
+
+      # Apportion each period's real outlay across the runs that fall inside it, by list value.
+      paid = periods.to_h { |ps, _, seat, over| [ ps, seat.to_f + over.to_f ] }
+      per_run.each do |feature, value, pkey|
+        next if pkey.nil? || period_list[pkey].zero?
+        key = feature.to_s.empty? ? "(none)" : feature
+        by_feature[key][:billed] += paid[pkey].to_f * (value / period_list[pkey])
+      end
+
+      nodata = sq_rows("SELECT COALESCE(feature_id,'(none)'), COUNT(*) FROM runs WHERE usage_source IS NULL GROUP BY 1").to_h
+
+      puts "%-10s %5s %14s %16s %11s %11s %7s" % [ "Feature", "Runs", "CacheWrite", "CacheRead", "ListUSD", "BilledUSD", "NoData" ]
+      puts "-" * 82
+      by_feature.sort_by { |_, v| -v[:list] }.first(30).each do |feature, v|
+        puts "%-10s %5d %14d %16d %11s %11s %7s" % [
+          feature, v[:runs], v[:cw], v[:cr], usd(v[:list]),
+          v[:billed].zero? ? "-" : usd(v[:billed]), nodata[feature].to_s
+        ]
+      end
+      puts "-" * 82
+      # Printed against the FULL set, not the 30 rows above — the shown rows are a truncation and
+      # a total computed from them would silently understate every figure.
+      puts "%-10s %5d %14d %16d %11s %11s %7s" % [
+        "ALL (#{by_feature.size})", by_feature.values.sum { |v| v[:runs] },
+        by_feature.values.sum { |v| v[:cw] }, by_feature.values.sum { |v| v[:cr] },
+        usd(by_feature.values.sum { |v| v[:list] }), usd(by_feature.values.sum { |v| v[:billed] }),
+        nodata.values.sum { |n| n.to_i }.to_s
+      ]
+      puts "\nListUSD   = list-rate value of the tokens. An attribution weight, not an invoice."
+      puts "BilledUSD = share of (seat + overage) actually paid for the enclosing period. '-' means"
+      puts "            the run falls outside every recorded billing period."
+      puts "NoData    = runs in that feature with no usage reconciled (transcript gone or never swept)."
+      unless unpriced.empty?
+        puts "\nNOT PRICED (no model_rates row, counted as $0): " +
+             unpriced.map { |m, n| "#{m.empty? ? '(no model)' : m} x#{n}" }.join(", ")
+      end
+    end
+
+  when "billing"
+    card    = rate_card
+    periods = sq_rows("SELECT id, period_start, period_end, COALESCE(plan_name,''), COALESCE(seat_cost_usd,0), COALESCE(included_usd,0), COALESCE(overage_usd,0) FROM billing_periods ORDER BY period_start")
+    if periods.empty?
+      puts "(no plan recorded — run: bin/agent-log billing setup)"
+    else
+      runs = sq_rows(RATE_LOOKUP_SQL)
+      periods.each do |id, ps, pe, plan, seat, included, over|
+        value = runs.sum { |_, _, started, ti, to, cw, cr, model|
+          on = started.to_s[0, 10]
+          next 0.0 unless on >= ps && on <= pe
+          run_list_value(rate_for(card, model, started), ti.to_i, to.to_i, cw.to_i, cr.to_i)
+        }
+        paid = seat.to_f + over.to_f
+        pct  = included.to_f.zero? ? nil : (value / included.to_f * 100)
+        # A period with runs but no reconciled usage is NOT a period of zero spend — it is a
+        # period we cannot see. Printing "$0.00 — 0% of allowance" for it would read as an
+        # measured underspend and silently understate what the seat actually bought.
+        total_runs, measured = sq_rows(
+          "SELECT COUNT(*), SUM(CASE WHEN usage_source IS NOT NULL THEN 1 ELSE 0 END) FROM runs WHERE date(started_at) BETWEEN ? AND ?", ps, pe
+        ).first.map(&:to_i)
+        puts "#{id}  #{ps}..#{pe}  #{plan}"
+        if measured.zero?
+          puts "  NO USAGE DATA — #{total_runs} run(s) in this period, none with token counts"
+          puts "  paid                  #{usd(paid)} (seat #{usd(seat)} + overage #{usd(over)})"
+          next
+        end
+        puts "  coverage              #{measured}/#{total_runs} runs measured (#{(measured * 100.0 / total_runs).round}%)" if total_runs > 0
+        puts "  consumed (list value) #{usd(value)}#{pct ? format(' — %.0f%% of the %s included', pct, usd(included)) : ''}"
+        puts "                        measured runs only; the true figure is higher" if measured < total_runs
+        puts "  paid                  #{usd(paid)} (seat #{usd(seat)} + overage #{usd(over)})"
+        if value > 0 && paid > 0
+          puts "  effective discount    %.1fx versus list" % (value / paid)
+        end
+        if pct && pct > 100
+          puts "  OVER ALLOWANCE by #{usd(value - included.to_f)} of list value — if overage is billed at list,"
+          puts "  that is the figure to reconcile against the invoice; --overage records what was really charged."
+        end
+      end
+    end
+
   when "runs"
     rows = sq_rows(
       "SELECT id, agent_name, feature_id, status, quality_score, started_at, substr(input_summary,1,50) FROM runs ORDER BY started_at DESC LIMIT 20"

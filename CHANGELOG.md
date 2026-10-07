@@ -4,6 +4,26 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.22.0] - 2026-10-07
+
+### Added
+
+- **`bin/agent-log` now records what a run consumed, and prices it against the plan actually being paid for.** The log could say what an agent did but not what it cost, so "what did this feature cost me" was unanswerable from the data and had to be estimated. Six columns on `runs` (`tokens_in`, `tokens_out`, `cache_creation_tokens`, `cache_read_tokens`, `model`, `usage_source`) hold the usage; a dated `model_rates` card and a `billing_plans`/`billing_periods` pair hold the money. Agents log none of it — `usage sweep` reconciles it afterwards from session transcripts, so no agent definition changed and nothing new can fail mid-run.
+
+  **Nothing about any plan or price is hardcoded.** `billing setup` prompts for the seat name, its monthly cost, the included token allowance and the cycle day; `billing plan` is the scriptable form. One plan row derives one period per cycle covering every month that holds a run, so a project on a different Claude account gets correct costs with no change to the script. Rates are dated, so an old run keeps costing what it cost, and a model with no rate row is reported as **NOT PRICED** instead of being silently priced at another model's rate.
+
+  `query cost` prints two dollar columns on purpose. **ListUSD** is the list-rate value of the tokens — an attribution *weight*. **BilledUSD** is the feature's share of what was really paid for the enclosing period, apportioned by that weight. Under a subscription the marginal cost of a token is zero until the allowance is exhausted, so `tokens × list rate` answers "how much of the seat did this consume", not "what was I charged". BilledUSD conserves: across all features it sums to exactly the total paid.
+
+- **`test/agent-log/cost_test.rb` — the script's first automated test coverage**, which 1.21.0 noted was missing. Eight tests run the real script against a throwaway database, covering the parts where a silent error is expensive rather than merely annoying: that the apportioned column sums to exactly what was paid, that it weighs by token value and not run count, that a run is priced at the rate in force on its own date, that an unpriced model is reported, that a no-data period says so, that coverage is disclosed, that regenerating periods updates in place and preserves a hand-entered overage, and that `billing setup` refuses non-interactively. Verified by mutation: breaking the date-aware rate lookup, the value-weighted apportionment, and the no-data guard each fails the specific test written for it. Not vendored, same as `test/rubocop/`.
+
+### Fixed
+
+- **The usage sweep globbed only `*.output` and so swept nothing, while exiting 0.** Session transcripts are `*.jsonl`, under `~/.claude/projects`; `*.output` is background-job output, under `~/.claude/jobs`. Reading one pattern meant a sweep that found no files reported success and updated zero runs, which is indistinguishable from a sweep that genuinely had nothing to do. It now reads both shapes and aborts when a directory yields neither.
+
+- **The transcript-to-run join matched any mention of a run id, not the id itself.** "Result contains a known id" made 295 transcripts claim runs that weren't theirs — the skill tells a resumed agent to run `query runs`, which dumps every recent id into one tool result — and produced a confident, badly inflated total. The rule is now that the *whole* result must be the id, optionally behind `RUN_ID=` or `Run ID:` (the shape the skill's own `run start` snippet produces). Widening from bare-uuid-only to those three forms was measured before it was applied: coverage rose from 17% to 77% of runs with still zero runs claimed by two different transcripts — the number that matters, since a transcript legitimately holds many runs but a run belongs to exactly one transcript.
+
+- **A billing period holding runs but no reconciled usage rendered as `$0.00 — 0% of allowance`.** Zero spend and no visibility are different facts and were printing identically, which reads as a measured underspend and understates what the seat bought. Such a period now prints **NO USAGE DATA** with its run count, and every period line carries its own coverage ratio so any consumption figure below 100% coverage reads as the floor it is.
+
 ## [1.21.0] - 2026-10-07
 
 ### Added

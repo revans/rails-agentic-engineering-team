@@ -344,3 +344,73 @@ Logging failures do not halt work. If a `bin/agent-log` call fails:
 - Surface the logging gap in the final report or written artifact
 
 The work is more important than the log.
+
+---
+
+## Cost and Billing
+
+Token counts are captured per run so a feature's cost can be answered from the log rather than
+estimated. Six columns on `runs` hold it: `tokens_in`, `tokens_out`, `cache_creation_tokens`,
+`cache_read_tokens`, `model`, `usage_source`.
+
+**Agents do not log these.** They are reconciled after the fact from session transcripts by
+`usage sweep`, which joins a transcript to a run by finding a tool result that is *entirely* a
+known run id (optionally as `RUN_ID=<uuid>` or `Run ID: <uuid>`). This is why the `run start`
+snippet above echoes the id — a run whose id never reaches the transcript cannot be costed.
+
+```bash
+bin/agent-log usage sweep --dir ~/.claude/projects   # reconcile transcripts -> runs
+bin/agent-log query cost                             # per-feature token and dollar totals
+bin/agent-log query billing                          # per-period consumption vs allowance
+```
+
+### First-time setup in a new project
+
+Nothing about any plan or price is hardcoded — a different project on a different Claude account
+records its own figures and gets correct costs with no change to this script.
+
+```bash
+bin/agent-log billing setup     # prompts for seat name, seat cost/month, included $/month, cycle day
+```
+
+Non-interactively (CI, scripted install):
+
+```bash
+bin/agent-log billing plan --name "Claude Code premium seat" \
+  --seat-cost 125 --included 1000 --cycle-day 1
+```
+
+Either form records the plan once and derives one `billing_periods` row per cycle covering every
+month that holds a run. Re-running after a price change updates those rows in place; a manually
+entered `--overage` is preserved, because it came from an invoice and cannot be re-derived.
+
+Model rates are a separate, dated rate card, so an old run keeps costing what it cost:
+
+```bash
+bin/agent-log billing rate --model claude-opus-5 --from 2026-01-01 \
+  --in 15 --out 75 --cache-write 18.75 --cache-read 1.50 --source "list pricing"
+bin/agent-log billing rates      # what is on file
+```
+
+A run whose model has no rate row is counted as $0 and reported under **NOT PRICED** rather than
+being silently priced at some other model's rate.
+
+### Reading the two dollar columns
+
+`query cost` prints **ListUSD** and **BilledUSD** and they are different numbers on purpose:
+
+- **ListUSD** — what those tokens would cost at API list rates. An attribution *weight*, not an
+  invoice.
+- **BilledUSD** — this feature's share of what was actually paid (seat + overage) for the period
+  its runs fall in, apportioned by that weight. Under a subscription the marginal cost of a token
+  is zero until the allowance is exhausted, so `tokens x list rate` answers "how much of the seat
+  did this consume", not "what was I charged".
+
+The BilledUSD column conserves: across all features it sums to exactly the total paid.
+
+### Two things the reports deliberately refuse to hide
+
+- A period with runs but no reconciled usage prints **NO USAGE DATA**, never `$0.00 — 0% of
+  allowance`. Zero spend and no visibility are different facts and must not render identically.
+- Every period line carries its own `coverage` (measured runs / total runs). Any consumption
+  figure below 100% coverage is a floor, and says so.

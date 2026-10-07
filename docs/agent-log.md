@@ -107,6 +107,57 @@ bin/agent-log outcome \
 
 This closes the hypothesis/result loop. Without it, the log analyst has no signal for Pattern Type 4 (outcome delta analysis).
 
+## Cost
+
+Each run records what it consumed — `tokens_in`, `tokens_out`, `cache_creation_tokens`,
+`cache_read_tokens`, `model` — so "what did this feature cost" is answered from the log rather
+than estimated.
+
+Agents do not log these. They are reconciled afterwards from session transcripts:
+
+```bash
+bin/agent-log usage sweep --dir ~/.claude/projects
+bin/agent-log query cost      # per-feature totals
+bin/agent-log query billing   # per-period consumption against the allowance
+```
+
+The join from a transcript to a run matches a tool result that is *entirely* a known run id
+(optionally `RUN_ID=<uuid>` or `Run ID: <uuid>`). It is deliberately that strict: an earlier
+"result contains a known id" rule made 295 transcripts claim runs that weren't theirs, because
+the skill tells a resumed agent to run `query runs`, which dumps every recent id into a single
+result. A run whose id never reaches its transcript simply cannot be costed, and is counted in
+the `NoData` column rather than guessed at.
+
+### Setting it up in a project
+
+Nothing about any plan or price is hardcoded, so a project on a different Claude account records
+its own figures and gets correct costs with no change to the script:
+
+```bash
+bin/agent-log billing setup   # prompts: seat name, cost/month, included $/month, cycle day
+```
+
+Model rates are a separate dated rate card (`billing rate`), so an old run keeps costing what it
+cost; a model with no rate row is reported as **NOT PRICED** rather than borrowed from another
+model's rate.
+
+### The two dollar columns
+
+`query cost` prints **ListUSD** and **BilledUSD**, and they answer different questions. ListUSD is
+the list-rate value of the tokens — an attribution *weight*. BilledUSD is the feature's share of
+what was actually paid for the enclosing period, apportioned by that weight. Under a subscription
+the marginal cost of a token is zero until the allowance is exhausted, so `tokens × list rate`
+answers "how much of the seat did this consume", not "what was I charged". BilledUSD conserves:
+across all features it sums to exactly the total paid.
+
+Two things the reports refuse to hide: a period holding runs but no reconciled usage prints
+**NO USAGE DATA** rather than `$0.00 — 0% of allowance` (zero spend and no visibility are
+different facts), and every period line carries its own coverage ratio, so any figure below 100%
+coverage reads as the floor it is.
+
+The arithmetic is covered by `test/agent-log/cost_test.rb` — run it with
+`ruby -I test/agent-log test/agent-log/cost_test.rb`. Like `test/rubocop/`, it is not vendored.
+
 ## Things to Know
 
 - The database creates itself on first use. No setup command is needed.
