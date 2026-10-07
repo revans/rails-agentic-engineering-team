@@ -4,6 +4,20 @@ Notable changes to this project, newest first. Each entry corresponds to a bump 
 
 Maintained by `/rails-deploy` — see [Updates](docs/updates.md).
 
+## [1.21.0] - 2026-10-07
+
+### Added
+
+- **Two review rules, both earned the expensive way.** A feature took five review rounds for roughly 200 lines of production code, and every finding sat in an assumption rather than in the new code. The two mechanisms behind that now live in the agents that needed them.
+
+  `fresh-eyes-review` gains **"enumerate; do not trace from what you were told."** A verification that inherits the assumption it is testing will always confirm it: walking the subclass tree a spec names cannot, by construction, find an implementer outside that tree. The instance — a spec asserted a table was written exclusively by one method, four documents repeated it, three reviewers passed it, and a second writer had shipped days earlier. A later round's three *independent* enumerations then all scoped to the application and library trees and all missed a third writer in the seeds file, which is why the rule names `db/`, `test/`, task directories and fixtures explicitly. Treat "exclusively", "the only" and "all of" as the assertions most likely to be false, because they are the ones nobody re-derived.
+
+  `fidelity-review` gains **"an empty diff against an excluded entity proves it was not written to, not that it is unaffected"** — check the read direction separately from the write direction. This one is subtler than an unverified assumption: the premise is correctly verified and only the inference is wrong, so it survives the careful check that catches the cruder version. It shipped a display regression into a table the feature never touched, reached through an enrichment fallback. `fidelity-review` also gets a compact form of the enumeration rule, since its own early check had that shape.
+
+### Fixed
+
+- **`bin/agent-log` no longer stores the next flag name as a flag's value.** Every flag the tool defines takes a value, but the parser accepted a bare flag and silently consumed whatever followed — so `--run-id $RUN_ID --title "x"` with `RUN_ID` unset became `--run-id --title "x"`, stored `"--title"` as the run id, and reported success. Rows then landed under an id matching no run, invisible to every query, while the caller believed the write had worked. Agents hit this routinely because each shell invocation is a fresh process, so a variable set in one call is empty in the next — this is a silent log-corruption bug, not a typo guard. A bare flag now errors with a message naming both flags and the likely cause; `--flag=value` is the escape hatch for a value that genuinely begins with `--`. Verified by execution across the bare-flag, missing-value, normal, `=`-form and dash-leading-value cases. The script still has no automated test coverage — worth adding.
+
 ## [1.20.2] - 2026-10-06
 
 ### Added

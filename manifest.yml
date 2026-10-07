@@ -4,8 +4,8 @@
 # source repo. See docs/updates.md.
 
 ---
-version: 1.20.2
-generated_at: '2026-10-06T13:01:07Z'
+version: 1.21.0
+generated_at: '2026-10-07T13:01:03Z'
 source_repo: https://github.com/revans/rails-agentic-engineering-team.git
 files:
   agents/architect.md: b7201168643c68706dbf0c6b93af397b7576ec9305f9c13222e8a91bcecdd607
@@ -14,8 +14,8 @@ files:
   agents/design.md: c651cbbd9e3128d41461c64b4fc32489d5770a3247d9b09173dbcf19fbdee91a
   agents/discovery.md: d29c7de1f0f9552ede484eca78b49774bcdafbc0978c3b782eb372b67a5ad753
   agents/engineer.md: b7ca03e521ff172f549d510160f34a00650870ec7eae7a3144f37f798f7cc1d6
-  agents/fidelity-review.md: d187fc533cbd39d7fbc1f0d3930a7ce1a97d109ee5d77407d369baa53388de8a
-  agents/fresh-eyes-review.md: 380e049ac08c82bb0c87cd8542e4e115a931bddaa01ab1b081d5ed2b9558f517
+  agents/fidelity-review.md: 75483e09f4b015e3678a2d2dcdd3139efb57d5ab0c7272b30210979b9b9fd303
+  agents/fresh-eyes-review.md: 3b2908745fafa6b07ad242f4a465aaec8e46949199bb4a5a8017350980af0814
   agents/intake.md: 66836642a9acb34ff843ec3feef17c06ca154cb88a166a64d15ede22778e87f9
   agents/performance-review.md: ff7ddaa849278131edfd51e27e6b99b44fc6bce81a64ec1bbdbcbbed9d2ef64a
   agents/rails-installer.md: 57041e5cf3f8aa0a8bb77e77f8e035e6cde7cd83a11515c80f4bc83942743cd7
@@ -25,7 +25,7 @@ files:
   agents/rails-updater.md: 2ada9a88a46c7975fd015f896b3808d0e06e758e655d57ed901870b59e10b9a3
   agents/roadmap-analyst.md: 73617da5df30206899e8bcec9e6253b82b09c662018b83e41e9ba1987aacb9b8
   agents/security-review.md: 14c47389bc735813b0f4b1048bf62ee29e7e99399d3f3c1aafadcff501ef297b
-  bin/agent-log: bdbf0e3f628ab58abd4ae4066494984d9c7e9d727681be078c0b7eaefa73ce4f
+  bin/agent-log: 54e1b0d5a92747060320fe89f4123962ad053901a41d0c4cd9c6e2d9dbfac3d8
   bin/rails-team-setup-project: 1143a5a43b5fcabc60e372caca5e6f1a109087422523732bad79d42f5e1323b2
   bin/rails-team-update: 84c205e964249db6cfd42aa4580125512a04ac56ab14de884e8b5184e44aecf0
   bin/team-create-issue: 0eab2be28d07d766a6e9c6cbbe1e39f5b16328292e2de827953bd8816ccd6c3e

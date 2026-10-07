@@ -222,17 +222,50 @@ def derive_work_type(explicit, feature_id)
   end
 end
 
+# Every flag this tool defines takes a value; none is a bare boolean. So a flag whose next
+# token is missing, or is itself another flag, is always a mistake — and silently accepting it
+# is the worst available outcome: `--run-id $RUN_ID --title "x"` with RUN_ID unset collapses to
+# `--run-id --title "x"`, which used to store "--title" AS the run id and report success. Rows
+# then landed under an id matching no run, invisible to every query, while the caller believed
+# the write had worked (issue #509). Agents hit this routinely because each Bash invocation is
+# a fresh shell, so a variable set in one call is empty in the next.
+#
+# A value that legitimately begins with "--" is still expressible as --flag=value; the bare-flag
+# check below only fires on a single token that looks exactly like another flag, so a quoted
+# phrase such as --description "-- see above" is untouched.
+FLAG_SHAPED = /\A--[a-z][\w-]*\z/
+
 def parse_args(argv)
   args = {}
   i = 0
   while i < argv.length
-    if argv[i].start_with?("--")
-      key = argv[i].sub(/^--/, "").tr("-", "_").to_sym
-      args[key] = argv[i + 1]
-      i += 2
-    else
+    unless argv[i].start_with?("--")
       i += 1
+      next
     end
+
+    flag = argv[i]
+
+    if flag.include?("=")
+      name, value = flag.sub(/^--/, "").split("=", 2)
+      args[name.tr("-", "_").to_sym] = value
+      i += 1
+      next
+    end
+
+    value = argv[i + 1]
+    if value.nil?
+      fail!("#{flag} requires a value, but none was given. " \
+            "If this came from a shell variable, it was unset — each Bash call is a fresh shell.")
+    end
+    if value.match?(FLAG_SHAPED)
+      fail!("#{flag} requires a value, but was followed by #{value}, which is another flag. " \
+            "If this came from a shell variable, it was unset — each Bash call is a fresh shell. " \
+            "Use #{flag}=VALUE if the value genuinely starts with '--'.")
+    end
+
+    args[flag.sub(/^--/, "").tr("-", "_").to_sym] = value
+    i += 2
   end
   args
 end
